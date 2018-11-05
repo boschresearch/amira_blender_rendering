@@ -1,7 +1,11 @@
 ---
 # We'll use defaults from the LLVM style, but with 4 columns indentation.
 BasedOnStyle: Google
+AlignAfterOpenBracket: DontAlign
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
 AlignOperands:   true
+AlignTrailingComments: true
 BraceWrapping:   
   AfterClass:      true
   AfterControlStatement: true
@@ -14,10 +18,13 @@ BraceWrapping:
   BeforeCatch:     false
   BeforeElse:      true
   IndentBraces:    false
+BreakBeforeBraces: Custom
 ColumnLimit: 120
 IndentWidth:     2
 MaxEmptyLinesToKeep: 2
 PointerAlignment: Left
+ReflowComments:  false
+SpacesBeforeTrailingComments: 2
 Standard:        Cpp11
-TabWidth:        4
+TabWidth:        2
 UseTab:          Never
