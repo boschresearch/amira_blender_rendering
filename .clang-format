@@ -6,9 +6,10 @@ AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
 AlignOperands:   true
 AlignTrailingComments: true
+AlwaysBreakTemplateDeclarations: true
 BraceWrapping:   
   AfterClass:      true
-  AfterControlStatement: true
+  AfterControlStatement: false
   AfterEnum:       true
   AfterFunction:   true
   AfterNamespace:  false
@@ -16,15 +17,24 @@ BraceWrapping:
   AfterStruct:     true
   AfterUnion:      true
   BeforeCatch:     false
-  BeforeElse:      true
+  BeforeElse:      false
   IndentBraces:    false
+  SplitEmptyFunction: false
 BreakBeforeBraces: Custom
 ColumnLimit: 120
-IndentWidth:     2
+IndentWidth:     4
 MaxEmptyLinesToKeep: 2
 PointerAlignment: Left
 ReflowComments:  false
 SpacesBeforeTrailingComments: 2
 Standard:        Cpp11
-TabWidth:        2
+TabWidth:        4
 UseTab:          Never
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
+CompactNamespaces: true
