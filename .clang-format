@@ -1,4 +1,40 @@
 ---
 # We'll use defaults from the LLVM style, but with 4 columns indentation.
 BasedOnStyle: Google
+AlignAfterOpenBracket: DontAlign
+AlignConsecutiveAssignments: false
+AlignConsecutiveDeclarations: false
+AlignOperands:   true
+AlignTrailingComments: true
+AlwaysBreakTemplateDeclarations: true
+BraceWrapping:   
+  AfterClass:      true
+  AfterControlStatement: false
+  AfterEnum:       true
+  AfterFunction:   true
+  AfterNamespace:  false
+  AfterObjCDeclaration: false
+  AfterStruct:     true
+  AfterUnion:      true
+  BeforeCatch:     false
+  BeforeElse:      false
+  IndentBraces:    false
+  SplitEmptyFunction: false
+BreakBeforeBraces: Custom
 ColumnLimit: 120
+IndentWidth:     4
+MaxEmptyLinesToKeep: 2
+PointerAlignment: Left
+ReflowComments:  false
+SpacesBeforeTrailingComments: 2
+Standard:        Cpp11
+TabWidth:        4
+UseTab:          Never
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+BreakConstructorInitializers: BeforeComma
+BreakInheritanceList: BeforeComma
+CompactNamespaces: true
