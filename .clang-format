@@ -38,3 +38,4 @@ ConstructorInitializerAllOnOneLineOrOnePerLine: false
 # BreakConstructorInitializers: BeforeComma # Not in clang 3.8
 # BreakInheritanceList: BeforeComma # Not in clang 6
 # CompactNamespaces: true # Not in clang 3.8
+AccessModifierOffset: -4
