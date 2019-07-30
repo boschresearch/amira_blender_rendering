@@ -13,8 +13,10 @@ assets_dir = osp.join(pkg_dir, "assets")
 
 logger = utils.get_logger()
 
+version_ge_2_8 = bpy.app.version[1] >= 80
 
-def clear_all_objects():
+
+def _unlink_279():
     for scene in bpy.data.scenes:
         for obj in scene.objects:
             try:
@@ -25,14 +27,33 @@ def clear_all_objects():
                 bpy.ops.object.mode_set(mode='OBJECT')
                 scene.objects.unlink(obj)
 
-    for bpy_data_iter in (
-            bpy.data.objects,
-            bpy.data.meshes,
-            bpy.data.lamps,
-            bpy.data.cameras,
-    ):
-        for id_data in bpy_data_iter:
-            bpy_data_iter.remove(id_data)
+
+def _unlink_280():
+    for scene in bpy.data.scenes:
+        for c in scene.collection.children:
+            scene.collection.children.unlink(c)
+
+
+def clear_all_objects():
+
+    if version_ge_2_8:
+        _unlink_280()
+    else:
+        _unlink_279()
+
+    data_collections = list((
+        bpy.data.objects,
+        bpy.data.meshes,
+        bpy.data.cameras,
+    ))
+    if version_ge_2_8:
+        data_collections.append(bpy.data.lights)
+    else:
+        data_collections.append(bpy.data.lamps)
+
+    for clc in data_collections:
+        for id_data in clc:
+            clc.remove(id_data)
 
 
 def delete_object(object_name):
@@ -73,8 +94,12 @@ def set_image_texture(obj, image_path, material_name):
 
     img = bpy.data.images.load(image_path)
 
-    if len(obj.data.uv_textures) == 0:
-        obj.data.uv_textures.new()
+    if version_ge_2_8:
+        clc = obj.data.uv_layers
+    else:
+        clc = obj.data.uv_textures
+    if len(clc) == 0:
+        clc.new()
 
     mat = bpy.data.materials.new(name=material_name)
     mat.use_nodes = True
@@ -108,9 +133,8 @@ def set_image_texture(obj, image_path, material_name):
 def create_room_corner():
 
     bpy.ops.mesh.primitive_plane_add(
-        radius=1,
-        location=(0.0, 0.0, 0.0),
-    )
+        # radius=1,  # 2.79 uses radius[=1], 2.8 uses size[=2]
+        location=(0.0, 0.0, 0.0),)
     floor = bpy.context.active_object
     floor.name = "Floor"
     set_image_texture(
@@ -120,7 +144,6 @@ def create_room_corner():
     )
 
     bpy.ops.mesh.primitive_plane_add(
-        radius=1,
         location=(0.0, -1.0, 1.0),
         rotation=(0.5 * np.pi, 0.0, 0.0),
     )
@@ -133,7 +156,6 @@ def create_room_corner():
     )
 
     bpy.ops.mesh.primitive_plane_add(
-        radius=1,
         location=(-1.0, 0.0, 1.0),
         rotation=(0.5 * np.pi, 0.0, 0.5 * np.pi),
     )
@@ -148,7 +170,11 @@ def create_room_corner():
 
 def load_cad_part(cad_part):
     current_objects = bpy.data.objects.keys()
-    blendfile = osp.join(assets_dir, "CAD_parts.blend")
+    blendfile = osp.join(assets_dir, "CAD_parts_{}.blend")
+    if version_ge_2_8:
+        blendfile = blendfile.format(280)
+    else:
+        blendfile = blendfile.format(279)
     bpy.ops.wm.append(filename=cad_part, directory=blendfile + "\\Object\\")
     for o in bpy.data.objects.keys():
         if o not in current_objects:

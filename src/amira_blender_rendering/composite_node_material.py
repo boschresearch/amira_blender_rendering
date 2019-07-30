@@ -3,19 +3,21 @@
 Generates RGD, Depth, Part-ID masks
 """
 # TODO:
-# 1. change to MaterialNodeDriver class (hide: nodes, root_node, links), 
+# 1. change to MaterialNodeDriver class (hide: nodes, root_node, links),
 # and use specialized material classes
-# 2. Depth should act at scene level (as-is), 
+# 2. Depth should act at scene level (as-is),
 # but it will probably be simpler to apply Part-ID at Object level;
 # especially for instance masks and Part-IDs for multiple instance-types
 # 3. Randomization, e.g. of hue, and roughness for Metal parts (use "Metal" in material names?)
-# 4. Using bumps, espeacially on metalic\glossy parts 
+# 4. Using bumps, espeacially on metalic\glossy parts
 
 import os.path as osp
 
 import bpy
 
 from amira_blender_rendering import utils
+
+version_ge_2_8 = bpy.app.version[1] >= 80
 
 logger = utils.get_logger()
 
@@ -25,7 +27,7 @@ col_width, row_height = 200, -180
 
 def set_materials(out_parent,
                   scene=None,
-                  render_layer=None,
+                  index_layer=None,
                   depth=True,
                   part_id=True,
                   remove_current_nodes=True,
@@ -42,10 +44,14 @@ def set_materials(out_parent,
     scene.use_nodes = True
     scene.render.use_compositing = True
 
-    if render_layer is None:
-        render_layer = 0
-    render_layer_obj = bpy.context.scene.render.layers[render_layer]
-    render_layer_obj.use_pass_object_index = True
+    if index_layer is None:
+        index_layer = 0
+
+    if version_ge_2_8:
+        layer = bpy.context.scene.view_layers[index_layer]
+    else:
+        layer = bpy.context.scene.render.layers[index_layer]
+    layer.use_pass_object_index = True
 
     nodes = scene.node_tree.nodes
     if remove_current_nodes:
