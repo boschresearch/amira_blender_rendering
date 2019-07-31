@@ -4,7 +4,7 @@
 
 import os.path as osp
 import sys
-pkg_dir = "/home/yoelsh/work/amira_tools/amira_blender_rendering" #TODO: customize to your PC
+pkg_dir = "/home/yoelsh/work/amira_blender_rendering" #TODO: customize to your PC
 sys.path.append(osp.join(pkg_dir, "src"))
 sys.path.append(osp.join(pkg_dir, "test"))
 import test_panda
@@ -22,6 +22,9 @@ import bpy
 from mathutils import Vector, Matrix, Quaternion
 
 from amira_blender_rendering import utils, composite_node_material, robot_driver
+from amira_blender_rendering import blender_utils as blnd
+
+version_ge_2_8 = bpy.app.version[1] >= 80
 
 DEG2RAD = 0.01745
 X_AXIS = (1, 0, 0)
@@ -40,26 +43,36 @@ utils.try_rmtree(test_out_dir)
 utils.try_makedirs(test_out_dir)
 
 
+def _flatten_test_results_file(test_name, timeout=20, sleep=1):
+    t0 = time.time()
+    while (time.time() - t0) < timeout:
+        for suffix in [".png", ".jpg"]:
+            img = osp.join(temp_dir, "image{}".format(suffix))
+            if osp.isfile(img):
+                dst = osp.join(test_out_dir, test_name + suffix)
+                utils.try_move(img, dst)
+                return
+        time.sleep(sleep)
+
+
 class SceneManager():
 
     def make_scene(self):
 
-        bpy.ops.mesh.primitive_plane_add(
-            radius=1,
-            location=(0.0, 0.0, 0.0),
-        )
+        bpy.ops.mesh.primitive_plane_add(location=(0.0, 0.0, 0.0))
         floor = bpy.context.active_object
         floor.name = "Floor"
         mat = bpy.data.materials.new(name="FloorMaterial")
         floor.data.materials.append(mat)
-        floor.material_slots[0].material.diffuse_color = (0.4, 0.5, 1.0)
-        # bpy.context.object.active_material.diffuse_color = (0, 0, 1)
+        if version_ge_2_8:
+            floor.material_slots[0].material.diffuse_color = (0.4, 0.5, 1.0, 1.0)
+        else:
+            floor.material_slots[0].material.diffuse_color = (0.4, 0.5, 1.0)
 
-        bpy.ops.object.lamp_add(
-            type='SUN',
-            radius=1,
-            location=(1.0, 1.0, 2.0),
-        )
+        if version_ge_2_8:
+            bpy.ops.object.light_add(type='SUN', location=(1, 2, 2))
+        else:
+            bpy.ops.object.lamp_add(type='SUN', radius=1, location=(1.0, 1.0, 2.0))
 
         bpy.ops.object.camera_add(
             location=(1.5, -0.5, 1.15),
@@ -80,17 +93,7 @@ class SceneManager():
             pass
 
     def reset_blend(self):
-        for scene in bpy.data.scenes:
-            for obj in scene.objects:
-                scene.objects.unlink(obj)
-        for bpy_data_iter in (
-                bpy.data.objects,
-                bpy.data.meshes,
-                bpy.data.lamps,
-                bpy.data.cameras,
-        ):
-            for id_data in bpy_data_iter:
-                bpy_data_iter.remove(id_data)
+        blnd.clear_all_objects()
 
 
 class TestBasics(unittest.TestCase, SceneManager):
@@ -167,14 +170,7 @@ class TestPandaIK(unittest.TestCase, SceneManager):
         self.panda = robot_driver.PandaIKDriver()
 
     def _flatten_test_results(self, timeout=20, sleep=1):
-        t0 = time.time()
-        img = osp.join(temp_dir, "image.png")
-        while (time.time() - t0) < timeout:
-            if osp.isfile(img):
-                dst = osp.join(test_out_dir, self._test_name + ".png")
-                utils.try_move(img, dst)
-                return
-            time.sleep(sleep)
+        _flatten_test_results_file(self._test_name, timeout=timeout, sleep=sleep)
 
     def tearDown(self):
         self.scene.render.filepath = temp_dir + "/image"
@@ -247,14 +243,7 @@ class TestPandaFK(unittest.TestCase, SceneManager):
         self.panda = robot_driver.PandaFKDriver()
 
     def _flatten_test_results(self, timeout=20, sleep=1):
-        t0 = time.time()
-        img = osp.join(temp_dir, "image.png")
-        while (time.time() - t0) < timeout:
-            if osp.isfile(img):
-                dst = osp.join(test_out_dir, self._test_name + ".png")
-                utils.try_move(img, dst)
-                return
-            time.sleep(sleep)
+        _flatten_test_results_file(self._test_name, timeout=timeout, sleep=sleep)
 
     def tearDown(self):
         self.scene.render.filepath = temp_dir + "/image"
