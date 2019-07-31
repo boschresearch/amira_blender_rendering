@@ -10,6 +10,8 @@ from mathutils import Vector, Matrix, Quaternion
 from amira_blender_rendering import utils
 from amira_blender_rendering import blender_utils as blnd
 
+version_ge_2_8 = bpy.app.version[1] >= 80
+
 logger = utils.get_logger()
 
 
@@ -101,7 +103,10 @@ class RigidBody():
         # FIXME: so far this was only tested with R 4x4 (H)
         # should work for both R and H, need to check dimensions
         R_current = self.matrix_world
-        R_final = R * R_current
+        if version_ge_2_8:
+            R_final = R @ R_current
+        else:
+            R_final = R * R_current
         self.set_rotation_matrix_to_R(R_final)
 
 
@@ -181,9 +186,16 @@ class PandaDriverParent():
         # The scene might contain pre-existing copies, e.g. Panda, Panda.001, Panda.002
         pre_existing = bpy.data.objects.keys()
         pkg = utils.get_my_dir(__file__)
-        blendfile = osp.join(pkg, "assets/Panda_IK.blend")
-        bpy.ops.wm.append(filename="Panda", directory=blendfile + "\\Group\\")
-        bpy.ops.wm.append(filename="Panda", directory=blendfile + "\\Material\\")
+
+        blendfile = osp.join(pkg, "assets/Panda_IK_{}.blend")
+        if version_ge_2_8:
+            blendfile = blendfile.format(280)
+            bpy.ops.wm.append(filename="Panda", directory=blendfile + "\\Collection\\")
+        else:
+            blendfile = blendfile.format(279)
+            bpy.ops.wm.append(filename="Panda", directory=blendfile + "\\Group\\")
+            bpy.ops.wm.append(filename="Panda", directory=blendfile + "\\Material\\")
+        
         # TODO : might need to remove duplicate material names
         for key in bpy.data.objects.keys():
             if key in pre_existing:
@@ -223,7 +235,7 @@ class PandaIKDriver(PandaDriverParent):
         else:
             raise AssertionError("could not determine TCP")
 
-    def randomize_tcp(self, allow_down=False):
+    def randomize_tcp(self, xlim=None, ylim=None, zlim=(0.4, 10)):
         """Using coarse approximaiton of workspace"""
         # TODO: set better limits, this is a bit too crazy
         EPS = 1e-4
@@ -236,7 +248,7 @@ class PandaIKDriver(PandaDriverParent):
         theta = np.random.rand(1) * np.deg2rad(360.0)
         phi = np.random.rand(1) * np.deg2rad(90.0)
 
-        if not allow_down:
+        if zlim[0] >= 0:
             denom = ((np.sin(phi) / R_XY)**2 + (np.cos(phi) / R_Z_UP)**2)
             r2_max = 1.0 / denom
         else:
@@ -246,16 +258,29 @@ class PandaIKDriver(PandaDriverParent):
         r = r_prop * np.sqrt(r2_max)
 
         xyz = [
-            self.base.position[0] + (r * np.cos(theta) * np.sin(phi)),
-            self.base.position[1] + (r * np.sin(theta) * np.sin(phi)),
-            self.base.position[2] + (r * np.cos(phi)),
+            r * np.cos(theta) * np.sin(phi),
+            r * np.sin(theta) * np.sin(phi),
+            r * np.cos(phi),
         ]
 
+        # Applying cartesian limits
+        if xlim is not None:
+            xyz[0] = min(xlim[1], max(xlim[0], xyz[0]))
+        if ylim is not None:
+            xyz[1] = min(ylim[1], max(ylim[0], xyz[1]))
+        if zlim is not None:
+            xyz[2] = min(zlim[1], max(zlim[0], xyz[2]))       
+
+        # Avoiding self-colision [coarse]
         r_xy = np.sqrt(xyz[0]**2 + xyz[1]**2)
         ratio = MIN_R_XY / (r_xy + EPS)
         if ratio > 1.0:
             xyz[0] *= ratio
             xyz[1] *= ratio
+            
+        # Adding base position
+        for k in range(3):
+            xyz[k] += self.base.position[k]
 
         self.tcp.set_position(xyz)
 

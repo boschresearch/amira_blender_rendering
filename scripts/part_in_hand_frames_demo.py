@@ -3,7 +3,7 @@
 
 import os.path as osp
 import sys
-pkg_dir = "/home/yoelsh/work/amira_tools/amira_blender_rendering" #TODO: customize to your PC
+pkg_dir = "/home/yoelsh/work/amira_blender_rendering" #TODO: customize to your PC
 sys.path.append(osp.join(pkg_dir, "src"))
 sys.path.append(osp.join(pkg_dir, "scripts"))
 import part_in_hand_frames_demo
@@ -24,9 +24,7 @@ pkg_dir = osp.split(scripts_dir)[0]
 out_dir = osp.join(pkg_dir, "out")
 output_file = osp.join(out_dir, "image_{:04}")
 
-# utils.try_makedirs(out_dir)
-# src_dir = osp.join(pkg_dir, "src", "amira_blender_rendering")
-# assets_dir = osp.join(src_dir, "assets")
+version_ge_2_8 = bpy.app.version[1] >= 80
 
 
 def scene_setup():
@@ -50,19 +48,21 @@ def scene_setup():
     except TypeError:
         pass
 
-    # Assuming single layer
-    try:
-        layer = render.layers[0]
-        layer.cycles.use_denoising = True
-        layer.cycles.denoising_radius = 5
-        layer.cycles.denoising_strength = 0.3
-        layer.cycles.denoising_feature_strength = 0.3
-        layer.cycles.denoising_diffuse_direct = False
-        layer.cycles.denoising_transmission_direct = False
-        layer.cycles.denoising_subsurface_direct = False
-    except Exception as err:
-        print("failed to set denoising")
-        print(err)
+    if version_ge_2_8:
+        pass  # TODO : configure params to avoid fireflies, etc.
+    else:
+        try:
+            for layer in render.layers:
+                layer.cycles.use_denoising = True
+                layer.cycles.denoising_radius = 5
+                layer.cycles.denoising_strength = 0.3
+                layer.cycles.denoising_feature_strength = 0.3
+                layer.cycles.denoising_diffuse_direct = False
+                layer.cycles.denoising_transmission_direct = False
+                layer.cycles.denoising_subsurface_direct = False
+        except Exception as err:
+            print("failed to set denoising")
+            print(err)
 
     return scene, render
 
@@ -77,13 +77,12 @@ def run():
     blnd.create_room_corner()
 
     # lighting
-    bpy.ops.object.lamp_add(
-        type='SUN',
-        radius=1,
-        view_align=False,
-        location=(1, 2, 2),
-    )
-    sun_name = bpy.data.lamps[-1].name
+    if version_ge_2_8:
+        bpy.ops.object.light_add(type='SUN', location=(1, 2, 2))
+        sun_name = bpy.data.lights[-1].name
+    else:
+        bpy.ops.object.lamp_add(type='SUN', radius=1, view_align=False, location=(1, 2, 2))
+        sun_name = bpy.data.lamps[-1].name
     sun = bpy.data.objects[sun_name]
     sun.name = "Sun"
     sun.rotation_mode = 'XYZ'
@@ -115,12 +114,19 @@ def run():
     panda.gripper.set_to(shaft_bbox.x.max)
 
     # images
+    if version_ge_2_8:
+        dg = bpy.context.evaluated_depsgraph_get()
+
     for k_img in range(1, 9):
 
         if k_img > 1:
-            panda.randomize_tcp()
+            panda.randomize_tcp(xlim=(0.1, 10), ylim=(-0.2, 10))
 
-        scene.update()  # must update panda.tcp.matrix_world
+        if version_ge_2_8:
+            dg.update()
+        else:
+            scene.update()  # must update panda.tcp.matrix_world
+
         shaft.matrix_world = panda.tcp.matrix_world
         if k_img > 3:
 
