@@ -33,6 +33,9 @@ def activate_cuda_devices():
         for d in prefs.devices:
             print(d.name, d.use)
 
+        # enable GPU compute devices for the current scene
+        bpy.context.scene.cycles.device = 'GPU'
+
 def render_image():
     bpy.ops.render.render(write_still=True)
 
