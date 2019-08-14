@@ -35,6 +35,7 @@ def _unlink_280():
 
 
 def clear_all_objects():
+    """Remove all objects, meshes, lights, and cameras from a scene"""
 
     if version_ge_2_8:
         _unlink_280()
@@ -54,6 +55,24 @@ def clear_all_objects():
     for clc in data_collections:
         for id_data in clc:
             clc.remove(id_data)
+
+
+def clear_orphaned_materials():
+    """Remove all materials without user"""
+    mats = []
+    for mat in bpy.data.materials:
+        if mat.users == 0:
+            mats.append(mat)
+
+    for mat in mats:
+        mat.user_clear()
+        bpy.data.materials.remove(mat)
+
+
+def remove_material_nodes(obj: bpy.types.Object = bpy.context.object):
+    """Remove all material nodes from an object"""
+    obj.data.materials.clear()
+
 
 
 def delete_object(object_name):
@@ -187,6 +206,7 @@ def translate_object(obj, translation: tuple):
 
 def get_mesh_bounding_box(mesh):
     """Returns Bounding-Box of Mesh-Object at zero position (Edit mode)"""
+
     try:
         xyz = mesh.data.vertices[0].co
     except AttributeError as err:
