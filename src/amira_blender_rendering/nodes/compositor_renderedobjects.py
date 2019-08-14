@@ -4,7 +4,11 @@ from typing import List
 import bpy
 
 
-def setup_compositor_nodes_RenderedObjects(objs : List[bpy.types.Object], scene: bpy.types.Scene = bpy.context.scene):
+def setup_compositor_nodes_rendered_objects(
+        base_path: str,
+        objs : List[bpy.types.Object],
+        scene: bpy.types.Scene = bpy.context.scene):
+
     """Setup all compositor nodes that are required for exporting to the
     RenderObjects dataset format."""
 
@@ -17,7 +21,7 @@ def setup_compositor_nodes_RenderedObjects(objs : List[bpy.types.Object], scene:
 
     # add file output node and setup format (16bit RGB without alpha channel)
     n_output_file = nodes.new('CompositorNodeOutputFile')
-    n_output_file.base_path = '/tmp/BlenderRenderedObjects'
+    n_output_file.base_path = base_path
     n_output_file.format.color_mode = 'RGB'
     n_output_file.format.color_depth = '16'
 

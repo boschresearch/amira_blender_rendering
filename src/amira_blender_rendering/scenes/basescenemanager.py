@@ -19,22 +19,10 @@ class BaseSceneManager():
 
     def __init__(self):
         super(BaseSceneManager, self).__init__()
-        self.reset_blend()
 
-
-    def reset_blend(self):
+    def reset(self):
         blnd.clear_all_objects()
         blnd.clear_orphaned_materials()
-
-
-    def __load_img(self, filepath):
-        """Load an image from filepath, or simply return the data block if
-        already available"""
-        for img in bpy.data.images:
-            if img.filepath == filepath:
-                return img
-        return bpy.data.images.load(filepath)
-
 
     def set_environment_texture(self, filepath):
         """Set a specific environment texture for the scene"""
@@ -52,12 +40,11 @@ class BaseSceneManager():
         n_envtex = nodes['Environment Texture']
 
         # retrieve image object and set
-        img = self.__load_img(filepath)
+        img = blnd.load_img(filepath)
         n_envtex.image = img
 
         # setup link (doesn't matter if already exists, won't duplicate)
         tree.links.new(n_envtex.outputs['Color'], nodes['Background'].inputs['Color'])
-
 
 
 # TODO: this should become a UnitTest

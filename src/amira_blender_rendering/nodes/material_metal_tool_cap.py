@@ -3,54 +3,32 @@
 import bpy
 import logging
 from mathutils import Vector
+from amira_blender_rendering import utils
+from amira_blender_rendering.blender_utils import clear_orphaned_materials, remove_material_nodes, add_default_material
 
 
-from amira_blender_rendering.blender_utils import clear_orphaned_materials, remove_material_nodes
-
-
-def add_default_material(
-    obj: bpy.types.Object = bpy.context.object,
-    name: str = 'DefaultMaterial') -> bpy.types.Material:
-
-    """Add a new 'default' Material to an object.
-
-    This material will automatically create a Principled BSDF node as well as a Material Output node."""
-
-    mat = bpy.data.materials.new(name=name)
-    mat.use_nodes = True
-    if obj.data.materials:
-        obj.data.materials[0] = mat
-    else:
-        obj.data.materials.append(mat)
-
-    return mat
-
-
-def setup_material_metal_tool_cap(material: bpy.types.Material, empty: bpy.types.Object = None):
+def setup_material_nodes_metal_tool_cap(material: bpy.types.Material, empty: bpy.types.Object = None):
     """Setup material nodes for the metal tool cap"""
     # TODO: refactor into smaller node-creation functions that can be re-used elsewhere
 
+    logger = utils.get_logger()
     tree = material.node_tree
     nodes = tree.nodes
 
-    # TODO: change this to some smarter logger function. here to be able to substitute quickly
-    logger_warn = lambda x: print(f"WW: {x}")
-    logger_info = lambda x: print(f"II: {x}")
-
     # check if default principles bsdf + metarial output exist
     if len(nodes) != 2:
-        logger_warn("More shader nodes in material than expected!")
+        logger.warn("More shader nodes in material than expected!")
 
     # find if the material output node is available. If not, create it
     if 'Material Output' not in nodes:
-        logger_warn("Node 'Material Output' not found in material node-tree")
+        logger.warn("Node 'Material Output' not found in material node-tree")
         n_output = nodes.new('ShaderNodeOutputMaterial')
     else:
         n_output = nodes['Material Output']
 
     # find if the principled bsdf node is available. If not, create it
     if 'Principled BSDF' not in nodes:
-        logger_warn("Node 'Principled BSDF' not found in material node-tree")
+        logger.warn("Node 'Principled BSDF' not found in material node-tree")
         n_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
     else:
         n_bsdf = nodes['Principled BSDF']
