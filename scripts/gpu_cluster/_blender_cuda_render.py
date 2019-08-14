@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
+import deprecation
 import bpy
 import sys
 from tempfile import NamedTemporaryFile
 
 
+@deprecation.deprecated(details='use amira_blender_rendering.blender_utils:activate_cuda_devices instead')
 def activate_cuda_devices():
     """This function tries to activate all CUDA devices for rendering"""
 
@@ -27,13 +29,10 @@ def activate_cuda_devices():
         device_set = False
         for d in prefs.devices:
             if d.type == 'CUDA':
-                print(f"II: Using CUDA device 'f{d.name}' ({d.id})")
+                print(f"II: Using CUDA device '{d.name}' ({d.id})")
                 d.use = True
             else:
                 d.use = False
-
-        for d in prefs.devices:
-            print(d.name, d.use)
 
         # using the current scene, enable GPU Compute for rendering
         bpy.context.scene.cycles.device = 'GPU'

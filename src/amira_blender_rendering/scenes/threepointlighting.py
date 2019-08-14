@@ -4,6 +4,7 @@
 rendering a single object"""
 
 import bpy
+import amira_blender_rendering.blender_utils as blnd
 from mathutils import Vector
 
 
@@ -16,16 +17,6 @@ class ThreePointLighting():
         self.setup_three_point_lighting()
 
 
-    def __look_at(self, obj, target):
-        """Rotate an object such that it looks at a target.
-
-        The object's Y axis will point upwards, and the -Z axis towards the
-        target. This is the 'correct' rotation for cameras and lights."""
-        t = obj.location
-        dir = target - t
-        quat = dir.to_track_quat('-Z', 'Y')
-        obj.rotation_euler = quat.to_euler()
-
 
     def setup_three_point_lighting(self, target = Vector((0.0, 0.0, 0.0))):
 
@@ -37,7 +28,7 @@ class ThreePointLighting():
         self.key_light.data.use_nodes = True
         self.key_light.data.size = 1.0
         self.key_light.data.node_tree.nodes['Emission'].inputs['Strength'].default_value = 13.0
-        self.__look_at(self.key_light, target)
+        blnd.look_at(self.key_light, target)
 
         # Fill Light
         bpy.ops.object.light_add(type='AREA')
@@ -47,7 +38,7 @@ class ThreePointLighting():
         self.fill_light.data.use_nodes = True
         self.fill_light.data.size = 3.0
         self.fill_light.data.node_tree.nodes['Emission'].inputs['Strength'].default_value = 10.0
-        self.__look_at(self.fill_light, target)
+        blnd.look_at(self.fill_light, target)
 
         # Back Light
         bpy.ops.object.light_add(type='AREA')
@@ -57,7 +48,7 @@ class ThreePointLighting():
         self.back_light.data.use_nodes = True
         self.back_light.data.size = 5.0
         self.back_light.data.node_tree.nodes['Emission'].inputs['Strength'].default_value = 25.0
-        self.__look_at(self.back_light, target)
+        blnd.look_at(self.back_light, target)
 
 
 # TODO: should become a UnitTest
