@@ -4,21 +4,8 @@ import bpy
 import logging
 from mathutils import Vector
 
-def clean_orphaned_materials():
-    """Remove all materials without user"""
-    mats = []
-    for mat in bpy.data.materials:
-        if mat.users == 0:
-            mats.append(mat)
 
-    for mat in mats:
-        mat.user_clear()
-        bpy.data.materials.remove(mat)
-
-
-def remove_material_nodes(obj: bpy.types.Object = bpy.context.object):
-    """Remove all material nodes from an object"""
-    obj.data.materials.clear()
+from amira_blender_rendering.blender_utils import clear_orphaned_materials, remove_material_nodes
 
 
 def add_default_material(
@@ -93,12 +80,16 @@ def setup_material_metal_tool_cap(material: bpy.types.Material, empty: bpy.types
         bpy.ops.object.empty_add(type='PLAIN_AXES')
         empty = bpy.context.object
 
-        # locate at the top of the object (XXX: assumes obj is in default coordinates)
+        # locate at the top of the object
         v0 = Vector(obj.bound_box[1])
         v1 = Vector(obj.bound_box[2])
         v2 = Vector(obj.bound_box[5])
         v3 = Vector(obj.bound_box[6])
         empty.location = (v0 + v1 + v2 + v3) / 4
+        # rotate into object space. afterwards we'll have linkage via parenting
+        empty.location = obj.matrix_world @ empty.location
+        # copy rotation
+        empty.rotation_euler = obj.rotation_euler
 
         # deselect all
         bpy.ops.object.select_all(action='DESELECT')
@@ -227,10 +218,11 @@ def setup_material_metal_tool_cap(material: bpy.types.Material, empty: bpy.types
     tree.links.new(n_output_normal.outputs['Normal'], n_bsdf.inputs['Normal'])
 
 
+# TODO: this should become a unit test
 def main():
     """First tear down any material assigned with the object, then create everything from scratch"""
     remove_material_nodes()
-    clean_orphaned_materials()
+    clear_orphaned_materials()
     mat = add_default_material()
     setup_material_metal_tool_cap(mat)
 
