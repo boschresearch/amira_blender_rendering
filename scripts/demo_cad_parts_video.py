@@ -6,8 +6,8 @@ import sys
 pkg_dir = "/home/yoelsh/work/amira_tools/amira_blender_rendering" #TODO: customize to your PC
 sys.path.append(osp.join(pkg_dir, "src"))
 sys.path.append(osp.join(pkg_dir, "scripts"))
-import cad_parts_video_demo
-cad_parts_video_demo.run()
+import demo_cad_parts_video
+demo_cad_parts_video.run()
 """
 import os.path as osp
 import time
