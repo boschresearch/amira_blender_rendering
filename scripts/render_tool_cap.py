@@ -26,7 +26,7 @@ AMIRA_BLENDER_PATH = '~/dev/vision/amira_blender_rendering/src'
 OUTPUT_PATH = '/tmp/BlenderRenderedObjects'
 ENVIRONMENT_TEXTURE = '~/gfx/assets/hdri/small_hangar_01_4k.hdr'
 
-N_IMAGES = 1
+N_IMAGES = 20
 
 #
 # ---- Configuration ends here
@@ -86,8 +86,8 @@ class SimpleToolCapScene(
         # TODO: pass camera calibration information and scene size as argument,
         #       or read from configuration
         self.K = np.array([ 9.9801747708520452e+02, 0., 6.6049856967197002e+02, 0., 9.9264009290521165e+02, 3.6404286361152555e+02, 0., 0., 1. ]).reshape(3,3)
-        self.width = 1280
-        self.height = 720
+        self.width = 640
+        self.height = 480
 
         # setup blender scene, camera, object, and compositors.
         # Note that the compositor setup needs to come after setting up the objects
@@ -174,7 +174,7 @@ class SimpleToolCapScene(
         # add camera, update with calibration data, and make it active for the scene
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
         self.cam = bpy.context.object
-        self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
+        # self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
         bpy.context.scene.camera = self.cam
 
         # look at center
@@ -327,6 +327,28 @@ class SimpleToolCapScene(
         self.save_annotations(corners2d, corners3d, aabb, oobb)
 
 
+    def randomize(self):
+        """Set an arbitrary location and rotation for the object"""
+
+        ok = False
+        while not ok:
+            self.cap_obj.location = Vector((1.0 * np.random.rand(3) - 0.5))
+
+            # update the scene. unfortunately it doesn't always work to just set
+            # the location of the object without recomputing the dependency
+            # graph
+            dg = bpy.context.evaluated_depsgraph_get()
+            dg.update()
+
+            # Test if object is still visible. That is, none of the vertices
+            # should lie outside the visible pixel-space
+            vs = [self.cap_obj.matrix_world @ Vector(v) for v in self.cap_obj.bound_box]
+            ps = [abr_geom.project_p3d(v, self.cam) for v in vs]
+            pxs = [abr_geom.p2d_to_pixel_coords(p) for p in ps]
+            oks = [px[0] >= 0 and px[0] < self.width and px[1] >= 0 and px[1] < self.height for px in pxs]
+            ok = all(oks)
+
+
 def save_dataset_configuration(dirinfo):
     # TODO: save the dataset.cfg file
     pass
@@ -349,7 +371,7 @@ def main():
         base_filename = "{:0{width}d}".format(i, width=format_width)
         scene.set_base_filename(base_filename)
 
-        # TODO: change camera and/or object location
+        scene.randomize()
 
         # postprocessing
         scene.render()
