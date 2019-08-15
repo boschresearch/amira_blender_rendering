@@ -4,6 +4,7 @@
 import sys, os
 import bpy
 import numpy as np
+from math import ceil, log
 from mathutils import Vector
 
 #
@@ -18,6 +19,8 @@ AMIRA_BLENDER_PATH = '~/dev/vision/amira_blender_rendering/src'
 
 OUTPUT_PATH = '/tmp/BlenderRenderedObjects'
 ENVIRONMENT_TEXTURE = '~/gfx/assets/hdri/small_hangar_01_4k.hdr'
+
+N_IMAGES = 100
 
 #
 # ---- Configuration ends here
@@ -38,17 +41,40 @@ import amira_blender_rendering.scenes as abr_scenes
 # import amira_deep_vision stuff that is required to generate the output
 from aps.core.interfaces import PoseRenderResult
 
+# we cannot import aps.data, because blender<->torch has some gflags issues at
+# the moment that we cannot solve. That is, when running blender -c --python
+# console, then import torch, leads to an ERROR and blender quits. To circumvent
+# this issue, we'll manually import the file that gives us diretory information
+# of renderedobjects within the following function. Fore more information, read
+# the comment in the file that gets imported
+def import_renderedobjects_static_methods():
+    import importlib
+    try:
+        fname = os.path.expanduser(os.path.join(
+            APS_REPOSITORY_PATH,
+            APS_RENDERED_OBJECTS_STATIC_METHODS))
+        spec = importlib.util.spec_from_file_location('renderedobjects_static', fname)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except ImportError as e:
+        raise RuntimeError(f"Could not import RenderedObjects' static methods")
+    return module
+ro_static = import_renderedobjects_static_methods()
 
-class SimpleToolCapScene(abr_scenes.BaseSceneManager, abr_scenes.ThreePointLighting):
+
+
+class SimpleToolCapScene(
+        abr_scenes.BaseSceneManager,
+        abr_scenes.ThreePointLighting):
     """Simple toolcap scene in which we have three point lighting and can set
     some background image.
     """
 
-    def __init__(self):
+    def __init__(self, base_filename: str):
         super(SimpleToolCapScene, self).__init__()
         self.reset()
 
-        # TODO: pass camera calibration information and scene size
+        # TODO: pass camera calibration information and scene size as argument
         self.K = np.array([ 9.9801747708520452e+02, 0., 6.6049856967197002e+02, 0., 9.9264009290521165e+02, 3.6404286361152555e+02, 0., 0., 1. ]).reshape(3,3)
         self.width = 1280
         self.height = 720
@@ -56,18 +82,22 @@ class SimpleToolCapScene(abr_scenes.BaseSceneManager, abr_scenes.ThreePointLight
         # setup blender scene and camera
         self.setup_scene()
         self.setup_camera()
-
-        # the order of what's done is important. first setup the object and its
-        # material, then rescale it. otherwise, values from shader nodes might
-        # not reflect the correct sizes (the metal-tool-cap material depends on
-        # an empty that is placed on top of the object. scaling the empty will
-        # scale the texture)
         self.setup_three_point_lighting()
+
+        # the order of what's done is important. first import and setup the
+        # object and its material, then rescale it. otherwise, values from
+        # shader nodes might not reflect the correct sizes (the metal-tool-cap
+        # material depends on an empty that is placed on top of the object.
+        # scaling the empty will scale the texture)
         self.import_toolcap_mesh()
         self.setup_material()
         self.rescale_objects()
-        self.setup_compositor()
+
+        # compositor setup needs to come after setting up the objects
         self.setup_environment()
+
+        self.base_filename = base_filename
+        self.setup_compositor()
 
 
     def rescale_objects(self):
@@ -99,16 +129,22 @@ class SimpleToolCapScene(abr_scenes.BaseSceneManager, abr_scenes.ThreePointLight
         blnd.clear_orphaned_materials()
 
         # add default material and setup nodes (without specifying empty, to get
-        # it created)
+        # it created automatically)
         self.cap_mat = blnd.add_default_material(self.cap_obj)
         abr_nodes.setup_material_nodes_metal_tool_cap(self.cap_mat)
 
 
     def setup_compositor(self):
-        abr_nodes.setup_compositor_nodes_rendered_objects(
-                base_path=OUTPUT_PATH,
-                objs=[self.cap_obj]
-                )
+        self.dirinfo = ro_static.build_directory_info(OUTPUT_PATH)
+        self.compositor = abr_nodes.CompositorNodesOutputRenderedObject()
+
+        # setup all path related information in the compositor
+        # TODO: both in amira_deep_vision as well as here we actually only need
+        # some schema that defines the layout of the dataset. This should be
+        # extracted into an independent schema file. Note that this does not
+        # mean to use any xml garbage! Rather, it should be as plain as
+        # possible.
+        self.compositor.setup(self.dirinfo, self.base_filename, objs=[self.cap_obj])
 
 
     def setup_scene(self):
@@ -137,33 +173,51 @@ class SimpleToolCapScene(abr_scenes.BaseSceneManager, abr_scenes.ThreePointLight
         self.set_environment_texture(filepath)
 
 
+    def set_base_filename(self, filename):
+        if filename == self.base_filename:
+            return
+        self.base_filename = filename
 
-# we cannot import aps.data, because blender<->torch has some gflags issues at
-# the moment that we cannot solve. That is, when running blender -c --python
-# console, then import torch, leads to an ERROR and blender quits. To circumvent
-# this issue, we'll manually import the file that gives us diretory information
-# of renderedobjects within the following function. Fore more information, read
-# the comment in the file that gets imported
-def import_renderedobjects_static_methods():
-    import importlib
-    try:
-        fname = os.path.expanduser(os.path.join(
-            APS_REPOSITORY_PATH,
-            APS_RENDERED_OBJECTS_STATIC_METHODS))
-        spec = importlib.util.spec_from_file_location('renderedobjects_static', fname)
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-    except ImportError as e:
-        raise RuntimeError(f"Could not import RenderedObjects' static methods")
-    return module
+        # update the compositor with the new filename
+        self.compositor.update(
+                self.dirinfo,
+                self.base_filename,
+                [self.cap_obj])
+
+
+    def render(self):
+        # Rendering will automatically save images due to the compositor node
+        # setup. passing write_still=False prevents writing another file
+        bpy.ops.render.render(write_still=False)
+
+
+    def save_annotations(self):
+        # TODO: extract PoseRenderResult, and save annotation to json
+        pass
+
+
+    def save_dataset_configuration(self):
+        # TODO: save the dataset.cfg file
+        pass
+
+    def postprocess(self):
+        # the compositor postprocessing takes care of fixing file names
+        self.compositor.postprocess()
+        self.save_annotations()
+        self.save_dataset_configuration()
 
 
 def main():
-    ro_static = import_renderedobjects_static_methods()
-    dirinfo = ro_static.build_directory_info('/tmp')
+    i = 13
+    format_width = int(ceil(log(N_IMAGES, 10)))
+    base_filename = "{:0{width}d}".format(i, width=format_width)
+
     blnd.activate_cuda_devices()
-    scene = SimpleToolCapScene()
-    bpy.ops.render.render(write_still=True)
+    scene = SimpleToolCapScene(base_filename)
+    scene.render()
+    scene.postprocess()
+
+
 
 if __name__ == "__main__":
     main()
