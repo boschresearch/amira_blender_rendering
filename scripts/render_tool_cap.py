@@ -73,6 +73,7 @@ class SimpleToolCapScene(
     def __init__(self, base_filename: str):
         super(SimpleToolCapScene, self).__init__()
         self.reset()
+        self.base_filename = base_filename
 
         # TODO: pass camera calibration information and scene size as argument
         self.K = np.array([ 9.9801747708520452e+02, 0., 6.6049856967197002e+02, 0., 9.9264009290521165e+02, 3.6404286361152555e+02, 0., 0., 1. ]).reshape(3,3)
@@ -83,21 +84,21 @@ class SimpleToolCapScene(
         self.setup_scene()
         self.setup_camera()
         self.setup_three_point_lighting()
+        self.setup_object()
+        # compositor setup needs to come after setting up the objects
+        self.setup_environment()
+        self.setup_compositor()
 
+
+    def setup_object(self):
         # the order of what's done is important. first import and setup the
         # object and its material, then rescale it. otherwise, values from
         # shader nodes might not reflect the correct sizes (the metal-tool-cap
         # material depends on an empty that is placed on top of the object.
         # scaling the empty will scale the texture)
-        self.import_toolcap_mesh()
+        self.import_mesh()
         self.setup_material()
         self.rescale_objects()
-
-        # compositor setup needs to come after setting up the objects
-        self.setup_environment()
-
-        self.base_filename = base_filename
-        self.setup_compositor()
 
 
     def rescale_objects(self):
@@ -105,7 +106,8 @@ class SimpleToolCapScene(
         self.cap_obj.scale = Vector((0.010, 0.010, 0.010))
 
 
-    def import_toolcap_mesh(self):
+    def import_mesh(self):
+        """Import the mesh of the cap from a ply file."""
         # load mesh from assets directory
         self.ply_path = os.path.join(blnd.assets_dir, 'tool_cap.ply')
         bpy.ops.import_mesh.ply(filepath=self.ply_path)
@@ -114,12 +116,15 @@ class SimpleToolCapScene(
 
 
     def select_cap(self):
+        """Select the cap, which is the object of interest in this scene."""
         bpy.ops.object.select_all(action='DESELECT')
         self.cap_obj.select_set(state=True)
         bpy.context.view_layer.objects.active = self.cap_obj
 
 
     def setup_material(self):
+        """Setup object material"""
+
         # make sure cap is selected
         self.select_cap()
 
@@ -135,6 +140,7 @@ class SimpleToolCapScene(
 
 
     def setup_compositor(self):
+        """Setup output compositor nodes"""
         self.dirinfo = ro_static.build_directory_info(OUTPUT_PATH)
         self.compositor = abr_nodes.CompositorNodesOutputRenderedObject()
 
@@ -148,12 +154,13 @@ class SimpleToolCapScene(
 
 
     def setup_scene(self):
+        """Setup the scene"""
         bpy.context.scene.render.resolution_x = self.width
         bpy.context.scene.render.resolution_y = self.height
 
 
     def setup_camera(self):
-        # TODO: set camera position randomly from somewhere
+        """Setup camera, and place at a default location"""
 
         # add camera and make it active for the scene
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
