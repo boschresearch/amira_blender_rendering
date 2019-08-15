@@ -213,7 +213,7 @@ class CompositorNodesOutputRenderedObject():
         files to desired-filename.ext.
         """
 
-        # TODO: TODO items from ..._update apply!
+        # TODO: all TODO items from the _update function above apply!
 
         fname_render   = os.path.join(self.dirinfo.images.const,                 f'{self.base_filename}.png0001')
         fname_depth    = os.path.join(self.dirinfo.images.depth,                 f'{self.base_filename}.exr0001')
