@@ -21,7 +21,6 @@ def opencv_to_blender(width, height, K, cam):
     cx = K[0, 2]
     cy = K[1, 2]
 
-
     cam.data.shift_x = -(cx / width - 0.5)
     cam.data.shift_y =  (cy - 0.5 * height) / width
 

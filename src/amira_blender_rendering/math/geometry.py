@@ -89,3 +89,21 @@ def get_relative_transform(obj1: bpy.types.Object,
     r = get_relative_rotation(obj1, obj2)
     return t, r
 
+
+
+if __name__ == "__main__":
+    obj = bpy.data.objects['Tool.Cap']
+    cam = bpy.context.scene.camera
+    render = bpy.context.scene.render
+
+    print(obj.location)
+    vs = [obj.matrix_world @ Vector(v) for v in obj.bound_box]
+    print(vs)
+    ps = [project_p3d(v, cam) for v in vs]
+    print(ps)
+    pxs = [p2d_to_pixel_coords(p) for p in ps]
+    print(pxs)
+    oks = [px[0] >= 0 and px[0] < render.resolution_x and px[1] >= 0 and px[1] < render.resolution_y for px in pxs]
+    print(oks)
+    print(all(oks))
+
