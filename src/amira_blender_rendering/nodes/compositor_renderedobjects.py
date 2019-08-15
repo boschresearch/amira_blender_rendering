@@ -135,6 +135,7 @@ class CompositorNodesOutputRenderedObject():
         tree.links.new(n_id_mask.outputs['Alpha'], n_output_file.inputs[mask_name])
         self.sockets['s_backdrop'] = s_obj_mask
 
+
         # add nodes and sockets for all masks
         for i, obj in enumerate(objs):
             # setup object (this will change the pass index). The pass_index must be > 0 for the mask to work.
@@ -215,12 +216,15 @@ class CompositorNodesOutputRenderedObject():
 
         # TODO: all TODO items from the _update function above apply!
 
-        fname_render   = os.path.join(self.dirinfo.images.const,                 f'{self.base_filename}.png0001')
-        fname_depth    = os.path.join(self.dirinfo.images.depth,                 f'{self.base_filename}.exr0001')
-        fname_backdrop = os.path.join(self.dirinfo.images.base_path, 'backdrop', f'{self.base_filename}.png0001')
-        for f in (fname_render, fname_depth, fname_backdrop):
+        self.fname_render   = os.path.join(self.dirinfo.images.const,                 f'{self.base_filename}.png0001')
+        self.fname_depth    = os.path.join(self.dirinfo.images.depth,                 f'{self.base_filename}.exr0001')
+        self.fname_backdrop = os.path.join(self.dirinfo.images.base_path, 'backdrop', f'{self.base_filename}.png0001')
+        for f in (self.fname_render, self.fname_depth, self.fname_backdrop):
             os.rename(f, f[:-4])
 
+        # store mask filename for other users that currently need the mask
+        self.fname_masks = []
         for i in range(len(self.objs)):
             fname_mask = os.path.join(self.dirinfo.images.mask,                  f'{self.base_filename}.png0001')
             os.rename(fname_mask, fname_mask[:-4])
+            self.fname_masks.append(fname_mask[:-4])

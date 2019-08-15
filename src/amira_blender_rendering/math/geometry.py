@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import bpy
-from mathutils import Vector
+from mathutils import Vector, Euler
 
 def project_p3d(p: Vector,
             camera: bpy.types.Object = bpy.context.scene.camera,
