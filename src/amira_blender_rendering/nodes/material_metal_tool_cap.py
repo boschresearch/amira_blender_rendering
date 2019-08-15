@@ -7,6 +7,9 @@ from amira_blender_rendering import utils
 from amira_blender_rendering.blender_utils import clear_orphaned_materials, remove_material_nodes, add_default_material
 
 
+# TODO: change into MaterialNodesMetalToolCap class
+
+
 def setup_material_nodes_metal_tool_cap(material: bpy.types.Material, empty: bpy.types.Object = None):
     """Setup material nodes for the metal tool cap"""
     # TODO: refactor into smaller node-creation functions that can be re-used elsewhere

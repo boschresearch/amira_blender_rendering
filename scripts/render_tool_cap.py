@@ -75,17 +75,18 @@ class SimpleToolCapScene(
         self.reset()
         self.base_filename = base_filename
 
-        # TODO: pass camera calibration information and scene size as argument
+        # TODO: pass camera calibration information and scene size as argument,
+        #       or read from configuration
         self.K = np.array([ 9.9801747708520452e+02, 0., 6.6049856967197002e+02, 0., 9.9264009290521165e+02, 3.6404286361152555e+02, 0., 0., 1. ]).reshape(3,3)
         self.width = 1280
         self.height = 720
 
-        # setup blender scene and camera
+        # setup blender scene, camera, object, and compositors.
+        # Note that the compositor setup needs to come after setting up the objects
         self.setup_scene()
         self.setup_camera()
         self.setup_three_point_lighting()
         self.setup_object()
-        # compositor setup needs to come after setting up the objects
         self.setup_environment()
         self.setup_compositor()
 
