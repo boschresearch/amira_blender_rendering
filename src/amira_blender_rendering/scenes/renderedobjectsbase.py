@@ -13,6 +13,8 @@ try:
 except:
     import json
 
+from amira_blender_rendering import camera_utils
+from amira_blender_rendering import blender_utils as blnd
 import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
@@ -217,3 +219,18 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
             np_corners3d[i+1, :] = np.array((corners3d[-1][0], corners3d[-1][1]))
 
         return np_aabb, np_oobb, np_corners3d
+
+
+    def setup_camera(self):
+        """Setup camera, and place at a default location"""
+
+        # add camera, update with calibration data, and make it active for the scene
+        bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
+        self.cam = bpy.context.object
+        if self.K is not None:
+            self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
+        bpy.context.scene.camera = self.cam
+
+        # look at center
+        blnd.look_at(self.cam, Vector((0.0, 0.0, 0.0)))
+
