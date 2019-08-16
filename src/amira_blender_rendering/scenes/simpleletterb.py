@@ -69,7 +69,7 @@ class SimpleLetterB(
         # add default material and setup nodes (without specifying empty, to get
         # it created automatically)
         self.B_mat = blnd.add_default_material(self.obj)
-        #abr_nodes.setup_material_nodes_3D_printed(self.B_mat)
+        abr_nodes.material_3Dprinted_plastic.setup_material(self.B_mat)
 
 
     def setup_lighting(self):
