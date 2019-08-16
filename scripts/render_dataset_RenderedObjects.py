@@ -4,7 +4,7 @@
 
 The script must be run in blender, for instance from the command line using:
 
-    $ blender -b -P scripts/render_tool_cap.py
+    $ blender -b -P scripts/render_dataset_RenderedObjects.py
 
 The script accepts several additional arguments. The most important is the path
 to the render configuration file, which defaults to 'config/render_toolcap.cfg'.
@@ -15,7 +15,7 @@ their parent-folders can be passed along as command-line arguments via the
 
 Example:
 
-    $ blender -b -P scripts/render_tool_cap.py -- --arb-path ~/amira/amira_blender_rendering --aps-path ~/amira/amira_deep_vision
+    $ blender -b -P scripts/render_dataset_RenderedObjects.py -- --arb-path ~/amira/amira_blender_rendering --aps-path ~/amira/amira_deep_vision
 
 Note that paths will be expanded, i.e. variables such as $AMIRA_DATASETS or ~
 will be turned into their proper values.
@@ -29,6 +29,7 @@ import argparse, configparser
 import numpy as np
 import random
 from math import log, ceil
+
 
 def expandpath(path):
     return os.path.expandvars(os.path.expanduser(path))
