@@ -60,6 +60,19 @@ def import_abr(path=None):
     import amira_blender_rendering.scenes
 
 
+# TODO: Good news, there appears to be a solution to the torch import error.
+#       So far, my (Nicolai) system had blender 2.80 and pytorch 1.1.0-8
+#       installed (system runs Arch Linux). While trying to set up blender that
+#       was downloaded directly from blender.org, I had to install torch via pip
+#       into a virtualenv. This step installed torch 1.2.0 locally into a
+#       virtualenv, which does not appear to have the gflags error anymore when
+#       imported in blender.
+#
+#       Long story short: we import aps.data :-)
+#
+#       Note: see Readme.md for more details on how to use a virtualenv with blender
+#
+#
 def import_ro_static(aps_path):
     """Import the static methods from renderedobjects.
 
