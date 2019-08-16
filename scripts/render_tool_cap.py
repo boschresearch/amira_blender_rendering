@@ -1,5 +1,28 @@
 #!/usr/bin/env python
 
+"""This script can be used to generate RenderedObjects datasets of the cap tool.
+
+The script must be run in blender, for instance from the command line using:
+
+    $ blender -b -P scripts/render_tool_cap.py
+
+The script accepts several additional arguments. The most important is the path
+to the render configuration file, which defaults to 'config/render_toolcap.cfg'.
+The script also needs to find amira_blender_rendering, as well as aps (AMIRA
+Perception Subsystem) and foundry (also part of amira_deep_vision). Path to
+their parent-folders can be passed along as command-line arguments via the
+--arb-path and --aps-path flags.s
+
+Example:
+
+    $ blender -b -P scripts/render_tool_cap.py -- --arb-path ~/amira/amira_blender_rendering --aps-path ~/amira/amira_deep_vision
+
+Note that paths will be expanded, i.e. variables such as $AMIRA_DATASETS or ~
+will be turned into their proper values.
+
+"""
+
+
 # make amira_deep_vision packages available
 import sys, os
 import argparse, configparser
