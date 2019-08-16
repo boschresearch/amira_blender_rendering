@@ -37,7 +37,7 @@ def setup_material(material: bpy.types.Material):
     n_ramp_rough.color_ramp.elements[1].position = 1.000
 
     n_value = nodes.new('ShaderNodeValue')
-    n_value.outputs['Value'].default_value = 0.400
+    n_value.outputs['Value'].default_value = 0.800
 
     n_overlay = nodes.new('ShaderNodeMixRGB')
     n_overlay.blend_type = 'OVERLAY'
@@ -55,7 +55,8 @@ def setup_material(material: bpy.types.Material):
     n_noise_bump.inputs['Detail'].default_value     =  16.0
     n_noise_bump.inputs['Distortion'].default_value =   0.0
     n_bump = nodes.new('ShaderNodeBump')
-    n_bump.inputs['Strength'].default_value = 1.0
+    n_bump.inputs['Strength'].default_value = 0.010
+    n_bump.inputs['Distance'].default_value = 0.100
     tree.links.new(n_noise_bump.outputs['Fac'], n_bump.inputs['Height'])
     tree.links.new(n_bump.outputs['Normal'], n_bsdf.inputs['Normal'])
 
