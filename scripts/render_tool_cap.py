@@ -70,13 +70,26 @@ def import_ro_static(aps_path):
         raise RuntimeError(f"Could not import RenderedObjects' static methods")
 
 
-def save_dataset_configuration(dirinfo):
-    # TODO: save the dataset.cfg file
-    pass
+def get_environment_textures(cfg):
+    """Determine if the user wants to set specific environment texture, or
+    randomly select from a directory"""
+
+    environment_textures = expandpath(cfg['render_setup']['environment_texture'])
+    if os.path.isdir(environment_textures):
+        files = os.listdir(environment_textures)
+        environment_textures = [os.path.join(environment_textures, f) for f in files]
+    else:
+        environment_textures = [environment_textures]
+
+    return environment_textures
 
 
+def generate_dataset(cfg, dirinfo):
+    """Generate images and metadata for a dataset, specified by cfg and dirinfo"""
 
-def make_dataset(dirinfo, image_count, environment_textures):
+    image_count = int(cfg['dataset']['image_count'])
+    environment_textures = get_environment_textures(cfg)
+
     # filename setup
     format_width = int(ceil(log(image_count, 10)))
     base_filename = "{:0{width}d}".format(0, width=format_width)
@@ -87,12 +100,16 @@ def make_dataset(dirinfo, image_count, environment_textures):
     # scene setup with a calibrated camera.
     # NOTE: at the moment there is a bug in abr.camera_utils:opencv_to_blender,
     #       which prevents us from actually using a calibrated camera. Still, we
-    K = np.array([ 9.9801747708520452e+02, 0., 6.6049856967197002e+02, 0., 9.9264009290521165e+02, 3.6404286361152555e+02, 0., 0., 1. ]).reshape(3,3)
-    width = 640
-    height = 480
+    #       pass it along here because at some point, we might actually have
+    #       working implementation ;)
+    width  = int(cfg['camera_info']['width'])
+    height = int(cfg['camera_info']['height'])
+    K = None
+    if 'K' in cfg['camera_info']:
+        K = np.fromstring(cfg['camera_info']['K'], sep=',')
     scene = abr.scenes.SimpleToolCap(base_filename, dirinfo, K, width, height)
 
-    # generate some images
+    # generate images
     for i in range(image_count):
         # setup filename
         base_filename = "{:0{width}d}".format(i, width=format_width)
@@ -107,9 +124,6 @@ def make_dataset(dirinfo, image_count, environment_textures):
         scene.render()
         scene.postprocess()
 
-    # finalize
-    save_dataset_configuration(scene.dirinfo)
-
 
 def get_argv():
     """Get argv after --"""
@@ -118,7 +132,6 @@ def get_argv():
         return sys.argv[sys.argv.index('--') + 1:]
     except ValueError:
         return []
-
 
 
 def main():
@@ -141,20 +154,12 @@ def main():
     cfgs = foundry.utils.build_splitting_configs(config)
 
     for cfg in cfgs:
-        # determine if the user wants to set specific environment texture, or
-        # randomly select from a directory
-        environment_textures = expandpath(cfg['render_setup']['environment_texture'])
-        if os.path.isdir(environment_textures):
-            files = os.listdir(environment_textures)
-            environment_textures = [os.path.join(environment_textures, f) for f in files]
-        else:
-            environment_textures = [environment_textures]
-
         # build directory structure and run rendering
         # TODO: rename all configs from output_dir to output_path
         dirinfo = ro_static.build_directory_info(cfg['dataset']['output_dir'])
-        image_count = int(cfg['dataset']['image_count'])
-        make_dataset(dirinfo, image_count, environment_textures)
+
+        # generate it
+        generate_dataset(cfg, dirinfo)
 
         # save configuration
         foundry.utils.dump_config(cfg, dirinfo.base_path)
