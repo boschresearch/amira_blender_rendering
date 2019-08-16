@@ -5,10 +5,13 @@ from typing import List
 import bpy
 
 
-
-# TODO: horribly long function names. should be shortened. maybe build a mixin
-# class which contains all this knowledge
 class CompositorNodesOutputRenderedObject():
+    """This class contains the setup of compositor nodes that is required for
+    the RenderedObjects dataset. Using this class will set up FileOutput and ID
+    Mask nodes such that we not only get the rendered image, but also Depth
+    information (in OpenEXR format), image masks for each object of interest, as
+    well as a backdrop (mask excluding any object of interest."""
+
 
 
     def __init__(self):
