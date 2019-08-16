@@ -120,6 +120,31 @@ def get_environment_textures(cfg):
     return environment_textures
 
 
+def get_scene_type(type_str : str):
+    """Get the (literal) type of a scene given a string.
+
+    Essentially, this is what literal_cast does in C++, but for user-defined
+    types.
+
+    Args:
+        type_str(str): type-string of a scene without module-prefix
+
+    Returns:
+        type corresponding to type_str
+    """
+    # specify mapping from str -> type to get the scene
+    # TODO: this might be too simple at the moment, because some scenes might
+    #       require more arguments. But we could think about passing along a
+    #       Configuration object, similar to whats happening in aps
+    scene_types = {
+        'SimpleToolCap': abr.scenes.SimpleToolCap,
+    }
+    if type_str not in scene_types:
+        known_types = str([k for k in scene_types.keys()])[1:-1]
+        raise Exception(f"Scene type {type_str} not known. Known types: {known_types}. Note that scene types are case sensitive.")
+    return scene_types[type_str]
+
+
 def generate_dataset(cfg, dirinfo):
     """Generate images and metadata for a dataset, specified by cfg and dirinfo"""
 
@@ -143,7 +168,10 @@ def generate_dataset(cfg, dirinfo):
     K = None
     if 'K' in cfg['camera_info']:
         K = np.fromstring(cfg['camera_info']['K'], sep=',')
-    scene = abr.scenes.SimpleToolCap(base_filename, dirinfo, K, width, height)
+
+    # instantiate scene
+    scene_type = get_scene_type(cfg['render_setup']['scene_type'])
+    scene = scene_type(base_filename, dirinfo, K, width, height)
 
     # generate images
     for i in range(image_count):

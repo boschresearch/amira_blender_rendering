@@ -124,7 +124,7 @@ Finally, you can test if everything worked by running one of the render scripts.
 For instance
 
     (blender-venv) $ cd path/to/amira_blender_rendering
-    (blender-venv) $ blender -b -P scripts/render_tool_cap.py
+    (blender-venv) $ blender -b -P scripts/render_dataset_RenderedObjects.py
 
 
 ## Installing the blender-render scripts
