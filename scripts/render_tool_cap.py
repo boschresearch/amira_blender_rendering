@@ -161,7 +161,7 @@ def main():
     parser = argparse.ArgumentParser(description='Render dataset for the "cap tool"', prog="blender -b -P " + __file__)
     parser.add_argument('--config', default='config/render_toolcap.cfg', help='Path to configuration file')
     parser.add_argument('--aps-path', default='~/dev/vision/amira_deep_vision', help='Path where AMIRA Perception Subsystem (aps) can be found')
-    parser.add_argument('--abr-path', default='~/dev/vision/amira_blender_rendering/src', help='Path where amira_blender_rendering can be found')
+    parser.add_argument('--abr-path', default='~/dev/vision/amira_blender_rendering/src', help='Path where amira_blender_rendering (abr) can be found')
     args = parser.parse_args(args=get_argv())
 
     # special imports. will also set system path for abr and aps
