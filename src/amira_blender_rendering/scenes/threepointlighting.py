@@ -12,10 +12,9 @@ class ThreePointLighting():
 
     """Setup a scene with classical three point lighting"""
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         super(ThreePointLighting, self).__init__()
         self.setup_three_point_lighting()
-
 
 
     def setup_three_point_lighting(self, target = Vector((0.0, 0.0, 0.0))):
