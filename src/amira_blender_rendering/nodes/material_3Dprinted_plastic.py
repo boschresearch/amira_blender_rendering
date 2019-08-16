@@ -19,7 +19,10 @@ def setup_material(material: bpy.types.Material):
     n_output, n_bsdf = material_utils.check_default_material(material)
 
     # setup BSDF
-
+    n_bsdf.inputs['Base Color'].default_value = (0.668, 0.016, 0.012, 1.000)
+    n_bsdf.inputs['Subsurface'].default_value = 0.010
+    n_bsdf.inputs['Subsurface Color'].default_value = (0.395, 0.038, 0.040, 1.000)
+    n_bsdf.inputs['Metallic'].default_value = 0.0
 
     # procedural roughness  setup
     n_noise_rough = nodes.new('ShaderNodeTexNoise')
@@ -94,4 +97,15 @@ def setup_material(material: bpy.types.Material):
     n_mix.use_clamp = False
     n_mix.inputs['Color2'].default_value = (.5, .5, .5, 1.0)
 
+    tree.links.new(n_texcoord.outputs['Object'], n_mapping.inputs['Vector'])
+    tree.links.new(n_mapping.outputs['Vector'], n_sepxyz.inputs['Vector'])
+    tree.links.new(n_sepxyz.outputs['Z'], n_combxyz_ease.inputs['Z'])
+    tree.links.new(n_sepxyz.outputs['Z'], n_combxyz_spline.inputs['Z'])
+    tree.links.new(n_combxyz_ease.outputs['Vector'], n_noise_disp.inputs['Vector'])
+    tree.links.new(n_combxyz_spline.outputs['Vector'], n_wave.inputs['Vector'])
+    tree.links.new(n_noise_disp.outputs['Color'], n_ramp_ease.inputs['Fac'])
+    tree.links.new(n_wave.outputs['Color'], n_ramp_spline.inputs['Fac'])
+    tree.links.new(n_ramp_ease.outputs['Color'], n_mix.inputs['Fac'])
+    tree.links.new(n_ramp_spline.outputs['Color'], n_mix.inputs['Color1'])
+    tree.links.new(n_mix.outputs['Color'], n_output.inputs['Displacement'])
 
