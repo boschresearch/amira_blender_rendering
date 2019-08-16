@@ -74,7 +74,7 @@ class SimpleToolCap(
         # add default material and setup nodes (without specifying empty, to get
         # it created automatically)
         self.cap_mat = blnd.add_default_material(self.obj)
-        abr_nodes.setup_material_nodes_metal_tool_cap(self.cap_mat)
+        abr_nodes.material_metal_tool_cap.setup_material(self.cap_mat)
 
 
     def setup_lighting(self):

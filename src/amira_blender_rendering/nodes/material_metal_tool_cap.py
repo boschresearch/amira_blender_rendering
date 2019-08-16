@@ -13,7 +13,7 @@ from amira_blender_rendering.blender_utils import clear_orphaned_materials, remo
 #       python-code for us, or loads node setups from a configuration file, or
 #       something along the lines...
 
-def setup_material_nodes_metal_tool_cap(material: bpy.types.Material, empty: bpy.types.Object = None):
+def setup_material(material: bpy.types.Material, empty: bpy.types.Object = None):
     """Setup material nodes for the metal tool cap"""
     # TODO: refactor into smaller node-creation functions that can be re-used elsewhere
 

@@ -10,4 +10,5 @@
 from .compositor_renderedobjects import CompositorNodesOutputRenderedObject
 
 # material nodes
-from .material_metal_tool_cap import setup_material_nodes_metal_tool_cap
+from . import material_metal_tool_cap
+from . import material_3Dprinted_plastic
