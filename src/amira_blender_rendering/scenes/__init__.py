@@ -7,3 +7,4 @@ from .renderedobjectsbase import RenderedObjectsBase
 
 # concrete scenes
 from .simpletoolcap import SimpleToolCap
+from .simpleletterb import SimpleLetterB

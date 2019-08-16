@@ -24,6 +24,7 @@ will be turned into their proper values.
 
 
 # make amira_deep_vision packages available
+import bpy
 import sys, os
 import argparse, configparser
 import numpy as np
@@ -139,6 +140,7 @@ def get_scene_type(type_str : str):
     #       Configuration object, similar to whats happening in aps
     scene_types = {
         'SimpleToolCap': abr.scenes.SimpleToolCap,
+        'SimpleLetterB': abr.scenes.SimpleLetterB,
     }
     if type_str not in scene_types:
         known_types = str([k for k in scene_types.keys()])[1:-1]
@@ -146,8 +148,19 @@ def get_scene_type(type_str : str):
     return scene_types[type_str]
 
 
+def setup_renderer(cfg):
+    """Setup blender CUDA rendering, and specify number of samples per pixel to
+    use during rendering. If the setting render_setup.samples is not set in the
+    configuration, the function defaults to 128 samples per image."""
+    abr.blender_utils.activate_cuda_devices()
+    n_samples = int(cfg['render_setup']['samples']) if 'samples' in cfg['render_setup'] else 128
+    bpy.context.scene.cycles.samples = n_samples
+
+
 def generate_dataset(cfg, dirinfo):
     """Generate images and metadata for a dataset, specified by cfg and dirinfo"""
+
+    setup_renderer(cfg)
 
     image_count = int(cfg['dataset']['image_count'])
     environment_textures = get_environment_textures(cfg)
@@ -155,9 +168,6 @@ def generate_dataset(cfg, dirinfo):
     # filename setup
     format_width = int(ceil(log(image_count, 10)))
     base_filename = "{:0{width}d}".format(0, width=format_width)
-
-    # setup blender CUDA rendering
-    abr.blender_utils.activate_cuda_devices()
 
     # scene setup with a calibrated camera.
     # NOTE: at the moment there is a bug in abr.camera_utils:opencv_to_blender,
