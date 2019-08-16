@@ -37,7 +37,7 @@ def project_p3d(p: Vector,
             scale_x=render.pixel_aspect_x,
             scale_y=render.pixel_aspect_y)
 
-    # project point (generastes homogeneous coordinate)
+    # project point (generates homogeneous coordinate)
     p_hom = projection @ modelview @ Vector((p.x, p.y, p.z, 1))
 
     # normalize to get projected point
