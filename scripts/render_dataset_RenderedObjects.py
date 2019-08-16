@@ -70,9 +70,10 @@ def import_abr(path=None):
 #       virtualenv, which does not appear to have the gflags error anymore when
 #       imported in blender.
 #
-#       Long story short: we import aps.data :-)
+#       Long story short: we can import aps.data :-)
 #
-#       Note: see Readme.md for more details on how to use a virtualenv with blender
+#       Note 1: see Readme.md for more details on how to use a virtualenv with blender
+#       Note 2: still needs to be implemented/verified on the GPU cluster, though.
 #
 #
 def import_ro_static(aps_path):
