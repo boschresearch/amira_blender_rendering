@@ -126,7 +126,8 @@ class SimpleToolCap(
         # add camera, update with calibration data, and make it active for the scene
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
         self.cam = bpy.context.object
-        self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
+        if self.K is not None:
+            self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
         bpy.context.scene.camera = self.cam
 
         # look at center
