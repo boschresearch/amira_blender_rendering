@@ -32,17 +32,15 @@ class SimpleToolCap(
     some background image.
     """
 
-    def __init__(self, base_filename: str, dirinfo):
+    def __init__(self, base_filename: str, dirinfo, K, width, height):
         super(SimpleToolCap, self).__init__()
         self.reset()
         self.base_filename = base_filename
         self.dirinfo = dirinfo
 
-        # TODO: pass camera calibration information and scene size as argument,
-        #       or read from configuration
-        self.K = np.array([ 9.9801747708520452e+02, 0., 6.6049856967197002e+02, 0., 9.9264009290521165e+02, 3.6404286361152555e+02, 0., 0., 1. ]).reshape(3,3)
-        self.width = 640
-        self.height = 480
+        self.K = K
+        self.width = width
+        self.height = height
 
         # setup blender scene, camera, object, and compositors.
         # Note that the compositor setup needs to come after setting up the objects
@@ -128,7 +126,7 @@ class SimpleToolCap(
         # add camera, update with calibration data, and make it active for the scene
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
         self.cam = bpy.context.object
-        # self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
+        self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
         bpy.context.scene.camera = self.cam
 
         # look at center
@@ -136,12 +134,7 @@ class SimpleToolCap(
 
 
     def setup_environment(self):
-        # TODO: randomly select a file from directory
-        ENVIRONMENT_TEXTURE = '~/gfx/assets/hdri/small_hangar_01_4k.hdr'
-
-
-        filepath = os.path.expanduser(ENVIRONMENT_TEXTURE)
-        self.set_environment_texture(filepath)
+        pass
 
 
     def set_base_filename(self, filename):

@@ -2,44 +2,23 @@
 
 # make amira_deep_vision packages available
 import sys, os
-import bpy
-import numpy as np
-import imageio
 import argparse
-from math import ceil, log
-from mathutils import Vector, Euler
-try:
-    import ujson as json
-except:
-    import json
+import numpy as np
+import random
+from math import log, ceil
+
+def expandpath(path):
+    return os.path.expandvars(os.path.expanduser(path))
 
 
-#
-# ---- Configuration starts here
-# TODO: move to a configuration file that we can directly import, and also
-# change single environment texture to load arbitrary files
-#
+def import_abr(paths=[]):
+    """Import amira_blender_rendering.
 
-
-OUTPUT_PATH = '/tmp/BlenderRenderedObjects'
-ENVIRONMENT_TEXTURE = '~/gfx/assets/hdri/small_hangar_01_4k.hdr'
-
-N_IMAGES = 20
-
-
-
-#
-# ---- Configuration ends here
-#
-
-def import_abr(paths):
-    """Import amira_blender_rendering and aps.
-
-    This might require setting up the system path. If both packages are
-    installed on your python path already, then let paths=[].
+    This might require setting up the system path. If both
+    amira_blender_rendering and aps are installed, simply let path=[].
     """
     for p in paths:
-        sys.path.append(os.path.expandvars(os.path.expanduser(p)))
+        sys.path.append(expandpath(p))
 
     global abr
     import amira_blender_rendering as abr
@@ -85,27 +64,35 @@ def save_dataset_configuration(dirinfo):
     pass
 
 
-def make_dataset(dirinfo):
+
+def make_dataset(dirinfo, image_count, environment_textures):
     # filename setup
-    format_width = int(ceil(log(N_IMAGES, 10)))
+    format_width = int(ceil(log(image_count, 10)))
     base_filename = "{:0{width}d}".format(0, width=format_width)
 
     # setup blender CUDA rendering
     abr.blender_utils.activate_cuda_devices()
 
-    # scene instance
-    scene = abr.scenes.SimpleToolCap(base_filename, dirinfo)
+    # scene setup with a calibrated camera.
+    # NOTE: at the moment there is a bug in abr.camera_utils:opencv_to_blender,
+    #       which prevents us from actually using a calibrated camera. Still, we
+    K = np.array([ 9.9801747708520452e+02, 0., 6.6049856967197002e+02, 0., 9.9264009290521165e+02, 3.6404286361152555e+02, 0., 0., 1. ]).reshape(3,3)
+    width = 640
+    height = 480
+    scene = abr.scenes.SimpleToolCap(base_filename, dirinfo, K, width, height)
 
     # generate some images
-    for i in range(N_IMAGES):
-
-        # update filename
+    for i in range(image_count):
+        # setup filename
         base_filename = "{:0{width}d}".format(i, width=format_width)
         scene.set_base_filename(base_filename)
 
-        scene.randomize()
+        # set some environment texture
+        filepath = expandpath(random.choice(environment_textures))
+        scene.set_environment_texture(filepath)
 
-        # postprocessing
+        # actual rendering
+        scene.randomize()
         scene.render()
         scene.postprocess()
 
@@ -113,21 +100,43 @@ def make_dataset(dirinfo):
     save_dataset_configuration(scene.dirinfo)
 
 
+def get_argv():
+    """Get argv after --"""
+    try:
+        # only arguments after --
+        return sys.argv[sys.argv.index('--') + 1:]
+    except ValueError:
+        return []
+
+
 def main():
-    # import things
-    APS_PATH = '~/dev/vision/amira_deep_vision'
-    ABR_PATH = '~/dev/vision/amira_blender_rendering/src'
+    #
+    parser = argparse.ArgumentParser(description='Render dataset for the "cap tool"', prog="blender -b -P " + __file__)
+    parser.add_argument('--n', default=100, help='Number of images to render')
+    parser.add_argument('--output-path', default='/tmp/BlenderRenderedObjects', help='Output path')
+    parser.add_argument('--fixed-envtex', action='store_true', help='Use only a single environment texture')
+    parser.add_argument('--envtex-path', default='$AMIRA_DATASETS/OpenImagesV4/Images', help='Path to environment textures. If --fixed-envtex is True, should point to file, otherwise should point to directory')
+    parser.add_argument('--aps-path', default='~/dev/vision/amira_deep_vision', help='Path where AMIRA Perception Subsystem (aps) can be found')
+    parser.add_argument('--abr-path', default='~/dev/vision/amira_blender_rendering/src', help='Path where amira_blender_rendering can be found')
+    args = parser.parse_args(args=get_argv())
 
     # special imports
-    paths = [ABR_PATH, APS_PATH]
-    import_abr(paths)
-    import_ro_static(APS_PATH)
+    import_abr([args.abr_path, args.aps_path])
+    import_ro_static(args.aps_path)
 
+    # set up of environment textures
+    if args.fixed_envtex:
+        environment_textures = [expandpath('~/gfx/assets/hdri/small_hangar_01_4k.hdr')]
+        # environment_textures = [expandpath(args.envtex_path)]
+    else:
+        environment_textures = os.listdir(expandpath(args.envtex_path))
+        environment_textures = [os.path.join(args.envtex_path, p) for p in environment_textures]
 
     # now ready to run
-    dirinfo = ro_static.build_directory_info(OUTPUT_PATH)
-    make_dataset(dirinfo)
+    dirinfo = ro_static.build_directory_info(args.output_path)
+    make_dataset(dirinfo, args.n, environment_textures)
 
 
 if __name__ == "__main__":
     main()
+

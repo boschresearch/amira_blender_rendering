@@ -29,7 +29,7 @@ class BaseSceneManager():
 
         # check if path exists or not
         if not os.path.exists(filepath):
-            logger.error(f"Path {path} to environment texture does not exist.")
+            logger.error(f"Path {filepath} to environment texture does not exist.")
             return
 
         # add new environment texture node if required
