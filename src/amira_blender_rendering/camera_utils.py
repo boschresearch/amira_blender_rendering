@@ -3,12 +3,20 @@
 import bpy
 from mathutils import Vector
 
+
 def opencv_to_blender(width, height, K, cam):
     """Convert the intrinsic camera from OpenCV to blender's format
 
     Args:
         K (np.array): 3x3 intrinsic camera calibration matrix
     """
+
+    # TODO: this function does not appear to work correctly. A test with small
+    #       output sizes (640x480) showed that the function actually shifted the
+    #       camera in a weird way. Until this is fixed, the function ignores all
+    #       inputs and simply returns the cam argument.
+    if True:
+        return cam
 
     # extract relevant values from K :
     #
