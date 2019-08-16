@@ -10,7 +10,16 @@ def project_p3d(p: Vector,
             render: bpy.types.RenderSettings = bpy.context.scene.render) -> Vector:
     """Project a point p onto the image plane of a camera. The returned value is
     in normalized device coordiantes. That is, left upper corner is -1,1, right
-    bottom lower corner is 1/-1"""
+    bottom lower corner is 1/-1.
+
+    Args:
+        p (Vector): 3D vector to project to image plane
+        camera (bpy.types.Object): blender camera to use for projection
+        render (bpy.types.RenderSettings): render settings used for computation
+
+    Returns:
+        2D vector with projected p in normalized device coordiantes
+    """
 
     if camera.type != 'CAMERA':
         raise Exception(f"Object {camera.name} is not a camera")
@@ -39,7 +48,16 @@ def project_p3d(p: Vector,
 def p2d_to_pixel_coords(p: Vector,
         render: bpy.types.RenderSettings = bpy.context.scene.render) -> Vector:
     """Take a 2D point in normalized device coordiantes to pixel coordinates
-    using specified render settings"""
+    using specified render settings.
+
+    Args:
+        p (Vector): 2D vector in normalized device coordinates
+        render (bpy.types.RenderSettings): blender render settings to use for
+            pixel calculation
+
+    Returns:
+        2D vector containing screen space (pixel) coordinate of p
+    """
 
     if len(p) != 2:
         raise Exception(f"Vector {p} needs to be 2 dimensinoal")
@@ -72,6 +90,11 @@ def get_relative_translation(obj1: bpy.types.Object,
     object's coordinate system. Note that the second object will be default
     initialized to the scene's camera.
 
+    Args:
+        obj1 (bpy.types.Object): first object
+        obj2 (bpy.types.Object): second object, relative to which the
+            translation will be computed.
+
     Returns:
         3D Vector with relative translation (in OpenGL coordinates)
     """
@@ -85,27 +108,21 @@ def get_relative_translation(obj1: bpy.types.Object,
 def get_relative_transform(obj1: bpy.types.Object,
         obj2: bpy.types.Object = bpy.context.scene.camera):
     """Get the relative transform between obj1 and obj2 in obj2's coordinate
-    frame."""
+    frame.
+
+    Args:
+        obj1 (bpy.types.Object): first object
+        obj2 (bpy.types.Object): second object, relative to which the
+            transform will be computed.
+
+    Returns:
+        tuple containing the translation and rotation between obj1 and obj2
+        (relative to obj2)
+
+    """
 
     t = get_relative_translation(obj1, obj2)
     r = get_relative_rotation(obj1, obj2)
     return t, r
 
-
-
-if __name__ == "__main__":
-    obj = bpy.data.objects['Tool.Cap']
-    cam = bpy.context.scene.camera
-    render = bpy.context.scene.render
-
-    print(obj.location)
-    vs = [obj.matrix_world @ Vector(v) for v in obj.bound_box]
-    print(vs)
-    ps = [project_p3d(v, cam) for v in vs]
-    print(ps)
-    pxs = [p2d_to_pixel_coords(p) for p in ps]
-    print(pxs)
-    oks = [px[0] >= 0 and px[0] < render.resolution_x and px[1] >= 0 and px[1] < render.resolution_y for px in pxs]
-    print(oks)
-    print(all(oks))
 
