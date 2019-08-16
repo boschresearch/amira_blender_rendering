@@ -62,8 +62,8 @@ folder:
     $ ~/bin/blender-2.80.d      # un-packed blender download
     $ ~/bin/blender             # symlink to ~/bin/blender-2.80.d/blender
 
-Finally, make sure that ~/bin is on your path. For this, open the file ~/.bashrc
-on the GPU cluster and add the line
+Now, make sure that ~/bin is on your path. For this, open the file ~/.bashrc on
+the GPU cluster and add the line
 
     export PATH="~/bin:$PATH"
 
@@ -71,7 +71,63 @@ at the end of the file (or add ~/bin to the beginning of an already existing
 PATH export).
 
 
-### Installing the blender-render scripts
+### Using blender and pip to install python packages in a virtualenv
+
+Blender, when installed as above, ships its own python binary. This leads to
+issues when trying to install third party libraries due to numpy version
+mismatches. The following replaces the shipped python version with the python of
+a virtualenv. It is assumed that blender was installed as above to
+~/bin/blender.
+
+    $ mkvirtualenv blender-venv                  # This creates a new virtual environment.
+                                                 # The path to the venv depends on your system
+                                                 # setup. By default, it should end up in
+                                                 # ~/.venvs or something similar. In the
+                                                 # example here, we assume that virtualenvs
+                                                 # are created in ~/venvs
+                                                 # Note that this also activtes the venv,
+                                                 # which should be indicated by
+                                                 # `(blender-env)` in front of PS1 (the dollar
+                                                 # sign that indictes your shell $).
+    (blender-venv) $ cd bin/blender.d/2.80
+    (blender-venv) $ mv python original.python   # make back up of shipped python
+    (blender-venv) $ ln -s ~/venvs/blender-venv python
+    (blender-venv) $ cd ..
+    (blender-venv) $ ./blender -b --python-console
+
+You can exit the shell with Ctrl-D.
+
+If the last step (runnign blender with an interactive python shell) fails,
+something went wrong. Quite curiously, blender will report that it found a
+bundled python at /home/username/bin/blender.d/2.80/python and reports the
+python version that it found as 3.7.0.
+
+Now you can install python packages with pip, which are then also available from
+within blender. For instance, to install numpy, imageio, and torch, simply run
+the following
+
+    (blender-venv) $ pip install numpy imageio torch
+
+Running blender with an interactive shell, you should now be able to import
+numpy, torch, etc.
+
+    (blender-venv) $ blender -b --python-console
+    >>> import numpy, torch, imageio
+
+To install packages that are frequently used, go to the `amira_deep_vision`
+repository, and consult the requirements.txt file. Or, run the following:
+
+    (blender-venv) $ cd path/to/amira_deep_vision
+    (blender-venv) $ pip install -r requirements.txt
+
+Finally, you can test if everything worked by running one of the render scripts.
+For instance
+
+    (blender-venv) $ cd path/to/amira_blender_rendering
+    (blender-venv) $ blender -b -P scripts/render_tool_cap.py
+
+
+## Installing the blender-render scripts
 
 Copy the scripts from `scripts/gpu_cluster` to the GPU cluster to ~/bin. Then,
 make the script `blender_headless_render` executable
@@ -112,4 +168,6 @@ Software | License
 ------------------
 [Blender](https://www.blender.org/about/license/) | [GPL](http://www.gnu.org/licenses/gpl-3.0.html)
 [Cycles Rendering Engine](https://www.blender.org/about/license/) | [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+
 
