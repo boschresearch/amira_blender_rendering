@@ -98,6 +98,10 @@ To use CUDA rendering on the GPU cluster and automatically select all devices
 in another blender script, simply use/copy the function `activate_cuda_devices` from
 file `scripts/gpu_cluster/_blender_cuda_render.py`.
 
+The function is also available as`amira_blender_rendering.blender_utils:activate_cuda_devices`.
+It is recommended to use this function and not the script provided in
+`scripts/gpu_cluster` whenever possible.
+
 
 
 ## Used 3rd party Licenses<a name="licenses"></a>
