@@ -14,6 +14,11 @@ import amira_blender_rendering.math.geometry as abr_geom
 
 
 class SimpleToolCap(
+        # TODO: maybe multiple inheritance is not the best way to set up scenes.
+        #       Rather, it could be done using composition and having a setup()
+        #       function. Not sure if there are significant benefits with either
+        #       variant, so let's just go with multiple inheritance for the time
+        #       being.
         abr_scenes.RenderedObjectsBase,
         abr_scenes.ThreePointLighting):
     """Simple toolcap scene in which we have three point lighting and can set
@@ -73,6 +78,7 @@ class SimpleToolCap(
 
 
     def setup_lighting(self):
+        # this scene uses classical three point lighting
         self.setup_three_point_lighting()
 
 
@@ -82,21 +88,9 @@ class SimpleToolCap(
         bpy.context.scene.render.resolution_y = self.height
 
 
-    def setup_camera(self):
-        """Setup camera, and place at a default location"""
-
-        # add camera, update with calibration data, and make it active for the scene
-        bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
-        self.cam = bpy.context.object
-        if self.K is not None:
-            self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
-        bpy.context.scene.camera = self.cam
-
-        # look at center
-        blnd.look_at(self.cam, Vector((0.0, 0.0, 0.0)))
-
-
     def setup_environment(self):
+        # This simple scene does not have a specific environment which needs to
+        # be set up, such as a table or robot or else.
         pass
 
 
