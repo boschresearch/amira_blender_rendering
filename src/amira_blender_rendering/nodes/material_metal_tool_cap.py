@@ -8,7 +8,10 @@ from amira_blender_rendering.blender_utils import clear_orphaned_materials, remo
 
 
 # TODO: change into MaterialNodesMetalToolCap class
-
+# TODO: it is really tedious and error-prone to set up materials this way. We
+#       should invest the time to write a blender plugin that generates
+#       python-code for us, or loads node setups from a configuration file, or
+#       something along the lines...
 
 def setup_material_nodes_metal_tool_cap(material: bpy.types.Material, empty: bpy.types.Object = None):
     """Setup material nodes for the metal tool cap"""
