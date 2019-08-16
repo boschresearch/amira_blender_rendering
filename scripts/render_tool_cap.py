@@ -2,7 +2,7 @@
 
 # make amira_deep_vision packages available
 import sys, os
-import argparse
+import argparse, configparser
 import numpy as np
 import random
 from math import log, ceil
@@ -11,14 +11,25 @@ def expandpath(path):
     return os.path.expandvars(os.path.expanduser(path))
 
 
-def import_abr(paths=[]):
-    """Import amira_blender_rendering.
+def import_aps(path=None):
+    """Import the AMIRA Perception Subsystem."""
+    if path is not None:
+        sys.path.append(expandpath(path))
 
-    This might require setting up the system path. If both
-    amira_blender_rendering and aps are installed, simply let path=[].
-    """
-    for p in paths:
-        sys.path.append(expandpath(p))
+    global aps
+    global foundry
+
+    import aps
+    import aps.core
+
+    import foundry
+    import foundry.utils
+
+
+def import_abr(path=None):
+    """Import amira_blender_rendering."""
+    if path is not None:
+        sys.path.append(expandpath(path))
 
     global abr
     import amira_blender_rendering as abr
@@ -109,32 +120,44 @@ def get_argv():
         return []
 
 
+
 def main():
-    #
     parser = argparse.ArgumentParser(description='Render dataset for the "cap tool"', prog="blender -b -P " + __file__)
-    parser.add_argument('--n', default=100, help='Number of images to render')
-    parser.add_argument('--output-path', default='/tmp/BlenderRenderedObjects', help='Output path')
-    parser.add_argument('--fixed-envtex', action='store_true', help='Use only a single environment texture')
-    parser.add_argument('--envtex-path', default='$AMIRA_DATASETS/OpenImagesV4/Images', help='Path to environment textures. If --fixed-envtex is True, should point to file, otherwise should point to directory')
+    parser.add_argument('--config', default='config/render_toolcap.cfg', help='Path to configuration file')
     parser.add_argument('--aps-path', default='~/dev/vision/amira_deep_vision', help='Path where AMIRA Perception Subsystem (aps) can be found')
     parser.add_argument('--abr-path', default='~/dev/vision/amira_blender_rendering/src', help='Path where amira_blender_rendering can be found')
     args = parser.parse_args(args=get_argv())
 
-    # special imports
-    import_abr([args.abr_path, args.aps_path])
+    # special imports. will also set system path for abr and aps
+    import_aps(args.aps_path)
+    import_abr(args.abr_path)
     import_ro_static(args.aps_path)
 
-    # set up of environment textures
-    if args.fixed_envtex:
-        environment_textures = [expandpath('~/gfx/assets/hdri/small_hangar_01_4k.hdr')]
-        # environment_textures = [expandpath(args.envtex_path)]
-    else:
-        environment_textures = os.listdir(expandpath(args.envtex_path))
-        environment_textures = [os.path.join(args.envtex_path, p) for p in environment_textures]
+    # read configuration file
+    # TODO: change to Configuration here and in foundry
+    config = configparser.ConfigParser()
+    config.read(expandpath(args.config))
+    config = foundry.utils.check_paths(config)
+    cfgs = foundry.utils.build_splitting_configs(config)
 
-    # now ready to run
-    dirinfo = ro_static.build_directory_info(args.output_path)
-    make_dataset(dirinfo, args.n, environment_textures)
+    for cfg in cfgs:
+        # determine if the user wants to set specific environment texture, or
+        # randomly select from a directory
+        environment_textures = expandpath(cfg['render_setup']['environment_texture'])
+        if os.path.isdir(environment_textures):
+            files = os.listdir(environment_textures)
+            environment_textures = [os.path.join(environment_textures, f) for f in files]
+        else:
+            environment_textures = [environment_textures]
+
+        # build directory structure and run rendering
+        # TODO: rename all configs from output_dir to output_path
+        dirinfo = ro_static.build_directory_info(cfg['dataset']['output_dir'])
+        image_count = int(cfg['dataset']['image_count'])
+        make_dataset(dirinfo, image_count, environment_textures)
+
+        # save configuration
+        foundry.utils.dump_config(cfg, dirinfo.base_path)
 
 
 if __name__ == "__main__":
