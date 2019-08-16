@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"""This module contains functions for (projective) geometry calculations."""
+
 import bpy
 from mathutils import Vector, Euler
 
