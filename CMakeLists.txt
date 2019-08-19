@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(amira_blender_robot)
+project(amira_blender_rendering)
 
 find_package(catkin REQUIRED)
 
