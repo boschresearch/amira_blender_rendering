@@ -41,7 +41,8 @@ class SimpleToolCap(
 
     def rescale_objects(self):
         # needs to be re-scaled to fit nicely into blender units
-        self.obj.scale = Vector((0.010, 0.010, 0.010))
+        # self.obj.scale = Vector((0.010, 0.010, 0.010))
+        self.obj.scale = Vector((0.020, 0.020, 0.020))
 
 
     def import_mesh(self):
