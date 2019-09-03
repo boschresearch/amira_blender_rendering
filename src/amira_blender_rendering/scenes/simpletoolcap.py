@@ -98,6 +98,7 @@ class SimpleToolCap(
     def render(self):
         # Rendering will automatically save images due to the compositor node
         # setup. passing write_still=False prevents writing another file
+        bpy.context.scene.render.engine = "CYCLES"
         bpy.ops.render.render(write_still=False)
 
 
