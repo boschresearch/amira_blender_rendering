@@ -43,9 +43,11 @@ def import_aps(path=None):
 
     global aps
     global foundry
+    global RenderedObjects
 
     import aps
     import aps.core
+    from aps.data.datasets.renderedobjects import RenderedObjects
 
     import foundry
     import foundry.utils
@@ -60,53 +62,6 @@ def import_abr(path=None):
     import amira_blender_rendering as abr
     import amira_blender_rendering.blender_utils
     import amira_blender_rendering.scenes
-
-
-# TODO: Good news, there appears to be a solution to the torch import error.
-#       So far, my (Nicolai) system had blender 2.80 and pytorch 1.1.0-8
-#       installed (system runs Arch Linux). While trying to set up blender that
-#       was downloaded directly from blender.org, I had to install torch via pip
-#       into a virtualenv. This step installed torch 1.2.0 locally into a
-#       virtualenv, which does not appear to have the gflags error anymore when
-#       imported in blender.
-#
-#       Long story short: we can import aps.data :-)
-#
-#       Note 1: see Readme.md for more details on how to use a virtualenv with blender
-#       Note 2: still needs to be implemented/verified on the GPU cluster, though.
-#
-#
-def import_ro_static(aps_path):
-    """Import the static methods from renderedobjects.
-
-    We cannot import aps.data, because blender<->torch has some gflags issues that, at
-    the moment, we cannot easily solve. That is, when running
-
-        $ blender -c --python
-
-    in a console, and then trying to import torch in the console
-
-        >>> import torch
-
-    you'll get an ERROR and blender quits. To circumvent this issue, we'll
-    manually import the file that gives us directory information of
-    renderedobjects within the following function. Fore more information, read
-    the comment in the file that gets imported.
-    """
-
-    global ro_static
-
-    APS_RENDERED_OBJECTS_STATIC_METHODS = 'aps/data/datasets/renderedobjects_static.py'
-    import importlib
-    try:
-        fname = os.path.expanduser(os.path.join(
-            aps_path,
-            APS_RENDERED_OBJECTS_STATIC_METHODS))
-        spec = importlib.util.spec_from_file_location('renderedobjects_static', fname)
-        ro_static = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(ro_static)
-    except ImportError as e:
-        raise RuntimeError(f"Could not import RenderedObjects' static methods")
 
 
 def get_environment_textures(cfg):
@@ -220,7 +175,6 @@ def main():
     # special imports. will also set system path for abr and aps
     import_aps(args.aps_path)
     import_abr(args.abr_path)
-    import_ro_static(args.aps_path)
 
     # read configuration file
     # TODO: change to Configuration here and in foundry
@@ -232,7 +186,7 @@ def main():
     for cfg in cfgs:
         # build directory structure and run rendering
         # TODO: rename all configs from output_dir to output_path
-        dirinfo = ro_static.build_directory_info(cfg['dataset']['output_dir'])
+        dirinfo = RenderedObjects.build_directory_info(cfg['dataset']['output_dir'])
 
         # generate it
         generate_dataset(cfg, dirinfo)
