@@ -156,32 +156,49 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         return boundingbox_from_mask(mask)
 
 
+    def reorder_bbox(self, aabb, order=[1, 0, 2, 3, 5, 4, 6, 7]):
+        """Reorder the vertices in an aab according to a certain permutation order."""
+
+        if len(aabb) != 8:
+            raise RuntimeError(f'Unexpected length of aabb (is {len(aabb)}, should be 8)')
+
+        result = list()
+        for i in range(8):
+            result.append(aabb[order[i]])
+
+        return result
+
+
+
     def compute_3dbbox(self):
-        # TODO: probably, using numpy is not at all required, we could directly
-        #       store to lists. have to decide if we want this or not
+        """Compute all 3D bounding boxes (axis aligned, object oriented, and the 3D corners
 
-        # TODO: check if order of vertices is the same as for amira_deep_vision.
-        #       At the moment this is probably not the case, and we have to be careful
-        #       to translate between OpenCV's coordinate system convention, and
-        #       blender's (OpenGL).
+        Blender has the coordinates and bounding box in the following way.
 
-        # Blender has the coordinates and bounding box in the following way.
-        #
-        # The world coordinate system has x pointing right, y pointing forward,
-        # z pointing upwards. Then, indexing with x/y/z, the bounding box
-        # corners are taken from the following axes:
-        #
-        #   0:  -x/-y/-z
-        #   1:  -x/-y/+z
-        #   2:  -x/+y/+z
-        #   3:  -x/+y/-z
-        #   4:  +x/-y/-z
-        #   5:  +x/-y/+z
-        #   6:  +x/+y/+z
-        #   7:  +x/+y/-z
+        The world coordinate system has x pointing right, y pointing forward,
+        z pointing upwards. Then, indexing with x/y/z, the bounding box
+        corners are taken from the following axes:
+
+          0:  -x/-y/-z
+          1:  -x/-y/+z
+          2:  -x/+y/+z
+          3:  -x/+y/-z
+          4:  +x/-y/-z
+          5:  +x/-y/+z
+          6:  +x/+y/+z
+          7:  +x/+y/-z
+
+        This differs from the order of the bounding box as it was used in
+        OpenGL. Ignoring the first item (centroid), the following re-indexing is
+        required to get it into the correct order: [1, 0, 2, 3, 5, 4, 6, 7].
+        This will be done after getting the aabb from blender, using function
+        reorder_bbox.
+
+        TODO: probably, using numpy is not at all required, we could directly
+              store to lists. have to decide if we want this or not
+        """
 
         # 0. storage for numpy arrays.
-
         np_aabb = np.zeros((9, 3))
         np_oobb = np.zeros((9, 3))
         np_corners3d = np.zeros((9, 2))
@@ -191,15 +208,24 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
         # axis aligned (no object rotation)
         aabb = [Vector(v) for v in self.obj.bound_box]
+        # compute centroid
         aa_centroid = aabb[0] + (aabb[6] - aabb[0]) / 2.0
+        # copy aabb before reordering to have access to it later
+        aabb_orig = aabb
+        # fix order of aabb for RenderedObjects
+        aabb = self.reorder_bbox(aabb)
         # convert to numpy
         np_aabb[0, :] = np.array((aa_centroid[0], aa_centroid[1], aa_centroid[2]))
         for i in range(8):
             np_aabb[i+1, :] = np.array((aabb[i][0], aabb[i][1], aabb[i][2]))
 
         # object aligned (that is, including object rotation)
-        oobb = [self.obj.matrix_world @ v for v in aabb]
+        oobb = [self.obj.matrix_world @ v for v in aabb_orig]
+        # compute oo centroid
         oo_centroid = oobb[0] + (oobb[6] - oobb[0]) / 2.0
+        # fix order for rendered objects
+        oobb = self.reorder_bbox(oobb)
+
         # convert to numpy
         np_oobb[0, :] = np.array((oo_centroid[0], oo_centroid[1], oo_centroid[2]))
         for i in range(8):
