@@ -19,10 +19,12 @@ def setup_material(material: bpy.types.Material):
     n_output, n_bsdf = material_utils.check_default_material(material)
 
     # setup BSDF
-    n_bsdf.inputs['Base Color'].default_value = (0.668, 0.016, 0.012, 1.000)
-    n_bsdf.inputs['Subsurface'].default_value = 0.010
+    n_bsdf.inputs['Base Color'].default_value = (0.691, 0.010, 0.009, 1.000)
+    n_bsdf.inputs['Subsurface'].default_value = 0.005
     n_bsdf.inputs['Subsurface Color'].default_value = (0.395, 0.038, 0.040, 1.000)
-    n_bsdf.inputs['Metallic'].default_value = 0.0
+    n_bsdf.inputs['Metallic'].default_value = 0.300
+    n_bsdf.inputs['Specular'].default_value = 0.650
+    n_bsdf.inputs['IOR'].default_value = 1.600
 
     # procedural roughness  setup
     n_noise_rough = nodes.new('ShaderNodeTexNoise')
@@ -55,7 +57,7 @@ def setup_material(material: bpy.types.Material):
     n_noise_bump.inputs['Detail'].default_value     =  16.0
     n_noise_bump.inputs['Distortion'].default_value =   0.0
     n_bump = nodes.new('ShaderNodeBump')
-    n_bump.inputs['Strength'].default_value = 0.010
+    n_bump.inputs['Strength'].default_value = 0.100
     n_bump.inputs['Distance'].default_value = 0.100
     tree.links.new(n_noise_bump.outputs['Fac'], n_bump.inputs['Height'])
     tree.links.new(n_bump.outputs['Normal'], n_bsdf.inputs['Normal'])
