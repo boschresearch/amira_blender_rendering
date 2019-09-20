@@ -1,3 +1,20 @@
+#!/usr/bin/env python
+
+bl_info = {
+    "name"        : "Node Tree Import/Export",
+    "author"      : "",
+    "version"     : (0, 1),
+    "blender"     : (2, 8, 0),
+    "location"    : "Node Editor > View",
+    "description" : "Import and export a node tree",
+    "warning"     : "",
+    "wiki_url"    : "",
+    "category"    : "Node",
+}
+
+import bpy
+import bpy.types
+import bpy.utils
 from mathutils import Vector
 
 
@@ -81,3 +98,53 @@ def import_node_tree(node_tree_dict, dst_material, clear=False):
             dst_tree.nodes[from_node].outputs[from_index],
         )
     return
+
+
+class NODE_MT_node_tree_import(bpy.types.Operator):
+    bl_idname = 'addon.node_tree_import'
+    bl_label = 'Import Node Tree'
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        print("Import called, but not yet implemented")
+        return {'FINISHED'}
+
+
+class NODE_MT_node_tree_export(bpy.types.Operator):
+    bl_idname = 'addon.node_tree_export'
+    bl_label = 'Export Node Tree'
+
+    @classmethod
+    def poll(cls, context):
+        return True
+
+    def execute(self, context):
+        print("Export called, but not yet implemented")
+        return {'FINISHED'}
+
+
+def _menu_func(self, context):
+    layout = self.layout
+    layout.separator()
+    layout.operator(NODE_MT_node_tree_import.bl_idname)
+    layout.operator(NODE_MT_node_tree_export.bl_idname)
+
+classes = (NODE_MT_node_tree_import,
+           NODE_MT_node_tree_export)
+
+def register():
+    for cls in classes:
+        bpy.utils.register_class(cls)
+    bpy.types.NODE_MT_view.append(_menu_func)
+
+def unregister():
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
+    bpy.types.NODE_MT_view.remove(_menu_func)
+
+
+if __name__ == "__main__":
+    register()
