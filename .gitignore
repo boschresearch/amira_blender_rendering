@@ -4,3 +4,4 @@
 *__pycache__*
 .vscode
 *.pyc
+.ycm_extra_conf.py
