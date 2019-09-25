@@ -34,7 +34,39 @@ def _unlink_280():
             scene.collection.children.unlink(c)
 
 
+def activate_cuda_devices():
+    """This function tries to activate all CUDA devices for rendering"""
+
+    # get cycles preferences
+    cycles = bpy.context.preferences.addons['cycles']
+    prefs = cycles.preferences
+
+    # set CUDA enabled, and activate all GPUs we have access to
+    prefs.compute_device_type = 'CUDA'
+
+    # determine if we have a GPU available
+    cuda_available = False
+    for d in prefs.get_devices()[0]:
+        cuda_available = cuda_available or d.type == 'CUDA'
+
+    # if we don't have a GPU available, then print a warning
+    if not cuda_available:
+        print("WW: No CUDA compute device available, will use CPU")
+    else:
+        device_set = False
+        for d in prefs.devices:
+            if d.type == 'CUDA':
+                print(f"II: Using CUDA device '{d.name}' ({d.id})")
+                d.use = True
+            else:
+                d.use = False
+
+        # using the current scene, enable GPU Compute for rendering
+        bpy.context.scene.cycles.device = 'GPU'
+
+
 def clear_all_objects():
+    """Remove all objects, meshes, lights, and cameras from a scene"""
 
     if version_ge_2_8:
         _unlink_280()
@@ -54,6 +86,56 @@ def clear_all_objects():
     for clc in data_collections:
         for id_data in clc:
             clc.remove(id_data)
+
+
+def clear_orphaned_materials():
+    """Remove all materials without user"""
+    mats = []
+    for mat in bpy.data.materials:
+        if mat.users == 0:
+            mats.append(mat)
+
+    for mat in mats:
+        mat.user_clear()
+        bpy.data.materials.remove(mat)
+
+
+def add_default_material(
+    obj: bpy.types.Object = bpy.context.object,
+    name: str = 'DefaultMaterial') -> bpy.types.Material:
+
+    """Add a new 'default' Material to an object.
+
+    This material will automatically create a Principled BSDF node as well as a Material Output node."""
+
+    # TODO: select the object if it is not bpy.context.object, and after setting
+    # up the material, deselect it again
+
+    mat = bpy.data.materials.new(name=name)
+    mat.use_nodes = True
+    if obj.data.materials:
+        obj.data.materials[0] = mat
+    else:
+        obj.data.materials.append(mat)
+
+    return mat
+
+
+def remove_material_nodes(obj: bpy.types.Object = bpy.context.object):
+    """Remove all material nodes from an object"""
+    obj.data.materials.clear()
+
+
+def look_at(obj : bpy.types.Object, target : Vector):
+    """Rotate an object such that it looks at a target.
+
+    The object's Y axis will point upwards, and the -Z axis towards the
+    target. This is the 'correct' rotation for cameras and lights."""
+    t = obj.location
+    dir = target - t
+    quat = dir.to_track_quat('-Z', 'Y')
+    obj.rotation_euler = quat.to_euler()
+
 
 
 def delete_object(object_name):
@@ -88,11 +170,20 @@ def delete_object(object_name):
             logger.error(str(err))
 
 
+def load_img(filepath):
+    """Load an image from filepath, or simply return the data block if
+    already available"""
+    for img in bpy.data.images:
+        if img.filepath == filepath:
+            return img
+    return bpy.data.images.load(filepath)
+
+
 def set_image_texture(obj, image_path, material_name):
 
     COL_WIDTH = 200
 
-    img = bpy.data.images.load(image_path)
+    img = load_img(image_path)
 
     if version_ge_2_8:
         clc = obj.data.uv_layers
@@ -187,6 +278,9 @@ def translate_object(obj, translation: tuple):
 
 def get_mesh_bounding_box(mesh):
     """Returns Bounding-Box of Mesh-Object at zero position (Edit mode)"""
+
+    # XXX: what type is mesh of? if it is a bpy.types.object, then it has
+    # property .bound_box
     try:
         xyz = mesh.data.vertices[0].co
     except AttributeError as err:
