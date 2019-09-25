@@ -18,6 +18,7 @@ from amira_blender_rendering import blender_utils as blnd
 import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
+from amira_blender_rendering.math.conversions import bu_to_mm
 
 # import things from AMIRA Perception Subsystem that are required
 from aps.core.interfaces import PoseRenderResult
@@ -28,7 +29,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
     """This class contains functions that convert a scene to the RenderedObjects format."""
 
 
-    def __init__(self, base_filename, dirinfo, K, width, height):
+    def __init__(self, base_filename, dirinfo, K, width, height, unit_conversion=bu_to_mm):
         super(RenderedObjectsBase, self).__init__()
         self.obj = None
 
@@ -39,6 +40,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         self.K = K
         self.width = width
         self.height = height
+        self.unit_conversion = unit_conversion
 
         # setup blender scene, camera, object, and compositors.
         # Note that the compositor setup needs to come after setting up the objects
@@ -116,6 +118,20 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
                 [self.obj])
 
 
+    def convert_units(self, render_result):
+        """Convert render_result units from blender units to target unit"""
+        if self.unit_conversion is None:
+            return render_result
+
+        # convert all relevant units from blender units to target units
+        result      = render_result
+        result.t    = self.unit_conversion(result.t)
+        result.aabb = self.unit_conversion(result.aabb)
+        result.oobb = self.unit_conversion(result.oobb)
+
+        return result
+
+
     def save_annotations(self, corners2d, corners3d, aabb, oobb):
         """Save annotations of a render result."""
 
@@ -129,6 +145,9 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
         if not os.path.exists(self.dirinfo.annotations):
             os.mkdir(self.dirinfo.annotations)
+
+        # convert to desired units
+        render_result = self.convert_units(render_result)
 
         # build json name, dump data
         fname_json = f"{self.base_filename}.json"
@@ -203,7 +222,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         np_oobb = np.zeros((9, 3))
         np_corners3d = np.zeros((9, 2))
 
-        # 1. get centroid and bounding box of object in world coordiantes by
+        # 1. get centroid and bounding box of object in world coordinates by
         # applying the objects rotation matrix to the bounding box of the object
 
         # axis aligned (no object rotation)
