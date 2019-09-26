@@ -123,7 +123,7 @@ class SimpleToolCap(
 
     def set_pose(self, rotation, translation):
         """
-        Set a specific pose for the object. 
+        Set a specific pose for the object.
         Alternative method to randomize(), in order to render given poses.
 
         Args:
