@@ -49,6 +49,8 @@ def import_aps(path=None):
     import aps.core
     from aps.data.datasets.renderedobjects import RenderedObjects
 
+    from aps.data.utils.viewspheresampler import ViewSampler
+
     import foundry
     import foundry.utils
 
@@ -156,6 +158,68 @@ def generate_dataset(cfg, dirinfo):
         scene.postprocess()
 
 
+def generate_viewsphere(cfg, dirinfo):
+    """Generate images and metadata for a view sphere, specified by cfg and dirinfo
+    
+    Args:
+        cfg()
+        dirinfo():
+    """
+
+    setup_renderer(cfg)
+
+    # sample views
+    sampler = ViewSampler()
+    rototranslations = sampler.viewsphere_rototranslations(
+        int(cfg['viewsphere']['min_num_views']),
+        float(cfg['viewsphere']['radius']),
+        int(cfg['viewsphere']['num_inplane_rotations'])
+    )
+    
+    # get textures
+    environment_textures = get_environment_textures(cfg)
+
+    # compute image count and ovewrite cfg to be dumped
+    image_count = len(rototranslations)
+    cfg['dataset']['image_count'] = str(image_count)
+
+    # filename setup
+    format_width = int(ceil(log(image_count, 10)))
+    base_filename = "{:0{width}d}".format(0, width=format_width)
+
+    # scene setup with a calibrated camera.
+    # NOTE: at the moment there is a bug in abr.camera_utils:opencv_to_blender,
+    #       which prevents us from actually using a calibrated camera. Still, we
+    #       pass it along here because at some point, we might actually have
+    #       working implementation ;)
+    width  = int(cfg['camera_info']['width'])
+    height = int(cfg['camera_info']['height'])
+    K = None
+    if 'K' in cfg['camera_info']:
+        K = np.fromstring(cfg['camera_info']['K'], sep=',')
+
+    # instantiate scene
+    scene_type = get_scene_type(cfg['render_setup']['scene_type'])
+    scene = scene_type(base_filename, dirinfo, K, width, height)
+
+    # generate images
+    for i in range(image_count):
+        # setup filename
+        base_filename = "{:0{width}d}".format(i, width=format_width)
+        scene.set_base_filename(base_filename)
+
+        # set some environment texture
+        filepath = expandpath(random.choice(environment_textures))
+        scene.set_environment_texture(filepath)
+
+        # actual rendering
+        R = rototranslations[i]['R']  # TODO: put in right format
+        t = rototranslations[i]['t']
+        scene.set_pose(rotation=R, translation=t)
+        scene.render()
+        scene.postprocess()
+
+
 def get_argv():
     """Get argv after --"""
     try:
@@ -193,8 +257,14 @@ def main():
 
         # save configuration
         foundry.utils.dump_config(cfg, dirinfo.base_path)
+    
+    # check if and create viewsphere
+    if 'viewsphere' in config:
+        output_dir = config['viewsphere'].get('output_dir', os.path.join(config['dataset']['output_dir'], 'Viewsphere'))
+        dirinfo = RenderedObjects.build_directory_info(output_dir)
+        generate_viewsphere(config, dirinfo)
+        foundry.utils.dump_config(config, dirinfo.base_path)
 
 
 if __name__ == "__main__":
     main()
-
