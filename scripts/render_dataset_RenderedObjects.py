@@ -47,6 +47,7 @@ def import_aps(path=None):
 
     import aps
     import aps.core
+    from aps.core.utils.math import rotation_matrix_to_euler
     from aps.data.datasets.renderedobjects import RenderedObjects
 
     from aps.data.utils.viewspheresampler import ViewSampler
@@ -169,8 +170,9 @@ def generate_viewsphere(cfg, dirinfo):
     setup_renderer(cfg)
 
     # sample views
-    sampler = ViewSampler()
-    rototranslations = sampler.viewsphere_rototranslations(
+    # This requires amira_deep_vision feature/aae-computations-inspection
+    # until it is not merged to master since the methods have been made static
+    rototranslations = ViewSampler.viewsphere_rototranslations(
         int(cfg['viewsphere']['min_num_views']),
         float(cfg['viewsphere']['radius']),
         int(cfg['viewsphere']['num_inplane_rotations'])
@@ -213,7 +215,7 @@ def generate_viewsphere(cfg, dirinfo):
         scene.set_environment_texture(filepath)
 
         # actual rendering
-        R = rototranslations[i]['R']  # TODO: put in right format
+        R = rotation_matrix_to_euler(rototranslations[i]['R']
         t = rototranslations[i]['t']
         scene.set_pose(rotation=R, translation=t)
         scene.render()
