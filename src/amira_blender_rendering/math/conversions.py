@@ -11,6 +11,11 @@ As a general 'solution', we also assume that blender units correspond to m. Make
 sure that you define all scenes in this way, or specify the correct conversion
 during scene construction.
 
+If you use the basescenemanager, then blender will be set up to represent
+everything in the metric system, and to use meters for distances. Although this
+is the default in a standard blender installation, you might have changed it by
+overwriting the default.blend file. Thus, we'll just set it once.
+
 """
 
 def bu_to_m(x):
