@@ -224,7 +224,6 @@ def generate_viewsphere(cfg, dirinfo):
         scene.set_pose(pose=rototranslations[i])
         scene.render()
         scene.postprocess()
-        break
 
 
 def get_argv():
