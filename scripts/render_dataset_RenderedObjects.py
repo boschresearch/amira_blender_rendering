@@ -164,8 +164,8 @@ def generate_viewsphere(cfg, dirinfo):
     """Generate images and metadata for a view sphere, specified by cfg and dirinfo
     
     Args:
-        cfg()
-        dirinfo():
+        cfg: config from configuration file
+        dirinfo(struct): structure with directory information. See RenderedObjects.build_directory_info
     """
 
     setup_renderer(cfg)
