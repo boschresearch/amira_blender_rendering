@@ -47,13 +47,14 @@ def import_aps(path=None):
 
     import aps
     import aps.core
-    from aps.core.utils.math import rotation_matrix_to_euler
     from aps.data.datasets.renderedobjects import RenderedObjects
-
-    from aps.data.utils.viewspheresampler import ViewSampler
 
     import foundry
     import foundry.utils
+
+    # additional
+    global ViewSampler
+    from aps.data.utils.viewspheresampler import ViewSampler
 
 
 def import_abr(path=None):
@@ -169,13 +170,14 @@ def generate_viewsphere(cfg, dirinfo):
 
     setup_renderer(cfg)
 
-    # sample views
+    # sample views in camera frame
     # This requires amira_deep_vision feature/aae-computations-inspection
     # until it is not merged to master since the methods have been made static
     rototranslations = ViewSampler.viewsphere_rototranslations(
-        int(cfg['viewsphere']['min_num_views']),
-        float(cfg['viewsphere']['radius']),
-        int(cfg['viewsphere']['num_inplane_rotations'])
+        min_n_views=int(cfg['viewsphere']['min_num_views']),
+        radius=float(cfg['viewsphere']['radius']) / 1000,  # convert radius from mm to m
+        num_inplane_rot=int(cfg['viewsphere']['num_inplane_rotations']),
+        convention='opengl'
     )
     
     # get textures
@@ -212,14 +214,17 @@ def generate_viewsphere(cfg, dirinfo):
 
         # set some environment texture
         filepath = expandpath(random.choice(environment_textures))
+        # TODO: it is still not clear the best way to render shiny objects for the viewsphere database.
+        # Currently, environment textures are set using random images (from OpenImagesV4). The background
+        # heavily impacts the appereance of the object, its shadows and reflection. This might, in turn,
+        # heavily affect the similarity measure.
         scene.set_environment_texture(filepath)
 
-        # actual rendering
-        R = rotation_matrix_to_euler(rototranslations[i]['R']
-        t = rototranslations[i]['t']
-        scene.set_pose(rotation=R, translation=t)
+        # set pose (expressed in camera frame. it is tranformerd into world frame: see set_pose) and render
+        scene.set_pose(pose=rototranslations[i])
         scene.render()
         scene.postprocess()
+        break
 
 
 def get_argv():
@@ -236,6 +241,7 @@ def main():
     parser.add_argument('--config', default='config/render_toolcap.cfg', help='Path to configuration file')
     parser.add_argument('--aps-path', default='~/dev/vision/amira_deep_vision', help='Path where AMIRA Perception Subsystem (aps) can be found')
     parser.add_argument('--abr-path', default='~/dev/vision/amira_blender_rendering/src', help='Path where amira_blender_rendering (abr) can be found')
+    parser.add_argument('--only-viewsphere', action='store_true', help='Generate only Viewsphere dataset')
     args = parser.parse_args(args=get_argv())
 
     # special imports. will also set system path for abr and aps
@@ -249,20 +255,22 @@ def main():
     config = foundry.utils.check_paths(config)
     cfgs = foundry.utils.build_splitting_configs(config)
 
-    for cfg in cfgs:
-        # build directory structure and run rendering
-        # TODO: rename all configs from output_dir to output_path
-        dirinfo = RenderedObjects.build_directory_info(cfg['dataset']['output_dir'])
+    # skip if only viewsphere dataset is selected
+    if not args.only_viewsphere:
+        for cfg in cfgs:
+            # build directory structure and run rendering
+            # TODO: rename all configs from output_dir to output_path
+            dirinfo = RenderedObjects.build_directory_info(cfg['dataset']['output_dir'])
 
-        # generate it
-        generate_dataset(cfg, dirinfo)
+            # generate it
+            generate_dataset(cfg, dirinfo)
 
-        # save configuration
-        foundry.utils.dump_config(cfg, dirinfo.base_path)
-    
+            # save configuration
+            foundry.utils.dump_config(cfg, dirinfo.base_path)
+        
     # check if and create viewsphere
     if 'viewsphere' in config:
-        output_dir = config['viewsphere'].get('output_dir', os.path.join(config['dataset']['output_dir'], 'Viewsphere'))
+        output_dir = expandpath(config['viewsphere'].get('output_dir', os.path.join(config['dataset']['output_dir'], 'Viewsphere')))
         dirinfo = RenderedObjects.build_directory_info(output_dir)
         generate_viewsphere(config, dirinfo)
         foundry.utils.dump_config(config, dirinfo.base_path)
