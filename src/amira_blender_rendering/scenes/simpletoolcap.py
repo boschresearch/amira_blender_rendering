@@ -40,9 +40,10 @@ class SimpleToolCap(
 
 
     def rescale_objects(self):
-        # needs to be re-scaled to fit nicely into blender units
-        # self.obj.scale = Vector((0.010, 0.010, 0.010))
-        self.obj.scale = Vector((0.020, 0.020, 0.020))
+        # needs to be re-scaled to fit nicely into blender units. This way, the
+        # Toolcap will be about 0.05 blender units high, which corresponds to
+        # 0.05m and, thus about 5cm
+        self.obj.scale = Vector((0.010, 0.010, 0.010))
 
 
     def import_mesh(self):

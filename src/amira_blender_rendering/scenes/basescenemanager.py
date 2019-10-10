@@ -19,6 +19,16 @@ class BaseSceneManager():
 
     def __init__(self):
         super(BaseSceneManager, self).__init__()
+        self.init_default_blender_config()
+
+    def init_default_blender_config(self):
+        """This function is used to setup blender into a known configuration,
+        such as which unit system to use."""
+
+        # unit system
+        bpy.context.scene.unit_settings.system = 'METRIC'
+        bpy.context.scene.unit_settings.length_unit = 'METERS'
+        bpy.context.scene.unit_settings.scale_length = 1.0
 
     def reset(self):
         blnd.clear_all_objects()
