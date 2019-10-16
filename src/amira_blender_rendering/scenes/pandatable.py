@@ -193,9 +193,14 @@ class ClutteredPandaTable(
     def randomize(self):
 
         # objects of interest + relative plate
-        cap   = bpy.context.scene.objects['Tool.Cap']
-        cubes = [bpy.context.scene.objects[cube_str] for cube_str in ['RedCube.001', 'RedCube.002', 'RedCube.003', 'RedCube.004', 'RedCube.005']]
-        plate = bpy.context.scene.objects['RubberPlate']
+        cap    = bpy.context.scene.objects['Tool.Cap']
+        plate  = bpy.context.scene.objects['RubberPlate']
+
+        cube_names = [f"RedCube.{d:03}" for d in range(1, 6)]
+        cubes  = [bpy.context.scene.objects[s] for s in cube_names]
+
+        shaft_names = [f"DriveShaft.{d:03}" for d in range(12)]
+        shafts = [bpy.context.scene.objects[s] for s in shaft_names]
 
         # we will set the location relative to the rubber plate. That is,
         # slightly above the plate. For this scenario, we will not change the
@@ -213,7 +218,7 @@ class ClutteredPandaTable(
         while not ok:
 
             # randomize object locations
-            for obj in [cap] + cubes:
+            for obj in [cap] + cubes + shafts:
                 obj.location.x = base_location.x + (np.random.rand(1) - .5) * range_x
                 obj.location.y = base_location.y + (np.random.rand(1) - .5) * range_y
                 obj.rotation_euler = Vector((np.random.rand(3) * np.pi))
