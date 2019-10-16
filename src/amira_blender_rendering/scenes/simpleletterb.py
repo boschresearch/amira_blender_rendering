@@ -45,7 +45,7 @@ class SimpleLetterB(
         self.ply_path = os.path.join(blnd.assets_dir, 'B.ply')
         bpy.ops.import_mesh.ply(filepath=self.ply_path)
         self.obj = bpy.context.object
-        self.obj.name = 'LetterB'
+        self.obj.name = 'B'
 
 
     def select_B(self):
