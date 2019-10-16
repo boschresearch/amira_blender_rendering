@@ -25,7 +25,7 @@ class SimpleToolCap(
     some background image.
     """
 
-    def __init__(self, base_filename: str, dirinfo, K, width, height):
+    def __init__(self, base_filename: str, dirinfo, K, width, height, **kwargs):
         super(SimpleToolCap, self).__init__(base_filename, dirinfo, K, width, height)
 
     def setup_object(self):

@@ -126,3 +126,11 @@ def get_relative_transform(obj1: bpy.types.Object,
     return t, r
 
 
+def test_visibility(obj, cam, width, height):
+    # Test if object is still visible. That is, none of the vertices
+    # should lie outside the visible pixel-space
+    vs  = [obj.matrix_world @ Vector(v) for v in obj.bound_box]
+    ps  = [project_p3d(v, cam) for v in vs]
+    pxs = [p2d_to_pixel_coords(p) for p in ps]
+    oks = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
+    return all(oks)

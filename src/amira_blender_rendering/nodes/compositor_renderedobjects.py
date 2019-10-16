@@ -219,15 +219,21 @@ class CompositorNodesOutputRenderedObject():
 
         # TODO: all TODO items from the _update function above apply!
 
-        self.fname_render   = os.path.join(self.dirinfo.images.const,                 f'{self.base_filename}.png0001')
-        self.fname_depth    = os.path.join(self.dirinfo.images.depth,                 f'{self.base_filename}.exr0001')
-        self.fname_backdrop = os.path.join(self.dirinfo.images.base_path, 'backdrop', f'{self.base_filename}.png0001')
+        # turn the frame number into a string. given the update function,
+        # blender will write files with the framenumber as four trailing digits
+        frame_number = int(bpy.context.scene.frame_current)
+        frame_number_str = f"{frame_number:04}"
+
+        # get file names
+        self.fname_render   = os.path.join(self.dirinfo.images.const,                 f'{self.base_filename}.png{frame_number_str}')
+        self.fname_depth    = os.path.join(self.dirinfo.images.depth,                 f'{self.base_filename}.exr{frame_number_str}')
+        self.fname_backdrop = os.path.join(self.dirinfo.images.base_path, 'backdrop', f'{self.base_filename}.png{frame_number_str}')
         for f in (self.fname_render, self.fname_depth, self.fname_backdrop):
             os.rename(f, f[:-4])
 
         # store mask filename for other users that currently need the mask
         self.fname_masks = []
         for i in range(len(self.objs)):
-            fname_mask = os.path.join(self.dirinfo.images.mask,                  f'{self.base_filename}.png0001')
+            fname_mask = os.path.join(self.dirinfo.images.mask,                  f'{self.base_filename}.png{frame_number_str}')
             os.rename(fname_mask, fname_mask[:-4])
             self.fname_masks.append(fname_mask[:-4])

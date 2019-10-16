@@ -103,7 +103,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         # extracted into an independent schema file. Note that this does not
         # mean to use any xml garbage! Rather, it should be as plain as
         # possible.
-        self.compositor.setup(self.dirinfo, self.base_filename, objs=[self.obj])
+        self.compositor.setup(self.dirinfo, self.base_filename, objs=[self.obj], scene=bpy.context.scene)
 
 
     def set_base_filename(self, filename):
