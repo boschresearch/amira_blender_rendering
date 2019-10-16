@@ -60,7 +60,7 @@ class PandaTable(
     def setup_object(self):
         # objects are already loaded in blend file. make sure to have the object
         # also available
-        self.obj = bpy.context.scene.objects['ToolCap']
+        self.obj = bpy.context.scene.objects['Tool.Cap']
 
     def setup_environment(self):
         # environment is already set up in blend file
@@ -68,8 +68,8 @@ class PandaTable(
 
     def randomize(self):
 
-
-        cap   = bpy.context.scene.objects['ToolCap']
+        # objects of interest + relative plate
+        cap   = bpy.context.scene.objects['Tool.Cap']
         cube  = bpy.context.scene.objects['RedCube']
         shaft = bpy.context.scene.objects['DriveShaft']
         plate = bpy.context.scene.objects['RubberPlate']
@@ -78,10 +78,12 @@ class PandaTable(
         # slightly above the plate, and within a volume above the plate that is
         # not too high
         base_location = Vector(plate.location)
+        base_location.x = base_location.x + .10 # start a bit more towards the robot
+        base_location.y = base_location.y + .10 # start a bit left of the middle (camera is not centered)
         base_location.z = base_location.z + .15 # start 10 cm above the plate
         # range from which to sample random numbers
-        range_x = 0.60 # 'depth'
-        range_y = 0.90 # 'width'
+        range_x = 0.20 # 'depth'
+        range_y = 0.30 # 'width'
         range_z = 0.20 # 'height' -> this will lead to objects being at most 5cm close to the plate
 
         # Iterate animation a couple of times
