@@ -147,7 +147,8 @@ def generate_dataset(cfg, dirinfo):
     scene = scene_type(base_filename, dirinfo, K, width, height, config=cfg)
 
     # generate images
-    for i in range(image_count):
+    i = 0
+    while i < image_count:
         # setup filename
         base_filename = "{:0{width}d}".format(i, width=format_width)
         scene.set_base_filename(base_filename)
@@ -159,7 +160,17 @@ def generate_dataset(cfg, dirinfo):
         # actual rendering
         scene.randomize()
         scene.render()
-        scene.postprocess()
+
+        try:
+            scene.postprocess()
+        except ValueError:
+            # This issue happens every now and then. The reason might be (not
+            # yet verified) that the target-object is occluded. In turn, this
+            # leads to a zero size 2D bounding box...
+            print(f"ValueError during post-processing, re-generating image index {i}")
+        else:
+            # increment loop counter
+            i = i + 1
 
     return True
 
