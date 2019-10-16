@@ -131,16 +131,13 @@ def generate_dataset(cfg, dirinfo):
     format_width = int(ceil(log(image_count, 10)))
     base_filename = "{:0{width}d}".format(0, width=format_width)
 
-    # scene setup with a calibrated camera.
-    # NOTE: at the moment there is a bug in abr.camera_utils:opencv_to_blender,
-    #       which prevents us from actually using a calibrated camera. Still, we
-    #       pass it along here because at some point, we might actually have
-    #[MaMa[Ma       working implementation ;)
+    # camera / output setup
     width  = int(cfg['camera_info']['width'])
     height = int(cfg['camera_info']['height'])
     K = None
     if 'K' in cfg['camera_info']:
         K = np.fromstring(cfg['camera_info']['K'], sep=',')
+        K = K.reshape((3, 3))
 
     # instantiate scene
     scene_type = get_scene_type(cfg['render_setup']['scene_type'])

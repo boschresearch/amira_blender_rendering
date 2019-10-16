@@ -16,30 +16,11 @@ import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 
 
-class PandaTable(
-        abr_scenes.RenderedObjectsBase):
-    """Panda Table scene which will get loaded from blend file"""
+class BasePandaTable(abr_scenes.RenderedObjectsBase):
+    """Common functions for all panda table scenes"""
 
-    def __init__(self, base_filename: str, dirinfo, K, width, height, **kwargs):
-        # TODO: change hardcoded settings to configurable arguments
-        # TODO: change from inheritance to composition to avoid having
-        #       constructor after setting up fields
-        self.blend_file_path = expandpath('~/gfx/modeling/robottable_one_object_each.blend')
-        self.primary_camera = 'CameraOrbbec'
-        self.obj = None
-
-        # parent constructor
-        super(PandaTable, self).__init__(base_filename, dirinfo, K, width, height)
-
-
-    def render(self):
-        bpy.context.scene.render.engine = "CYCLES"
-        bpy.ops.render.render(write_still=False)
-
-
-    def setup_scene(self):
-        # load scene from file
-        bpy.ops.wm.open_mainfile(filepath=self.blend_file_path)
+    def __init__self(base_filename: str, dirinfo, K, width, height, **kwargs):
+        super(BasePandaTable, self).__init__(base_filename, dirinfo, K, width, height)
 
 
     def setup_camera(self):
@@ -56,7 +37,22 @@ class PandaTable(
         # use calibration data?
         if self.K is not None:
             print(f"II: Using camera calibration data")
-            self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
+            self.cam = camera_utils.opencv_to_blender(self.K, self.cam)
+
+        # re-set camera and set rendering size
+        bpy.context.scene.camera = self.cam
+        bpy.context.scene.render.resolution_x = self.width
+        bpy.context.scene.render.resolution_y = self.height
+
+
+    def render(self):
+        bpy.context.scene.render.engine = "CYCLES"
+        bpy.ops.render.render(write_still=False)
+
+
+    def setup_scene(self):
+        # load scene from file
+        bpy.ops.wm.open_mainfile(filepath=self.blend_file_path)
 
 
     def setup_lighting(self):
@@ -67,7 +63,7 @@ class PandaTable(
     def setup_object(self):
         # objects are already loaded in blend file. make sure to have the object
         # also available
-        self.obj = bpy.context.scene.objects['Tool.Cap']
+        self.obj = bpy.context.scene.objects[self.obj_name]
 
 
     def setup_environment(self):
@@ -75,8 +71,23 @@ class PandaTable(
         pass
 
 
-    def randomize(self):
 
+class PandaTable(BasePandaTable):
+    """Panda Table scene which will get loaded from blend file"""
+
+    def __init__(self, base_filename: str, dirinfo, K, width, height, **kwargs):
+        # TODO: change hardcoded settings to configurable arguments
+        # TODO: change from inheritance to composition to avoid having
+        #       constructor after setting up fields
+        self.blend_file_path = expandpath('~/gfx/modeling/robottable_one_object_each.blend')
+        self.primary_camera = 'CameraOrbbec'
+        self.obj = None
+        self.obj_name = 'Tool.Cap'
+
+        # parent constructor
+        super(PandaTable, self).__init__(base_filename, dirinfo, K, width, height)
+
+    def randomize(self):
         # objects of interest + relative plate
         cap   = bpy.context.scene.objects['Tool.Cap']
         cube  = bpy.context.scene.objects['RedCube']
@@ -143,9 +154,8 @@ class PandaTable(
 
 
 
-class ClutteredPandaTable(
-        abr_scenes.RenderedObjectsBase):
-    """Panda Table scene which will get loaded from blend file"""
+class ClutteredPandaTable(BasePandaTable):
+    """Cluttered Panda Table scene which will get loaded from blend file"""
 
     def __init__(self, base_filename: str, dirinfo, K, width, height, **kwargs):
         # TODO: change hardcoded settings to configurable arguments
@@ -154,57 +164,13 @@ class ClutteredPandaTable(
         self.blend_file_path = expandpath('~/gfx/modeling/robottable_cluttered.blend')
         self.primary_camera = 'CameraOrbbec'
         self.obj = None
+        self.obj_name = 'Tool.Cap'
 
         # parent constructor
         super(ClutteredPandaTable, self).__init__(base_filename, dirinfo, K, width, height)
 
 
-    def render(self):
-        bpy.context.scene.render.engine = "CYCLES"
-        bpy.ops.render.render(write_still=False)
-
-
-    def setup_scene(self):
-        # load scene from file
-        bpy.ops.wm.open_mainfile(filepath=self.blend_file_path)
-
-
-    def setup_camera(self):
-        """Setup the primary camera, and set field"""
-        # the scene has multiple cameras set up. Make sure that the 'right'
-        # camera is used
-        scene  = bpy.context.scene
-        camera = scene.objects[self.primary_camera]
-        scene.camera = camera
-
-        # make sure to set this field
-        self.cam = camera
-
-        # use calibration data?
-        if self.K is not None:
-            print(f"II: Using camera calibration data")
-            self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
-
-
-
-    def setup_lighting(self):
-        # Lighting is already set up in blend file
-        pass
-
-
-    def setup_object(self):
-        # objects are already loaded in blend file. make sure to have the object
-        # also available
-        self.obj = bpy.context.scene.objects['Tool.Cap']
-
-
-    def setup_environment(self):
-        # environment is already set up in blend file
-        pass
-
-
     def randomize(self):
-
         # objects of interest + relative plate
         cap    = bpy.context.scene.objects['Tool.Cap']
         plate  = bpy.context.scene.objects['RubberPlate']

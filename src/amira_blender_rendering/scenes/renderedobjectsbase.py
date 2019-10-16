@@ -57,6 +57,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
     @abstractmethod
     def setup_scene(self):
+        # TODO: maybe set the rendering width and height?
         pass
 
     @abstractmethod
@@ -274,8 +275,12 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         self.cam = bpy.context.object
         if self.K is not None:
             print(f"II: Using camera calibration data")
-            self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
+            self.cam = camera_utils.opencv_to_blender(self.K, self.cam)
+
+        # re-set camera and set rendering size
         bpy.context.scene.camera = self.cam
+        bpy.context.scene.render.resolution_x = self.width
+        bpy.context.scene.render.resolution_y = self.height
 
         # look at center
         blnd.look_at(self.cam, Vector((0.0, 0.0, 0.0)))
