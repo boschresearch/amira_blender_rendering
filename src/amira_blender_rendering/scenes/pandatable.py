@@ -206,12 +206,12 @@ class ClutteredPandaTable(
         # slightly above the plate. For this scenario, we will not change the
         # height of the objects!
         base_location = Vector(plate.location)
-        base_location.x = base_location.x + .10 # start a bit more towards the robot
-        base_location.y = base_location.y + .10 # start a bit left of the middle (camera is not centered)
+        base_location.x = base_location.x
+        base_location.y = base_location.y
 
         # range from which to sample random numbers
-        range_x = 0.25 # 'depth'
-        range_y = 0.50 # 'width'
+        range_x = 0.60 # 'depth'
+        range_y = 0.90 # 'width'
 
         # Iterate animation a couple of times
         ok = False
