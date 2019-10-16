@@ -140,7 +140,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         # that we actually get the state dict defined in pose render result
         t = np.asarray(abr_geom.get_relative_translation(self.obj, self.cam))
         R = np.asarray(abr_geom.get_relative_rotation(self.obj, self.cam).to_matrix())
-        render_result = PoseRenderResult('Tool.Cap', None, None, None, None, None, None,
+        render_result = PoseRenderResult(self.obj.name, None, None, None, None, None, None,
                 R, t, corners2d, corners3d, aabb, oobb)
 
         if not os.path.exists(self.dirinfo.annotations):
