@@ -49,8 +49,14 @@ class PandaTable(
         scene  = bpy.context.scene
         camera = scene.objects[self.primary_camera]
         scene.camera = camera
+
         # make sure to set this field
         self.cam = camera
+
+        # use calibration data?
+        if self.K is not None:
+            print(f"II: Using camera calibration data")
+            self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
 
 
     def setup_lighting(self):
@@ -116,7 +122,7 @@ class PandaTable(
 
             # DEBUG output
             if has_intersections:
-                print(f"WARNING: object intersections detected")
+                print(f"WW: object intersections detected")
                 time.sleep(2)
 
             # forward compute some frames. number of frames is randomly selected
@@ -133,7 +139,7 @@ class PandaTable(
 
             # DEBUG output, we exit the loop because real randomization is not yet
             if not ok:
-                print(f"WARNING: Target object not in view frustum (location = {self.obj.location})")
+                print(f"WW: Target object not in view frustum (location = {self.obj.location})")
 
 
 
@@ -170,8 +176,15 @@ class ClutteredPandaTable(
         scene  = bpy.context.scene
         camera = scene.objects[self.primary_camera]
         scene.camera = camera
+
         # make sure to set this field
         self.cam = camera
+
+        # use calibration data?
+        if self.K is not None:
+            print(f"II: Using camera calibration data")
+            self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
+
 
 
     def setup_lighting(self):
@@ -243,5 +256,5 @@ class ClutteredPandaTable(
 
             # DEBUG output, we exit the loop because real randomization is not yet
             if not ok:
-                print(f"WARNING: Target object not in view frustum (location = {self.obj.location})")
+                print(f"WW: Target object not in view frustum (location = {self.obj.location})")
 

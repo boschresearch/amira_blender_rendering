@@ -273,6 +273,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
         self.cam = bpy.context.object
         if self.K is not None:
+            print(f"II: Using camera calibration data")
             self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
         bpy.context.scene.camera = self.cam
 
