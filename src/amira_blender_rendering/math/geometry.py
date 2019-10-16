@@ -4,6 +4,7 @@
 
 import bpy
 from mathutils import Vector, Euler
+from mathutils.bvhtree import BVHTree
 
 def project_p3d(p: Vector,
             camera: bpy.types.Object = bpy.context.scene.camera,
@@ -134,3 +135,18 @@ def test_visibility(obj, cam, width, height):
     pxs = [p2d_to_pixel_coords(p) for p in ps]
     oks = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
     return all(oks)
+
+
+def _get_bvh(obj):
+    mat = obj.matrix_world
+    vs = [mat @ v.co for v in obj.data.vertices]
+    ps = [p.vertices for p in obj.data.polygons]
+    return BVHTree.FromPolygons(vs, ps)
+
+def test_overlap(obj1, obj2):
+    bvh1 = _get_bvh(obj1)
+    bvh2 = _get_bvh(obj2)
+    if bvh1.overlap(bvh2):
+        return True
+    else:
+        return False

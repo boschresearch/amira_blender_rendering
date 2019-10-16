@@ -73,8 +73,17 @@ class PandaTable(
         while not ok:
             # TODO: randomize object location
 
+            # test overlap of objects after randomization
+            cap   = bpy.context.scene.objects['ToolCap']
+            cube  = bpy.context.scene.objects['RedCube']
+            shaft = bpy.context.scene.objects['DriveShaft']
+
+            if abr_geom.test_overlap(cube, shaft):
+                print(f"WARNING: Objects overlap")
+                time.sleep(2)
+
             # forward compute some frames. number of frames is randomly selected
-            n_frames = randint(15, 30)
+            n_frames = randint(15, 20)
 
             # update the scene. unfortunately it doesn't always work to just set
             # the location of the object without recomputing the dependency
