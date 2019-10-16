@@ -67,8 +67,7 @@ class PandaTable(
         pass
 
     def randomize(self):
-        # Iterate animation a couple of times
-        ok = False
+
 
         cap   = bpy.context.scene.objects['ToolCap']
         cube  = bpy.context.scene.objects['RedCube']
@@ -85,8 +84,8 @@ class PandaTable(
         range_y = 0.90 # 'width'
         range_z = 0.20 # 'height' -> this will lead to objects being at most 5cm close to the plate
 
-        do_intersection_test = False
-
+        # Iterate animation a couple of times
+        ok = False
         while not ok:
 
             # randomize object location
@@ -116,7 +115,7 @@ class PandaTable(
                 time.sleep(2)
 
             # forward compute some frames. number of frames is randomly selected
-            n_frames = randint(15, 20)
+            n_frames = randint(1, 20)
 
             print(f"Forward simulation of {n_frames} frames")
             scene = bpy.context.scene
@@ -127,13 +126,9 @@ class PandaTable(
             cam = bpy.context.scene.objects[self.primary_camera]
             ok = abr_geom.test_visibility(self.obj, cam, self.width, self.height)
 
-            # XXX: DEBUG, we exit the loop because real randomization is not yet
-            # implemented
-            break
-
-        # XXX: DEBUG
-        if not ok:
-            print(f"WARNING: Object not in view frustum")
-            time.sleep(2)
+            # DEBUG output, we exit the loop because real randomization is not yet
+            if not ok:
+                print(f"WARNING: Target object not in view frustum")
+                print(self.obj.location)
 
 

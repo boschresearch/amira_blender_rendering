@@ -120,7 +120,7 @@ def generate_dataset(cfg, dirinfo):
     # retrieve image count and finish, when there are no images to generate
     image_count = int(cfg['dataset']['image_count'])
     if image_count <= 0:
-        return
+        return False
 
     # setup the render backend and retrieve paths to environment textures
     setup_renderer(cfg)
@@ -160,6 +160,8 @@ def generate_dataset(cfg, dirinfo):
         scene.render()
         scene.postprocess()
 
+    return True
+
 
 def get_argv():
     """Get argv after --"""
@@ -194,10 +196,9 @@ def main():
         dirinfo = RenderedObjects.build_directory_info(cfg['dataset']['output_dir'])
 
         # generate it
-        generate_dataset(cfg, dirinfo)
-
-        # save configuration
-        foundry.utils.dump_config(cfg, dirinfo.base_path)
+        if generate_dataset(cfg, dirinfo):
+            # save configuration
+            foundry.utils.dump_config(cfg, dirinfo.base_path)
 
 
 if __name__ == "__main__":
