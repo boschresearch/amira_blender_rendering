@@ -2,7 +2,7 @@
 
 # blender
 import bpy
-from mathutils import Vector
+from mathutils import Vector, Matrix
 import os
 import numpy as np
 
@@ -115,14 +115,55 @@ class SimpleToolCap(
             # update the scene. unfortunately it doesn't always work to just set
             # the location of the object without recomputing the dependency
             # graph
-            dg = bpy.context.evaluated_depsgraph_get()
-            dg.update()
+            self._update_scene()
 
             # Test if object is still visible. That is, none of the vertices
             # should lie outside the visible pixel-space
-            vs  = [self.obj.matrix_world @ Vector(v) for v in self.obj.bound_box]
-            ps  = [abr_geom.project_p3d(v, self.cam) for v in vs]
-            pxs = [abr_geom.p2d_to_pixel_coords(p) for p in ps]
-            oks = [px[0] >= 0 and px[0] < self.width and px[1] >= 0 and px[1] < self.height for px in pxs]
-            ok = all(oks)
+            ok = self._test_visibility()
 
+
+    def set_pose(self, pose):
+        """
+        Set a specific pose for the object.
+        Alternative method to randomize(), in order to render given poses.
+
+        Args:
+            pose(dict): dict with rotation and translation
+                {
+                    'R': rotation(np.array(3)), rotation matrix
+                    't': translation(np.array(3,)), translation vector expressed in meters
+                }
+
+        Raise:
+            ValueError: if pose is not valid, i.e., object outside the scene
+        """
+        # get desired rototranslation (this is in OpenGL coordinate system) in camera frame
+        world_pose = abr_geom.get_world_to_object_tranform(pose, self.cam)
+        
+        # set pose
+        self.obj.location = Vector((world_pose['t']))
+        self.obj.rotation_euler = Matrix(world_pose['R']).to_euler()
+
+        # update the scene. unfortunately it doesn't always work to just set
+        # the location of the object without recomputing the dependency
+        # graph
+        self._update_scene()
+
+        # Test if object is still visible. That is, none of the vertices
+        # should lie outside the visible pixel-space
+        ok = self._test_visibility()
+        if not ok:
+            raise ValueError('Given pose is lying outside the scene')
+
+
+    def _update_scene(self):
+        dg = bpy.context.evaluated_depsgraph_get()
+        dg.update()
+
+
+    def _test_visibility(self):
+        vs  = [self.obj.matrix_world @ Vector(v) for v in self.obj.bound_box]
+        ps  = [abr_geom.project_p3d(v, self.cam) for v in vs]
+        pxs = [abr_geom.p2d_to_pixel_coords(p) for p in ps]
+        oks = [px[0] >= 0 and px[0] < self.width and px[1] >= 0 and px[1] < self.height for px in pxs]
+        return all(oks)
