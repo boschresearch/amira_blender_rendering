@@ -16,8 +16,6 @@ import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 
 
-
-
 class PandaTable(
         abr_scenes.RenderedObjectsBase):
     """Panda Table scene which will get loaded from blend file"""
@@ -38,9 +36,11 @@ class PandaTable(
         bpy.context.scene.render.engine = "CYCLES"
         bpy.ops.render.render(write_still=False)
 
+
     def setup_scene(self):
         # load scene from file
         bpy.ops.wm.open_mainfile(filepath=self.blend_file_path)
+
 
     def setup_camera(self):
         """Setup the primary camera, and set field"""
@@ -57,14 +57,17 @@ class PandaTable(
         # Lighting is already set up in blend file
         pass
 
+
     def setup_object(self):
         # objects are already loaded in blend file. make sure to have the object
         # also available
         self.obj = bpy.context.scene.objects['Tool.Cap']
 
+
     def setup_environment(self):
         # environment is already set up in blend file
         pass
+
 
     def randomize(self):
 
@@ -130,7 +133,110 @@ class PandaTable(
 
             # DEBUG output, we exit the loop because real randomization is not yet
             if not ok:
-                print(f"WARNING: Target object not in view frustum")
-                print(self.obj.location)
+                print(f"WARNING: Target object not in view frustum (location = {self.obj.location})")
 
+
+
+class ClutteredPandaTable(
+        abr_scenes.RenderedObjectsBase):
+    """Panda Table scene which will get loaded from blend file"""
+
+    def __init__(self, base_filename: str, dirinfo, K, width, height, **kwargs):
+        # TODO: change hardcoded settings to configurable arguments
+        # TODO: change from inheritance to composition to avoid having
+        #       constructor after setting up fields
+        self.blend_file_path = expandpath('~/gfx/modeling/robottable_cluttered.blend')
+        self.primary_camera = 'CameraOrbbec'
+        self.obj = None
+
+        # parent constructor
+        super(ClutteredPandaTable, self).__init__(base_filename, dirinfo, K, width, height)
+
+
+    def render(self):
+        bpy.context.scene.render.engine = "CYCLES"
+        bpy.ops.render.render(write_still=False)
+
+
+    def setup_scene(self):
+        # load scene from file
+        bpy.ops.wm.open_mainfile(filepath=self.blend_file_path)
+
+
+    def setup_camera(self):
+        """Setup the primary camera, and set field"""
+        # the scene has multiple cameras set up. Make sure that the 'right'
+        # camera is used
+        scene  = bpy.context.scene
+        camera = scene.objects[self.primary_camera]
+        scene.camera = camera
+        # make sure to set this field
+        self.cam = camera
+
+
+    def setup_lighting(self):
+        # Lighting is already set up in blend file
+        pass
+
+
+    def setup_object(self):
+        # objects are already loaded in blend file. make sure to have the object
+        # also available
+        self.obj = bpy.context.scene.objects['Tool.Cap']
+
+
+    def setup_environment(self):
+        # environment is already set up in blend file
+        pass
+
+
+    def randomize(self):
+
+        # objects of interest + relative plate
+        cap   = bpy.context.scene.objects['Tool.Cap']
+        cubes = [bpy.context.scene.objects[cube_str] for cube_str in ['RedCube.001', 'RedCube.002', 'RedCube.003', 'RedCube.004', 'RedCube.005']]
+        plate = bpy.context.scene.objects['RubberPlate']
+
+        # we will set the location relative to the rubber plate. That is,
+        # slightly above the plate. For this scenario, we will not change the
+        # height of the objects!
+        base_location = Vector(plate.location)
+        base_location.x = base_location.x + .10 # start a bit more towards the robot
+        base_location.y = base_location.y + .10 # start a bit left of the middle (camera is not centered)
+
+        # range from which to sample random numbers
+        range_x = 0.25 # 'depth'
+        range_y = 0.50 # 'width'
+
+        # Iterate animation a couple of times
+        ok = False
+        while not ok:
+
+            # randomize object locations
+            for obj in [cap] + cubes:
+                obj.location.x = base_location.x + (np.random.rand(1) - .5) * range_x
+                obj.location.y = base_location.y + (np.random.rand(1) - .5) * range_y
+                obj.rotation_euler = Vector((np.random.rand(3) * np.pi))
+
+            # update the scene. unfortunately it doesn't always work to just set
+            # the location of the object without recomputing the dependency
+            # graph
+            dg = bpy.context.evaluated_depsgraph_get()
+            dg.update()
+
+            # forward compute some frames. number of frames is randomly selected
+            n_frames = randint(1, 40)
+
+            print(f"Forward simulation of {n_frames} frames")
+            scene = bpy.context.scene
+            for i in range(n_frames):
+                scene.frame_set(i+1)
+
+            # test if the object is visible in the camera scene
+            cam = bpy.context.scene.objects[self.primary_camera]
+            ok = abr_geom.test_visibility(self.obj, cam, self.width, self.height)
+
+            # DEBUG output, we exit the loop because real randomization is not yet
+            if not ok:
+                print(f"WARNING: Target object not in view frustum (location = {self.obj.location})")
 
