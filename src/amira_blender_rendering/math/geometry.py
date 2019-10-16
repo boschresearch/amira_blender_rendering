@@ -143,7 +143,12 @@ def _get_bvh(obj):
     ps = [p.vertices for p in obj.data.polygons]
     return BVHTree.FromPolygons(vs, ps)
 
-def test_overlap(obj1, obj2):
+
+def test_intersection(obj1, obj2):
+    """Test if two objects intersect each other
+
+    Returns true if objects intersect, false if not.
+    """
     bvh1 = _get_bvh(obj1)
     bvh2 = _get_bvh(obj2)
     if bvh1.overlap(bvh2):
