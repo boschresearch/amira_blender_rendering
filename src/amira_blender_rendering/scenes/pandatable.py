@@ -70,26 +70,53 @@ class PandaTable(
         # Iterate animation a couple of times
         ok = False
 
+        cap   = bpy.context.scene.objects['ToolCap']
+        cube  = bpy.context.scene.objects['RedCube']
+        shaft = bpy.context.scene.objects['DriveShaft']
+        plate = bpy.context.scene.objects['RubberPlate']
+
+        # we will set the location relative to the rubber plate. That is,
+        # slightly above the plate, and within a volume above the plate that is
+        # not too high
+        base_location = Vector(plate.location)
+        base_location.z = base_location.z + .15 # start 10 cm above the plate
+        # range from which to sample random numbers
+        range_x = 0.60 # 'depth'
+        range_y = 0.90 # 'width'
+        range_z = 0.20 # 'height' -> this will lead to objects being at most 5cm close to the plate
+
+        do_intersection_test = False
+
         while not ok:
-            # TODO: randomize object location
 
-            # test overlap of objects after randomization
-            cap   = bpy.context.scene.objects['ToolCap']
-            cube  = bpy.context.scene.objects['RedCube']
-            shaft = bpy.context.scene.objects['DriveShaft']
-
-            if abr_geom.test_overlap(cube, shaft):
-                print(f"WARNING: Objects overlap")
-                time.sleep(2)
-
-            # forward compute some frames. number of frames is randomly selected
-            n_frames = randint(15, 20)
+            # randomize object location
+            for obj in [cap, cube, shaft]:
+                obj.location = base_location + Vector(( \
+                    (np.random.rand(1) - .5) * range_x, \
+                    (np.random.rand(1) - .5) * range_y, \
+                    (np.random.rand(1) - .5) * range_z))
+                obj.rotation_euler = Vector((np.random.rand(3) * np.pi))
 
             # update the scene. unfortunately it doesn't always work to just set
             # the location of the object without recomputing the dependency
             # graph
             dg = bpy.context.evaluated_depsgraph_get()
             dg.update()
+
+            # figure out if objects intersect for debug output
+            has_intersections = not (\
+                abr_geom.test_intersection(cap, cube) or \
+                abr_geom.test_intersection(cap, shaft) or \
+                abr_geom.test_intersection(cube, shaft)\
+                )
+
+            # DEBUG output
+            if has_intersections:
+                print(f"WARNING: object intersections detected")
+                time.sleep(2)
+
+            # forward compute some frames. number of frames is randomly selected
+            n_frames = randint(15, 20)
 
             print(f"Forward simulation of {n_frames} frames")
             scene = bpy.context.scene
