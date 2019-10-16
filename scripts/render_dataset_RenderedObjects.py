@@ -97,6 +97,7 @@ def get_scene_type(type_str : str):
     scene_types = {
         'SimpleToolCap': abr.scenes.SimpleToolCap,
         'SimpleLetterB': abr.scenes.SimpleLetterB,
+        'PandaTable':    abr.scenes.PandaTable,
     }
     if type_str not in scene_types:
         known_types = str([k for k in scene_types.keys()])[1:-1]
@@ -116,9 +117,13 @@ def setup_renderer(cfg):
 def generate_dataset(cfg, dirinfo):
     """Generate images and metadata for a dataset, specified by cfg and dirinfo"""
 
-    setup_renderer(cfg)
-
+    # retrieve image count and finish, when there are no images to generate
     image_count = int(cfg['dataset']['image_count'])
+    if image_count <= 0:
+        return
+
+    # setup the render backend and retrieve paths to environment textures
+    setup_renderer(cfg)
     environment_textures = get_environment_textures(cfg)
 
     # filename setup
@@ -129,7 +134,7 @@ def generate_dataset(cfg, dirinfo):
     # NOTE: at the moment there is a bug in abr.camera_utils:opencv_to_blender,
     #       which prevents us from actually using a calibrated camera. Still, we
     #       pass it along here because at some point, we might actually have
-    #       working implementation ;)
+    #[MaMa[Ma       working implementation ;)
     width  = int(cfg['camera_info']['width'])
     height = int(cfg['camera_info']['height'])
     K = None
@@ -138,7 +143,7 @@ def generate_dataset(cfg, dirinfo):
 
     # instantiate scene
     scene_type = get_scene_type(cfg['render_setup']['scene_type'])
-    scene = scene_type(base_filename, dirinfo, K, width, height)
+    scene = scene_type(base_filename, dirinfo, K, width, height, config=cfg)
 
     # generate images
     for i in range(image_count):

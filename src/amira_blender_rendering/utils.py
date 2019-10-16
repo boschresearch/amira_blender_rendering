@@ -6,6 +6,9 @@ import os.path as osp
 logger_name = "amira_blender_rendering"
 
 
+def expandpath(path):
+    return os.path.expandvars(os.path.expanduser(path))
+
 def get_logger(stream=True):
     logger = logging.getLogger(logger_name)
     if stream:
