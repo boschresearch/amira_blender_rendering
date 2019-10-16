@@ -4,6 +4,8 @@
 
 import bpy
 from mathutils import Vector, Euler
+import numpy as np
+
 
 def project_p3d(p: Vector,
             camera: bpy.types.Object = bpy.context.scene.camera,
@@ -126,3 +128,40 @@ def get_relative_transform(obj1: bpy.types.Object,
     return t, r
 
 
+def get_world_to_object_tranform(cam2obj_pose: dict, camera: bpy.types.Object = bpy.context.scene.camera):
+    """
+    Transform a pose {'R', 't'} expressed in camera coordinates to world coordinates
+
+    Args:
+        cam2obj_pose(dict): {
+            'R'(np.array(3)) : rotation matrix from camera to obj
+            't'(np.array(3,) : translation vector from camera to obh
+        }
+        camera(bpq.types.Object): scene camera
+    
+    Returns:
+        {'R','t'} where
+        R(np.array(3)): rotation matrix from world frame to object
+        t(np.array(3,)): translation vector from world frame to object
+    """
+    # TODO: this could probably be done using Matrix and Vectors from mathutils
+    
+    # camera to object transformation
+    M_c2o = np.eye(4)
+    M_c2o[:3, :3] = cam2obj_pose['R']
+    M_c2o[:3, 3] = cam2obj_pose['t']
+
+    # world to camera transformation
+    M_w2c = np.eye(4)
+    M_w2c[:3, :3] = camera.rotation_euler.to_matrix()
+    M_w2c[:3, 3] = camera.location
+
+    # world to object
+    M_w2o = M_w2c.dot(M_c2o)
+
+    # extract pose
+    R = M_w2o[:3, :3]
+    t = M_w2o[:3, 3]
+
+    # pack into dictionary to maintain input format and return
+    return {'R': R, 't': t}
