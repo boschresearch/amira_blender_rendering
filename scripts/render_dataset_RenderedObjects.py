@@ -119,13 +119,18 @@ def setup_renderer(cfg):
     bpy.context.scene.cycles.samples = n_samples
 
 
-def generate_dataset(cfg, dirinfo):
-    """Generate images and metadata for a dataset, specified by cfg and dirinfo"""
+def generate_dataset(cfg, dirinfo, scene=None):
+    """Generate images and metadata for a dataset, specified by cfg and dirinfo
+
+    Args:
+        cfg: Configuration for the dataset
+        dirinfo: directory info for file writing
+    """
 
     # retrieve image count and finish, when there are no images to generate
     image_count = int(cfg['dataset']['image_count'])
     if image_count <= 0:
-        return False
+        return False, None
 
     # setup the render backend and retrieve paths to environment textures
     setup_renderer(cfg)
@@ -143,9 +148,12 @@ def generate_dataset(cfg, dirinfo):
         K = np.fromstring(cfg['camera_info']['K'], sep=',')
         K = K.reshape((3, 3))
 
-    # instantiate scene
-    scene_type = get_scene_type(cfg['render_setup']['scene_type'])
-    scene = scene_type(base_filename, dirinfo, K, width, height, config=cfg)
+    # instantiate scene if necessary
+    if scene is None:
+        scene_type = get_scene_type(cfg['render_setup']['scene_type'])
+        scene = scene_type(base_filename, dirinfo, K, width, height, config=cfg)
+    else:
+        scene.update_dirinfo(dirinfo)
 
     # generate images
     i = 0
@@ -154,11 +162,10 @@ def generate_dataset(cfg, dirinfo):
         base_filename = "{:0{width}d}".format(i, width=format_width)
         scene.set_base_filename(base_filename)
 
-        # set some environment texture
+        # set some environment texture, randomize, and render
         filepath = expandpath(random.choice(environment_textures))
         scene.set_environment_texture(filepath)
 
-        # actual rendering
         scene.randomize()
         scene.render()
 
@@ -173,7 +180,8 @@ def generate_dataset(cfg, dirinfo):
             # increment loop counter
             i = i + 1
 
-    return True
+    # See comment in renderedobjectsbase for exaplanation of reset()
+    return True, scene.reset()
 
 
 def generate_viewsphere(cfg, dirinfo):
@@ -241,6 +249,9 @@ def generate_viewsphere(cfg, dirinfo):
         scene.render()
         scene.postprocess()
 
+    # reset in case this is required. Otherwise might lead to blender segfault
+    scene.reset()
+
 
 def get_argv():
     """Get argv after --"""
@@ -271,16 +282,22 @@ def main():
     cfgs = foundry.utils.build_splitting_configs(config)
 
     # skip if only viewsphere dataset is selected
+    scene = None
     if not args.only_viewsphere:
         for cfg in cfgs:
             # build directory structure and run rendering
             # TODO: rename all configs from output_dir to output_path
             dirinfo = RenderedObjects.build_directory_info(cfg['dataset']['output_dir'])
 
-            # generate it
-            if generate_dataset(cfg, dirinfo):
+            # generate it, reusing a potentially established scene
+            success, scene = generate_dataset(cfg, dirinfo, scene=scene)
+            if success:
                 # save configuration
                 foundry.utils.dump_config(cfg, dirinfo.base_path)
+            else:
+                print(f"EE: Error while generating dataset")
+                scene = None
+
 
     # check if and create viewsphere
     if 'viewsphere' in config:

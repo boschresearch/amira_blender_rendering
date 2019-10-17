@@ -76,6 +76,25 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
     def randomize():
         pass
 
+    def reset(self):
+        """Reset / Tear down a scene.
+
+        Some scenes require a tear-down before quitting. Otherwhise, this might
+        lead to a blender segfault.
+
+        Moreover, some scenes should not be reloaded. In the above example, this
+        lead to erroneous behavior and state of the physics engine. In such a case
+        it's better to re-use the already loaded scene. This can be accomplished
+        by returning the scene during reset. If the scene can be re-loaded, then
+        simply return None.
+
+
+        Example: pandatable scenes perform forward-simulation of the physics.
+                 Leaving the scene at the last frame which was used for
+                 rendering leads to a segfault.
+        """
+        return None
+
 
     def postprocess(self):
         """Postprocessing the scene.
@@ -107,16 +126,20 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         self.compositor.setup(self.dirinfo, self.base_filename, objs=[self.obj], scene=bpy.context.scene)
 
 
-    def set_base_filename(self, filename):
-        if filename == self.base_filename:
-            return
-        self.base_filename = filename
-
-        # update the compositor with the new filename
+    def update_dirinfo(self, dirinfo):
+        # set dirinfo, and update the compositor with the new filename
+        self.dirinfo = dirinfo
         self.compositor.update(
                 self.dirinfo,
                 self.base_filename,
                 [self.obj])
+
+
+    def set_base_filename(self, filename):
+        if filename == self.base_filename:
+            return
+        self.base_filename = filename
+        self.update_dirinfo(self.dirinfo)
 
 
     def convert_units(self, render_result):
@@ -253,13 +276,13 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
         # project centroid+vertices and convert to pixel coordinates
         corners3d = []
-        prj = abr_geom.project_p3d(oo_centroid, self.cam)
+        prj = abr_geom.project_p3d(oo_centroid, bpy.context.scene.camera)
         pix = abr_geom.p2d_to_pixel_coords(prj)
         corners3d.append(pix)
         np_corners3d[0, :] = np.array((corners3d[-1][0], corners3d[-1][1]))
 
         for i,v in enumerate(oobb):
-            prj = abr_geom.project_p3d(v, self.cam)
+            prj = abr_geom.project_p3d(v, bpy.context.scene.camera)
             pix = abr_geom.p2d_to_pixel_coords(prj)
             corners3d.append(pix)
             np_corners3d[i+1, :] = np.array((corners3d[-1][0], corners3d[-1][1]))
