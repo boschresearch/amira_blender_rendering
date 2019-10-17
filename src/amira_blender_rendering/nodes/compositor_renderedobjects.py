@@ -19,6 +19,7 @@ class CompositorNodesOutputRenderedObject():
 
         self.dirinfo = None
         self.sockets = dict()
+        self.nodes = dict()
         self.base_filename = ''
         self.objs = []
         self.scene = None
@@ -102,6 +103,7 @@ class CompositorNodesOutputRenderedObject():
 
         # add file output node and setup format (16bit RGB without alpha channel)
         n_output_file = nodes.new('CompositorNodeOutputFile')
+        n_output_file.name = 'RenderObjectsFileOutputNode'
         n_output_file.base_path = self.path_base
 
         # the following format will be used for all sockets, except when setting a
@@ -163,6 +165,17 @@ class CompositorNodesOutputRenderedObject():
         return self.sockets
 
 
+    def __update_node_paths(self):
+        """This function will update all base-path knowledge in the node editor"""
+
+        # get node tree
+        tree = bpy.context.scene.node_tree
+        nodes = tree.nodes
+
+        n_output_file = nodes['RenderObjectsFileOutputNode']
+        n_output_file.base_path = self.path_base
+
+
     def update(self,
             dirinfo,
             filename: str,
@@ -190,7 +203,9 @@ class CompositorNodesOutputRenderedObject():
         self.base_filename = filename
         self.objs = objs
         self.scene = scene
+        # extract paths and update in node
         self.__extract_pathspec()
+        self.__update_node_paths()
 
         # TODO: backdrop is currently not part of the RenderedObjects specification.
         #       Should be included.

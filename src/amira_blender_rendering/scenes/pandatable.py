@@ -71,6 +71,15 @@ class BasePandaTable(abr_scenes.RenderedObjectsBase):
         pass
 
 
+    def reset(self):
+        """Reset the panda table scene"""
+
+        # set to first frame in animation. Leaving the scene at another frame
+        # leads to a blender segfault
+        bpy.context.scene.frame_set(1)
+        return self
+
+
 
 class PandaTable(BasePandaTable):
     """Panda Table scene which will get loaded from blend file"""
@@ -171,6 +180,7 @@ class ClutteredPandaTable(BasePandaTable):
 
 
     def randomize(self):
+
         # objects of interest + relative plate
         cap    = bpy.context.scene.objects['Tool.Cap']
         plate  = bpy.context.scene.objects['RubberPlate']
@@ -219,8 +229,6 @@ class ClutteredPandaTable(BasePandaTable):
             # test if the object is visible in the camera scene
             cam = bpy.context.scene.objects[self.primary_camera]
             ok = abr_geom.test_visibility(self.obj, cam, self.width, self.height)
-
-            # DEBUG output, we exit the loop because real randomization is not yet
             if not ok:
-                print(f"WW: Target object not in view frustum (location = {self.obj.location})")
+                print(f"II: Target object not in view frustum (location = {self.obj.location})")
 

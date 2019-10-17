@@ -44,8 +44,12 @@ def project_p3d(p: Vector,
     p_hom = projection @ modelview @ Vector((p.x, p.y, p.z, 1))
 
     # normalize to get projected point
-    p_proj = Vector((p_hom.x/p_hom.w, p_hom.y/p_hom.w))
-    return p_proj
+    # W = 0 means that we have point that is infinitely far away. Return None
+    # in this case
+    if p_hom.w == 0.0:
+        return None
+    else:
+        return Vector((p_hom.x/p_hom.w, p_hom.y/p_hom.w))
 
 
 def p2d_to_pixel_coords(p: Vector,
@@ -134,9 +138,13 @@ def test_visibility(obj, cam, width, height):
     # should lie outside the visible pixel-space
     vs  = [obj.matrix_world @ Vector(v) for v in obj.bound_box]
     ps  = [project_p3d(v, cam) for v in vs]
-    pxs = [p2d_to_pixel_coords(p) for p in ps]
-    oks = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
-    return all(oks)
+    # Test if we encountered a "point at infinity"
+    if None in ps:
+        return False
+    else:
+        pxs = [p2d_to_pixel_coords(p) for p in ps]
+        oks = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
+        return all(oks)
 
 
 def _get_bvh(obj):
