@@ -4,6 +4,7 @@
 
 import bpy
 from mathutils import Vector, Euler
+from mathutils.bvhtree import BVHTree
 import numpy as np
 
 
@@ -43,8 +44,12 @@ def project_p3d(p: Vector,
     p_hom = projection @ modelview @ Vector((p.x, p.y, p.z, 1))
 
     # normalize to get projected point
-    p_proj = Vector((p_hom.x/p_hom.w, p_hom.y/p_hom.w))
-    return p_proj
+    # W = 0 means that we have point that is infinitely far away. Return None
+    # in this case
+    if p_hom.w == 0.0:
+        return None
+    else:
+        return Vector((p_hom.x/p_hom.w, p_hom.y/p_hom.w))
 
 
 def p2d_to_pixel_coords(p: Vector,
@@ -128,6 +133,40 @@ def get_relative_transform(obj1: bpy.types.Object,
     return t, r
 
 
+def test_visibility(obj, cam, width, height):
+    # Test if object is still visible. That is, none of the vertices
+    # should lie outside the visible pixel-space
+    vs  = [obj.matrix_world @ Vector(v) for v in obj.bound_box]
+    ps  = [project_p3d(v, cam) for v in vs]
+    # Test if we encountered a "point at infinity"
+    if None in ps:
+        return False
+    else:
+        pxs = [p2d_to_pixel_coords(p) for p in ps]
+        oks = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
+        return all(oks)
+
+
+def _get_bvh(obj):
+    mat = obj.matrix_world
+    vs = [mat @ v.co for v in obj.data.vertices]
+    ps = [p.vertices for p in obj.data.polygons]
+    return BVHTree.FromPolygons(vs, ps)
+
+
+def test_intersection(obj1, obj2):
+    """Test if two objects intersect each other
+
+    Returns true if objects intersect, false if not.
+    """
+    bvh1 = _get_bvh(obj1)
+    bvh2 = _get_bvh(obj2)
+    if bvh1.overlap(bvh2):
+        return True
+    else:
+        return False
+
+
 def get_world_to_object_tranform(cam2obj_pose: dict, camera: bpy.types.Object = bpy.context.scene.camera):
     """
     Transform a pose {'R', 't'} expressed in camera coordinates to world coordinates
@@ -138,14 +177,14 @@ def get_world_to_object_tranform(cam2obj_pose: dict, camera: bpy.types.Object = 
             't'(np.array(3,) : translation vector from camera to obh
         }
         camera(bpq.types.Object): scene camera
-    
+
     Returns:
         {'R','t'} where
         R(np.array(3)): rotation matrix from world frame to object
         t(np.array(3,)): translation vector from world frame to object
     """
     # TODO: this could probably be done using Matrix and Vectors from mathutils
-    
+
     # camera to object transformation
     M_c2o = np.eye(4)
     M_c2o[:3, :3] = cam2obj_pose['R']

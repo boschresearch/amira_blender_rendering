@@ -99,8 +99,10 @@ def get_scene_type(type_str : str):
     #       require more arguments. But we could think about passing along a
     #       Configuration object, similar to whats happening in aps
     scene_types = {
-        'SimpleToolCap': abr.scenes.SimpleToolCap,
-        'SimpleLetterB': abr.scenes.SimpleLetterB,
+        'SimpleToolCap'       : abr.scenes.SimpleToolCap,
+        'SimpleLetterB'       : abr.scenes.SimpleLetterB,
+        'PandaTable'          : abr.scenes.PandaTable,
+        'ClutteredPandaTable' : abr.scenes.ClutteredPandaTable,
     }
     if type_str not in scene_types:
         known_types = str([k for k in scene_types.keys()])[1:-1]
@@ -117,52 +119,74 @@ def setup_renderer(cfg):
     bpy.context.scene.cycles.samples = n_samples
 
 
-def generate_dataset(cfg, dirinfo):
-    """Generate images and metadata for a dataset, specified by cfg and dirinfo"""
+def generate_dataset(cfg, dirinfo, scene=None):
+    """Generate images and metadata for a dataset, specified by cfg and dirinfo
 
-    setup_renderer(cfg)
+    Args:
+        cfg: Configuration for the dataset
+        dirinfo: directory info for file writing
+    """
 
+    # retrieve image count and finish, when there are no images to generate
     image_count = int(cfg['dataset']['image_count'])
+    if image_count <= 0:
+        return False, None
+
+    # setup the render backend and retrieve paths to environment textures
+    setup_renderer(cfg)
     environment_textures = get_environment_textures(cfg)
 
     # filename setup
     format_width = int(ceil(log(image_count, 10)))
     base_filename = "{:0{width}d}".format(0, width=format_width)
 
-    # scene setup with a calibrated camera.
-    # NOTE: at the moment there is a bug in abr.camera_utils:opencv_to_blender,
-    #       which prevents us from actually using a calibrated camera. Still, we
-    #       pass it along here because at some point, we might actually have
-    #       working implementation ;)
+    # camera / output setup
     width  = int(cfg['camera_info']['width'])
     height = int(cfg['camera_info']['height'])
     K = None
     if 'K' in cfg['camera_info']:
         K = np.fromstring(cfg['camera_info']['K'], sep=',')
+        K = K.reshape((3, 3))
 
-    # instantiate scene
-    scene_type = get_scene_type(cfg['render_setup']['scene_type'])
-    scene = scene_type(base_filename, dirinfo, K, width, height)
+    # instantiate scene if necessary
+    if scene is None:
+        scene_type = get_scene_type(cfg['render_setup']['scene_type'])
+        scene = scene_type(base_filename, dirinfo, K, width, height, config=cfg)
+    else:
+        scene.update_dirinfo(dirinfo)
 
     # generate images
-    for i in range(image_count):
+    i = 0
+    while i < image_count:
         # setup filename
         base_filename = "{:0{width}d}".format(i, width=format_width)
         scene.set_base_filename(base_filename)
 
-        # set some environment texture
+        # set some environment texture, randomize, and render
         filepath = expandpath(random.choice(environment_textures))
         scene.set_environment_texture(filepath)
 
-        # actual rendering
         scene.randomize()
         scene.render()
-        scene.postprocess()
+
+        try:
+            scene.postprocess()
+        except ValueError:
+            # This issue happens every now and then. The reason might be (not
+            # yet verified) that the target-object is occluded. In turn, this
+            # leads to a zero size 2D bounding box...
+            print(f"ValueError during post-processing, re-generating image index {i}")
+        else:
+            # increment loop counter
+            i = i + 1
+
+    # See comment in renderedobjectsbase for exaplanation of reset()
+    return True, scene.reset()
 
 
 def generate_viewsphere(cfg, dirinfo):
     """Generate images and metadata for a view sphere, specified by cfg and dirinfo
-    
+
     Args:
         cfg: config from configuration file
         dirinfo(struct): structure with directory information. See RenderedObjects.build_directory_info
@@ -179,7 +203,7 @@ def generate_viewsphere(cfg, dirinfo):
         num_inplane_rot=int(cfg['viewsphere']['num_inplane_rotations']),
         convention='opengl'
     )
-    
+
     # get textures
     environment_textures = get_environment_textures(cfg)
 
@@ -225,6 +249,9 @@ def generate_viewsphere(cfg, dirinfo):
         scene.render()
         scene.postprocess()
 
+    # reset in case this is required. Otherwise might lead to blender segfault
+    scene.reset()
+
 
 def get_argv():
     """Get argv after --"""
@@ -255,18 +282,23 @@ def main():
     cfgs = foundry.utils.build_splitting_configs(config)
 
     # skip if only viewsphere dataset is selected
+    scene = None
     if not args.only_viewsphere:
         for cfg in cfgs:
             # build directory structure and run rendering
             # TODO: rename all configs from output_dir to output_path
             dirinfo = RenderedObjects.build_directory_info(cfg['dataset']['output_dir'])
 
-            # generate it
-            generate_dataset(cfg, dirinfo)
+            # generate it, reusing a potentially established scene
+            success, scene = generate_dataset(cfg, dirinfo, scene=scene)
+            if success:
+                # save configuration
+                foundry.utils.dump_config(cfg, dirinfo.base_path)
+            else:
+                print(f"EE: Error while generating dataset")
+                scene = None
 
-            # save configuration
-            foundry.utils.dump_config(cfg, dirinfo.base_path)
-        
+
     # check if and create viewsphere
     if 'viewsphere' in config:
         output_dir = expandpath(config['viewsphere'].get('output_dir', os.path.join(config['dataset']['output_dir'], 'Viewsphere')))

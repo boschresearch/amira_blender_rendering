@@ -4,41 +4,40 @@ import bpy
 from mathutils import Vector
 
 
-def opencv_to_blender(width, height, K, cam):
+def opencv_to_blender(K, cam, scale = 1.0):
     """Convert the intrinsic camera from OpenCV to blender's format
 
     Args:
         K (np.array): 3x3 intrinsic camera calibration matrix
-    """
 
-    # TODO: this function does not appear to work correctly. A test with small
-    #       output sizes (640x480) showed that the function actually shifted the
-    #       camera in a weird way. Until this is fixed, the function ignores all
-    #       inputs and simply returns the cam argument.
-    if True:
+    """
+    if K is None:
         return cam
 
-    # extract relevant values from K :
-    #
-    #           fx  s cx
-    #       K =  0 fy cy
-    #            0  0  1
-    #
-    fx = K[0, 0]
-    fy = K[1, 1]
-    cx = K[0, 2]
-    cy = K[1, 2]
+    sensor_width_mm  = K[1,1] * K[0,2] / (K[0,0] * K[1,2])
+    sensor_height_mm = 1
 
-    cam.data.shift_x = -(cx / width - 0.5)
-    cam.data.shift_y =  (cy - 0.5 * height) / width
+    # assume principal point in center
+    pixel_size_x = K[0,2] * 2
+    pixel_size_y = K[1,2] * 2
+    pixel_aspect = K[0,0] / K[1, 1]
 
-    sensor_width_in_mm = cam.data.sensor_width
-    cam.data.lens = fx / width * sensor_width_in_mm
+    s_u = pixel_size_x / sensor_width_mm
+    s_v = pixel_size_y / sensor_height_mm
+
+    f_in_mm = K[0,0] / s_u
 
     scene = bpy.context.scene
-    pixel_aspect = fy / fx
+    scene.render.resolution_x = pixel_size_x / scale
+    scene.render.resolution_y = pixel_size_y / scale
+    scene.render.resolution_percentage = scale * 100
     scene.render.pixel_aspect_x = 1.0
     scene.render.pixel_aspect_y = pixel_aspect
+
+    # set perspective camera
+    cam.data.type = 'PERSP'
+    cam.data.lens = f_in_mm
+    cam.data.sensor_width = sensor_width_mm
 
     return cam
 

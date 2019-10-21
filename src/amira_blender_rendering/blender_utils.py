@@ -100,6 +100,7 @@ def clear_orphaned_materials():
         bpy.data.materials.remove(mat)
 
 
+
 def add_default_material(
     obj: bpy.types.Object = bpy.context.object,
     name: str = 'DefaultMaterial') -> bpy.types.Material:
