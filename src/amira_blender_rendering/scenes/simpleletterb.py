@@ -20,7 +20,7 @@ class SimpleLetterB(
     some background image.
     """
 
-    def __init__(self, base_filename: str, dirinfo, K, width, height):
+    def __init__(self, base_filename: str, dirinfo, K, width, height, **kwargs):
         super(SimpleLetterB, self).__init__(base_filename, dirinfo, K, width, height)
 
     def setup_object(self):
@@ -113,9 +113,4 @@ class SimpleLetterB(
 
             # Test if object is still visible. That is, none of the vertices
             # should lie outside the visible pixel-space
-            vs  = [self.obj.matrix_world @ Vector(v) for v in self.obj.bound_box]
-            ps  = [abr_geom.project_p3d(v, self.cam) for v in vs]
-            pxs = [abr_geom.p2d_to_pixel_coords(p) for p in ps]
-            oks = [px[0] >= 0 and px[0] < self.width and px[1] >= 0 and px[1] < self.height for px in pxs]
-            ok = all(oks)
-
+            ok = abr_geom.test_visibility(self.obj, self.cam, self.width, self.height)

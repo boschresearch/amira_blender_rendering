@@ -57,6 +57,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
     @abstractmethod
     def setup_scene(self):
+        # TODO: maybe set the rendering width and height?
         pass
 
     @abstractmethod
@@ -74,6 +75,25 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
     @abstractmethod
     def randomize():
         pass
+
+    def reset(self):
+        """Reset / Tear down a scene.
+
+        Some scenes require a tear-down before quitting. Otherwhise, this might
+        lead to a blender segfault.
+
+        Moreover, some scenes should not be reloaded. In the above example, this
+        lead to erroneous behavior and state of the physics engine. In such a case
+        it's better to re-use the already loaded scene. This can be accomplished
+        by returning the scene during reset. If the scene can be re-loaded, then
+        simply return None.
+
+
+        Example: pandatable scenes perform forward-simulation of the physics.
+                 Leaving the scene at the last frame which was used for
+                 rendering leads to a segfault.
+        """
+        return None
 
 
     def postprocess(self):
@@ -103,19 +123,23 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         # extracted into an independent schema file. Note that this does not
         # mean to use any xml garbage! Rather, it should be as plain as
         # possible.
-        self.compositor.setup(self.dirinfo, self.base_filename, objs=[self.obj])
+        self.compositor.setup(self.dirinfo, self.base_filename, objs=[self.obj], scene=bpy.context.scene)
+
+
+    def update_dirinfo(self, dirinfo):
+        # set dirinfo, and update the compositor with the new filename
+        self.dirinfo = dirinfo
+        self.compositor.update(
+                self.dirinfo,
+                self.base_filename,
+                [self.obj])
 
 
     def set_base_filename(self, filename):
         if filename == self.base_filename:
             return
         self.base_filename = filename
-
-        # update the compositor with the new filename
-        self.compositor.update(
-                self.dirinfo,
-                self.base_filename,
-                [self.obj])
+        self.update_dirinfo(self.dirinfo)
 
 
     def convert_units(self, render_result):
@@ -252,13 +276,13 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
         # project centroid+vertices and convert to pixel coordinates
         corners3d = []
-        prj = abr_geom.project_p3d(oo_centroid, self.cam)
+        prj = abr_geom.project_p3d(oo_centroid, bpy.context.scene.camera)
         pix = abr_geom.p2d_to_pixel_coords(prj)
         corners3d.append(pix)
         np_corners3d[0, :] = np.array((corners3d[-1][0], corners3d[-1][1]))
 
         for i,v in enumerate(oobb):
-            prj = abr_geom.project_p3d(v, self.cam)
+            prj = abr_geom.project_p3d(v, bpy.context.scene.camera)
             pix = abr_geom.p2d_to_pixel_coords(prj)
             corners3d.append(pix)
             np_corners3d[i+1, :] = np.array((corners3d[-1][0], corners3d[-1][1]))
@@ -273,8 +297,13 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
         self.cam = bpy.context.object
         if self.K is not None:
-            self.cam = camera_utils.opencv_to_blender(self.width, self.height, self.K, self.cam)
+            print(f"II: Using camera calibration data")
+            self.cam = camera_utils.opencv_to_blender(self.K, self.cam)
+
+        # re-set camera and set rendering size
         bpy.context.scene.camera = self.cam
+        bpy.context.scene.render.resolution_x = self.width
+        bpy.context.scene.render.resolution_y = self.height
 
         # look at center
         blnd.look_at(self.cam, Vector((0.0, 0.0, 0.0)))
