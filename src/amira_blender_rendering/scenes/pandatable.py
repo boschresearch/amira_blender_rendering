@@ -85,23 +85,26 @@ class PandaTable(BasePandaTable):
     """Panda Table scene which will get loaded from blend file"""
 
     def __init__(self, base_filename: str, dirinfo, K, width, height, **kwargs):
-        # TODO: change hardcoded settings to configurable arguments
         # TODO: change from inheritance to composition to avoid having
         #       constructor after setting up fields
-        self.blend_file_path = expandpath('~/gfx/modeling/robottable_one_object_each.blend')
+
+        self.config = kwargs.get('config', None)
+        self.blend_file_path = self.config['render_setup']['blend_file'] if self.config is not None else '~/gfx/modeling/robottable_one_object_each.blend'
+        self.blend_file_path = expandpath(self.blend_file_path)
         self.primary_camera = 'CameraOrbbec'
         self.obj = None
-        self.obj_name = 'Tool.Cap'
+        self.obj_name = self.config['render_setup']['target_object'] if self.config is not None else 'Tool.Cap'
 
         # parent constructor
         super(PandaTable, self).__init__(base_filename, dirinfo, K, width, height)
 
     def randomize(self):
         # objects of interest + relative plate
-        cap   = bpy.context.scene.objects['Tool.Cap']
-        cube  = bpy.context.scene.objects['RedCube']
-        shaft = bpy.context.scene.objects['DriveShaft']
-        plate = bpy.context.scene.objects['RubberPlate']
+        cap     = bpy.context.scene.objects['Tool.Cap']
+        cube    = bpy.context.scene.objects['RedCube']
+        shaft   = bpy.context.scene.objects['DriveShaft']
+        letterb = None if 'LetterB' not in bpy.context.scene.objects else bpy.context.scene.objects['LetterB']
+        plate   = bpy.context.scene.objects['RubberPlate']
 
         # we will set the location relative to the rubber plate. That is,
         # slightly above the plate, and within a volume above the plate that is
@@ -120,7 +123,10 @@ class PandaTable(BasePandaTable):
         while not ok:
 
             # randomize object location
-            for obj in [cap, cube, shaft]:
+            for obj in [cap, cube, shaft, letterb]:
+                if obj is None:
+                    continue
+
                 obj.location = base_location + Vector(( \
                     (np.random.rand(1) - .5) * range_x, \
                     (np.random.rand(1) - .5) * range_y, \
@@ -167,13 +173,15 @@ class ClutteredPandaTable(BasePandaTable):
     """Cluttered Panda Table scene which will get loaded from blend file"""
 
     def __init__(self, base_filename: str, dirinfo, K, width, height, **kwargs):
-        # TODO: change hardcoded settings to configurable arguments
         # TODO: change from inheritance to composition to avoid having
         #       constructor after setting up fields
-        self.blend_file_path = expandpath('~/gfx/modeling/robottable_cluttered.blend')
+        # TODO: use Configuration from aps
+        self.config = kwargs.get('config', None)
+        self.blend_file_path = self.config['render_setup']['blend_file'] if self.config is not None else '~/gfx/modeling/robottable_cluttered.blend'
+        self.blend_file_path = expandpath(self.blend_file_path)
         self.primary_camera = 'CameraOrbbec'
         self.obj = None
-        self.obj_name = 'Tool.Cap'
+        self.obj_name = self.config['render_setup']['target_object'] if self.config is not None else 'Tool.Cap'
 
         # parent constructor
         super(ClutteredPandaTable, self).__init__(base_filename, dirinfo, K, width, height)
@@ -184,6 +192,7 @@ class ClutteredPandaTable(BasePandaTable):
         # objects of interest + relative plate
         cap    = bpy.context.scene.objects['Tool.Cap']
         plate  = bpy.context.scene.objects['RubberPlate']
+        letterb = None if 'LetterB' not in bpy.context.scene.objects else bpy.context.scene.objects['LetterB']
 
         cube_names = [f"RedCube.{d:03}" for d in range(1, 6)]
         cubes  = [bpy.context.scene.objects[s] for s in cube_names]
@@ -207,7 +216,10 @@ class ClutteredPandaTable(BasePandaTable):
         while not ok:
 
             # randomize object locations
-            for obj in [cap] + cubes + shafts:
+            for obj in [cap, letterb] + cubes + shafts:
+                if obj is None:
+                    continue
+
                 obj.location.x = base_location.x + (np.random.rand(1) - .5) * range_x
                 obj.location.y = base_location.y + (np.random.rand(1) - .5) * range_y
                 obj.rotation_euler = Vector((np.random.rand(3) * np.pi))
