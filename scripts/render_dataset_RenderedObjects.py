@@ -99,10 +99,11 @@ def get_scene_type(type_str : str):
     #       require more arguments. But we could think about passing along a
     #       Configuration object, similar to whats happening in aps
     scene_types = {
-        'SimpleToolCap'       : abr.scenes.SimpleToolCap,
-        'SimpleLetterB'       : abr.scenes.SimpleLetterB,
-        'PandaTable'          : abr.scenes.PandaTable,
-        'ClutteredPandaTable' : abr.scenes.ClutteredPandaTable,
+        'SimpleToolCap': abr.scenes.SimpleToolCap,
+        'SimpleLetterB': abr.scenes.SimpleLetterB,
+        'PandaTable': abr.scenes.PandaTable,
+        'ClutteredPandaTable': abr.scenes.ClutteredPandaTable,
+        'MultiObjectsClutteredPandaTable': abr.scenes.MultiObjectsClutteredPandaTable
     }
     if type_str not in scene_types:
         known_types = str([k for k in scene_types.keys()])[1:-1]
