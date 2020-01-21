@@ -3,7 +3,7 @@
 #
 # At the moment we simply import all node setups. This is not very nice, and
 # could be automated (see the automatic import of datasets in
-# amira_deep_vision/aps)
+# amira_perception/aps)
 #
 
 # compositor nodes
