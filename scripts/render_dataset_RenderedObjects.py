@@ -25,9 +25,8 @@ will be turned into their proper values.
 
 # make amira_deep_vision packages available
 import bpy
-import sys
-import os
-import argparse
+import sys, os
+import argparse, configparser
 import numpy as np
 import random
 from math import log, ceil
@@ -45,12 +44,10 @@ def import_aps(path=None):
     global aps
     global foundry
     global RenderedObjects
-    global Configuration
 
     import aps
     import aps.core
     from aps.data.datasets.renderedobjects import RenderedObjects
-    from aps.core.utils.datastructures import Configuration
 
     import foundry
     import foundry.utils
@@ -85,7 +82,7 @@ def get_environment_textures(cfg):
     return environment_textures
 
 
-def get_scene_type(type_str: str):
+def get_scene_type(type_str : str):
     """Get the (literal) type of a scene given a string.
 
     Essentially, this is what literal_cast does in C++, but for user-defined
@@ -119,7 +116,7 @@ def setup_renderer(cfg):
     use during rendering. If the setting render_setup.samples is not set in the
     configuration, the function defaults to 128 samples per image."""
     abr.blender_utils.activate_cuda_devices()
-    n_samples = int(cfg.render_setup.samples) if 'samples' in cfg.render_setup else 128
+    n_samples = int(cfg['render_setup']['samples']) if 'samples' in cfg['render_setup'] else 128
     bpy.context.scene.cycles.samples = n_samples
 
 
@@ -132,7 +129,7 @@ def generate_dataset(cfg, dirinfo, scene=None):
     """
 
     # retrieve image count and finish, when there are no images to generate
-    image_count = int(cfg.dataset.image_count)
+    image_count = int(cfg['dataset']['image_count'])
     if image_count <= 0:
         return False, None
 
@@ -145,16 +142,16 @@ def generate_dataset(cfg, dirinfo, scene=None):
     base_filename = "{:0{width}d}".format(0, width=format_width)
 
     # camera / output setup
-    width = int(cfg.camera_info.width)
-    height = int(cfg.camera_info.height)
+    width  = int(cfg['camera_info']['width'])
+    height = int(cfg['camera_info']['height'])
     K = None
-    if 'K' in cfg.camera_info:
-        K = np.fromstring(cfg.camera_info.K, sep=',')
+    if 'K' in cfg['camera_info']:
+        K = np.fromstring(cfg['camera_info']['K'], sep=',')
         K = K.reshape((3, 3))
 
     # instantiate scene if necessary
     if scene is None:
-        scene_type = get_scene_type(cfg.render_setup.scene_type)
+        scene_type = get_scene_type(cfg['render_setup']['scene_type'])
         scene = scene_type(base_filename, dirinfo, K, width, height, config=cfg)
     else:
         scene.update_dirinfo(dirinfo)
@@ -202,9 +199,9 @@ def generate_viewsphere(cfg, dirinfo):
     # This requires amira_deep_vision feature/aae-computations-inspection
     # until it is not merged to master since the methods have been made static
     rototranslations = ViewSampler.viewsphere_rototranslations(
-        min_n_views=int(cfg.viewsphere.min_num_views),
-        radius=float(cfg.viewsphere.radius) / 1000,  # convert radius from mm to m
-        num_inplane_rot=int(cfg.viewsphere.num_inplane_rotations),
+        min_n_views=int(cfg['viewsphere']['min_num_views']),
+        radius=float(cfg['viewsphere']['radius']) / 1000,  # convert radius from mm to m
+        num_inplane_rot=int(cfg['viewsphere']['num_inplane_rotations']),
         convention='opengl'
     )
 
@@ -213,7 +210,7 @@ def generate_viewsphere(cfg, dirinfo):
 
     # compute image count and ovewrite cfg to be dumped
     image_count = len(rototranslations)
-    cfg.dataset.image_count = str(image_count)
+    cfg['dataset']['image_count'] = str(image_count)
 
     # filename setup
     format_width = int(ceil(log(image_count, 10)))
@@ -224,14 +221,14 @@ def generate_viewsphere(cfg, dirinfo):
     #       which prevents us from actually using a calibrated camera. Still, we
     #       pass it along here because at some point, we might actually have
     #       working implementation ;)
-    width = int(cfg.camera_info.width)
-    height = int(cfg.camera_info.height)
+    width  = int(cfg['camera_info']['width'])
+    height = int(cfg['camera_info']['height'])
     K = None
-    if 'K' in cfg.camera_info:
-        K = np.fromstring(cfg.camera_info.K, sep=',')
+    if 'K' in cfg['camera_info']:
+        K = np.fromstring(cfg['camera_info']['K'], sep=',')
 
     # instantiate scene
-    scene_type = get_scene_type(cfg.render_setup.scene_type)
+    scene_type = get_scene_type(cfg['render_setup']['scene_type'])
     scene = scene_type(base_filename, dirinfo, K, width, height)
 
     # generate images
@@ -279,8 +276,9 @@ def main():
     import_abr(args.abr_path)
 
     # read configuration file
-    config = Configuration()
-    config.parse_file(expandpath(args.config))
+    # TODO: change to Configuration here and in foundry
+    config = configparser.ConfigParser()
+    config.read(expandpath(args.config))
     config = foundry.utils.check_paths(config)
     cfgs = foundry.utils.build_splitting_configs(config)
 
@@ -290,7 +288,7 @@ def main():
         for cfg in cfgs:
             # build directory structure and run rendering
             # TODO: rename all configs from output_dir to output_path
-            dirinfo = RenderedObjects.build_directory_info(cfg.dataset.output_dir)
+            dirinfo = RenderedObjects.build_directory_info(cfg['dataset']['output_dir'])
 
             # generate it, reusing a potentially established scene
             success, scene = generate_dataset(cfg, dirinfo, scene=scene)
@@ -301,10 +299,10 @@ def main():
                 print(f"EE: Error while generating dataset")
                 scene = None
 
+
     # check if and create viewsphere
     if 'viewsphere' in config:
-        output_dir = expandpath(
-            config.viewsphere.get('output_dir', os.path.join(config.dataset.output_dir, 'Viewsphere')))
+        output_dir = expandpath(config['viewsphere'].get('output_dir', os.path.join(config['dataset']['output_dir'], 'Viewsphere')))
         dirinfo = RenderedObjects.build_directory_info(output_dir)
         generate_viewsphere(config, dirinfo)
         foundry.utils.dump_config(config, dirinfo.base_path)
