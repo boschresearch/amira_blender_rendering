@@ -28,13 +28,13 @@ class CompositorNodesOutputRenderedObject():
     def __extract_pathspec(self):
         """Extract relevant paths from self.dirinfo.
 
-        In blender we operate with relative paths, whereas in amira_deep_vision we
+        In blender we operate with relative paths, whereas in amira_perception we
         currently use absolute paths. This should be changed to use some common
         dataset description format (but please no XML garbage).
 
         Args:
             dirinfo (DynamicStruct): directory information for the rendered_objects
-                dataset. See amira_deep_vision for more details
+                dataset. See amira_perception for more details
 
         Returns:
             5-tuple: base path, followed by relative paths for constant light, random light,
@@ -69,7 +69,7 @@ class CompositorNodesOutputRenderedObject():
 
         Args:
             dirinfo (DynamicStruct): directory information for the rendered_objects
-                dataset. See amira_deep_vision for more details
+                dataset. See amira_perception for more details
             filename (str): Filename of output (without file extension)
             objs (List[bpy.types.Object]): list of objects for which to compute an output mask
             scene (bpy.types.Scene): blender scene on which to operate
@@ -80,9 +80,9 @@ class CompositorNodesOutputRenderedObject():
         """
 
         # TODO: at the moment we get the dirinfo passed in here instead of just
-        # importing RenderedObjects from amira_deep_vision. This is because of
-        # the torch-import issue that is documented in the amira_deep_vision
-        # repository. As soon as this is fixed, and either the amira_deep_vision
+        # importing RenderedObjects from amira_perception. This is because of
+        # the torch-import issue that is documented in the amira_perception
+        # repository. As soon as this is fixed, and either the amira_perception
         # repository is on sys.path, or the aps package (amira perception
         # subsystem) is installed, we can simpy import it.
         self.dirinfo = dirinfo
