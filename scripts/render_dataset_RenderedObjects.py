@@ -25,8 +25,10 @@ will be turned into their proper values.
 
 # make amira_deep_vision packages available
 import bpy
-import sys, os
-import argparse, configparser
+import sys
+import os
+import argparse
+import configparser
 import numpy as np
 import random
 from math import log, ceil
@@ -82,7 +84,7 @@ def get_environment_textures(cfg):
     return environment_textures
 
 
-def get_scene_type(type_str : str):
+def get_scene_type(type_str: str):
     """Get the (literal) type of a scene given a string.
 
     Essentially, this is what literal_cast does in C++, but for user-defined
@@ -107,7 +109,7 @@ def get_scene_type(type_str : str):
     }
     if type_str not in scene_types:
         known_types = str([k for k in scene_types.keys()])[1:-1]
-        raise Exception(f"Scene type {type_str} not known. Known types: {known_types}. Note that scene types are case sensitive.")
+        raise Exception(f"Scene type {type_str} unknown. Known types: {known_types}. Note: types are case sensitive.")
     return scene_types[type_str]
 
 
@@ -142,7 +144,7 @@ def generate_dataset(cfg, dirinfo, scene=None):
     base_filename = "{:0{width}d}".format(0, width=format_width)
 
     # camera / output setup
-    width  = int(cfg['camera_info']['width'])
+    width = int(cfg['camera_info']['width'])
     height = int(cfg['camera_info']['height'])
     K = None
     if 'K' in cfg['camera_info']:
@@ -221,7 +223,7 @@ def generate_viewsphere(cfg, dirinfo):
     #       which prevents us from actually using a calibrated camera. Still, we
     #       pass it along here because at some point, we might actually have
     #       working implementation ;)
-    width  = int(cfg['camera_info']['width'])
+    width = int(cfg['camera_info']['width'])
     height = int(cfg['camera_info']['height'])
     K = None
     if 'K' in cfg['camera_info']:
@@ -266,8 +268,10 @@ def get_argv():
 def main():
     parser = argparse.ArgumentParser(description='Render dataset for the "cap tool"', prog="blender -b -P " + __file__)
     parser.add_argument('--config', default='config/render_toolcap.cfg', help='Path to configuration file')
-    parser.add_argument('--aps-path', default='~/dev/vision/amira_deep_vision', help='Path where AMIRA Perception Subsystem (aps) can be found')
-    parser.add_argument('--abr-path', default='~/dev/vision/amira_blender_rendering/src', help='Path where amira_blender_rendering (abr) can be found')
+    parser.add_argument('--aps-path', default='~/dev/vision/amira_deep_vision',
+                        help='Path where AMIRA Perception Subsystem (aps) can be found')
+    parser.add_argument('--abr-path', default='~/dev/vision/amira_blender_rendering/src',
+                        help='Path where amira_blender_rendering (abr) can be found')
     parser.add_argument('--only-viewsphere', action='store_true', help='Generate only Viewsphere dataset')
     args = parser.parse_args(args=get_argv())
 
@@ -276,7 +280,8 @@ def main():
     import_abr(args.abr_path)
 
     # read configuration file
-    # TODO: change to Configuration here and in foundry
+    # TODO: change to Configuration here and in foundry.
+    # Currently not possible since Configuration not pickable (used inside build_splitting_configs)
     config = configparser.ConfigParser()
     config.read(expandpath(args.config))
     config = foundry.utils.check_paths(config)
@@ -298,7 +303,6 @@ def main():
             else:
                 print(f"EE: Error while generating dataset")
                 scene = None
-
 
     # check if and create viewsphere
     if 'viewsphere' in config:
