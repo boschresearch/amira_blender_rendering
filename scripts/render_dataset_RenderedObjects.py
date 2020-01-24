@@ -9,13 +9,13 @@ The script must be run in blender, for instance from the command line using:
 The script accepts several additional arguments. The most important is the path
 to the render configuration file, which defaults to 'config/render_toolcap.cfg'.
 The script also needs to find amira_blender_rendering, as well as aps (AMIRA
-Perception Subsystem) and foundry (also part of amira_deep_vision). Path to
+Perception Subsystem) and foundry (also part of amira_perception). Path to
 their parent-folders can be passed along as command-line arguments via the
 --arb-path and --aps-path flags.s
 
 Example:
 
-    $ blender -b -P scripts/render_dataset_RenderedObjects.py -- --arb-path ~/amira/amira_blender_rendering --aps-path ~/amira/amira_deep_vision
+    $ blender -b -P scripts/render_dataset_RenderedObjects.py -- --arb-path ~/amira/amira_blender_rendering --aps-path ~/amira/amira_perception
 
 Note that paths will be expanded, i.e. variables such as $AMIRA_DATASETS or ~
 will be turned into their proper values.
@@ -23,7 +23,7 @@ will be turned into their proper values.
 """
 
 
-# make amira_deep_vision packages available
+# make amira_perception packages available
 import bpy
 import sys
 import os
@@ -198,7 +198,7 @@ def generate_viewsphere(cfg, dirinfo):
     setup_renderer(cfg)
 
     # sample views in camera frame
-    # This requires amira_deep_vision feature/aae-computations-inspection
+    # This requires amira_perception feature/aae-computations-inspection
     # until it is not merged to master since the methods have been made static
     rototranslations = ViewSampler.viewsphere_rototranslations(
         min_n_views=int(cfg['viewsphere']['min_num_views']),
@@ -268,7 +268,7 @@ def get_argv():
 def main():
     parser = argparse.ArgumentParser(description='Render dataset for the "cap tool"', prog="blender -b -P " + __file__)
     parser.add_argument('--config', default='config/render_toolcap.cfg', help='Path to configuration file')
-    parser.add_argument('--aps-path', default='~/dev/vision/amira_deep_vision',
+    parser.add_argument('--aps-path', default='~/dev/vision/amira_perception',
                         help='Path where AMIRA Perception Subsystem (aps) can be found')
     parser.add_argument('--abr-path', default='~/dev/vision/amira_blender_rendering/src',
                         help='Path where amira_blender_rendering (abr) can be found')

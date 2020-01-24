@@ -114,10 +114,10 @@ numpy, torch, etc.
     (blender-venv) $ blender -b --python-console
     >>> import numpy, torch, imageio
 
-To install packages that are frequently used, go to the `amira_deep_vision`
+To install packages that are frequently used, go to the `amira_perception`
 repository, and consult the requirements.txt file. Or, run the following:
 
-    (blender-venv) $ cd path/to/amira_deep_vision
+    (blender-venv) $ cd path/to/amira_perception
     (blender-venv) $ pip install -r requirements.txt
 
 Finally, you can test if everything worked by running one of the render scripts.
