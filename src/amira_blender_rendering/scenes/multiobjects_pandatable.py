@@ -4,14 +4,13 @@
 
 import bpy
 from mathutils import Vector
-import os, time
 import numpy as np
 from random import randint
 
 from amira_blender_rendering import camera_utils
-from amira_blender_rendering import blender_utils as blnd
+# from amira_blender_rendering import blender_utils as blnd
 from amira_blender_rendering.utils import expandpath
-import amira_blender_rendering.nodes as abr_nodes
+# import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 
@@ -19,7 +18,7 @@ import amira_blender_rendering.math.geometry as abr_geom
 class MultiObjectsBasePandaTable(abr_scenes.MultiRenderedObjectsBase):
     """Common functions for all panda table scenes"""
 
-    def __init_(self, base_filename: str, dirinfo, K, width, height, **kwargs):
+    def __init__(self, base_filename: str, dirinfo, K, width, height, **kwargs):
         super(MultiObjectsBasePandaTable, self).__init__(base_filename, dirinfo, K, width, height)
 
     def setup_camera(self):
@@ -57,10 +56,27 @@ class MultiObjectsBasePandaTable(abr_scenes.MultiRenderedObjectsBase):
 
     def setup_objects(self):
         # objects are already loaded in blend file. make sure to have all the target
-        # objects also available
-        for obj_name in self.obj_names:
-            self.objs.append(bpy.context.scene.objects[obj_name])
-
+        # objects also available.
+        for i, obj_type in enumerate(self.objs_types):
+            # creation of container for obj_type
+            self.objs[obj_type] = {
+                'id': i,
+                'instance_count': 0,
+                'instances': []
+            }
+            # fill up object instances
+            for bpy_obj in bpy.context.scene.objects:
+                if obj_type in bpy_obj.name:
+                    # create obj instance
+                    instance = {
+                        'id': self.objs[obj_type]['instance_count'],
+                        'name': bpy_obj.name,
+                        'obj': bpy_obj
+                    }
+                    # fill data structure
+                    self.objs[obj_type]['instances'].append(instance)
+                    self.objs[obj_type]['instance_count'] += 1
+                    
     def setup_environment(self):
         # environment is already set up in blend file
         pass
@@ -81,25 +97,29 @@ class MultiObjectsClutteredPandaTable(MultiObjectsBasePandaTable):
         # TODO: change from inheritance to composition to avoid having
         #       constructor after setting up fields
         # TODO: use Configuration from aps
+        # TODO: change signature: filename, basepath, camera_info, kwargs(render_info)
+        # NOTE: dirinfo can be build from basepath, h,w,K,camera_type in camera_info
+        # NOTE: if we are going to extend this to stereo we definitely need to change
+        # signature and send configs, e.g., with right and left camera
         self.config = kwargs.get('config', None)
         self.blend_file_path = self.config['render_setup']['blend_file'] if self.config is not None else '~/gfx/modeling/robottable_cluttered.blend'
         self.blend_file_path = expandpath(self.blend_file_path)
         self.primary_camera = 'CameraOrbbec'
-        self.obj = None
+        self.objs = dict()
         
-        # TODO: extract object names from target config
-        self.obj_name = self.config['render_setup']['target_object'] if self.config is not None else 'Tool.Cap'
+        # TODO: when available, use Configuration parameter of type list
+        objs_types_str = self.config['render_setup']['target_objects'] if self.config is not None else 'Tool.Cap'
+        self.objs_types = [t for t in objs_types_str.replace(' ', '').split(',') if not t == '']
 
         # parent constructor
         super(MultiObjectsClutteredPandaTable, self).__init__(base_filename, dirinfo, K, width, height)
 
-    # TODO: customize randomize method to match scene and multiple objects instances
     def randomize(self):
 
         # objects of interest + relative plate
-        cap = bpy.context.scene.objects['Tool.Cap']
+        # cap = bpy.context.scene.objects['Tool.Cap']
         plate = bpy.context.scene.objects['RubberPlate']
-        letterb = None if 'LetterB' not in bpy.context.scene.objects else bpy.context.scene.objects['LetterB']
+        # letterb = None if 'LetterB' not in bpy.context.scene.objects else bpy.context.scene.objects['LetterB']
 
         cube_names = [f"RedCube.{d:03}" for d in range(1, 6)]
         cubes = [bpy.context.scene.objects[s] for s in cube_names]
@@ -115,39 +135,53 @@ class MultiObjectsClutteredPandaTable(MultiObjectsBasePandaTable):
         base_location.y = base_location.y
 
         # range from which to sample random numbers
-        range_x = 0.60 # 'depth'
-        range_y = 0.90 # 'width'
+        range_x = 0.60  # 'depth'
+        range_y = 0.90  # 'width'
 
         # Iterate animation a couple of times
         ok = False
         while not ok:
 
-            # randomize object locations
-            for obj in [cap, letterb] + cubes + shafts:
+            # randomize uncontrolled object locations
+            # TODO: can we unify handling of all objects as in pandatable.ClutteredPandaTable ??
+            for obj in cubes + shafts:
                 if obj is None:
                     continue
-
                 obj.location.x = base_location.x + (np.random.rand(1) - .5) * range_x
                 obj.location.y = base_location.y + (np.random.rand(1) - .5) * range_y
                 obj.rotation_euler = Vector((np.random.rand(3) * np.pi))
+
+            # randomize controlled object locations
+            for obj_type, obj in self.objs.items():
+                for instance in obj['instances']:
+                    if instance['obj'] is None:
+                        continue
+                    instance['obj'].location.x = base_location.x + (np.random.rand(1) - .5) * range_x
+                    instance['obj'].location.y = base_location.y + (np.random.rand(1) - .5) * range_y
+                    instance['obj'].rotation_euler = Vector((np.random.rand(3) * np.pi))
 
             # update the scene. unfortunately it doesn't always work to just set
             # the location of the object without recomputing the dependency
             # graph
             dg = bpy.context.evaluated_depsgraph_get()
             dg.update()
-
             # forward compute some frames. number of frames is randomly selected
             n_frames = randint(1, 40)
 
             print(f"Forward simulation of {n_frames} frames")
             scene = bpy.context.scene
             for i in range(n_frames):
-                scene.frame_set(i+1)
+                scene.frame_set(i + 1)
 
-            # test if the object is visible in the camera scene
+            # test if the objects are visible in the camera scene
             cam = bpy.context.scene.objects[self.primary_camera]
-            ok = abr_geom.test_visibility(self.obj, cam, self.width, self.height)
-            if not ok:
-                print(f"II: Target object not in view frustum (location = {self.obj.location})")
-
+            for obj_type, obj in self.objs.items():
+                for instance in obj['instances']:
+                    # if any object does not pass the test, set to False and break
+                    if not abr_geom.test_visibility(instance['obj'], cam, self.width, self.height):
+                        ok = False
+                        print(f"II: Object '{obj_type}' (instance {instance['id']}) \
+                            not in view frustum (location = {instance['obj'].location})")
+                        break
+                    # otherwise visibility is ok
+                    ok = True
