@@ -3,7 +3,7 @@
 """This file contains helper functions to convert between different units.
 
 The base unit in blender is 'blender units', which most often is taken to
-correspond to meters. In the amira_deep_vision project, we usually define
+correspond to meters. In the amira_perception project, we usually define
 distances in mm. The functions contained in this file simply map from blender to
 another unit.
 

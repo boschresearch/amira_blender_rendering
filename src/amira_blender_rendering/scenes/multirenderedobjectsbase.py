@@ -116,7 +116,7 @@ class MultiRenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         self.compositor = abr_nodes.CompositorNodesOutputMultiRenderedObject()
 
         # setup all path related information in the compositor
-        # TODO: both in amira_deep_vision as well as here we actually only need
+        # TODO: both in amira_perception as well as here we actually only need
         # some schema that defines the layout of the dataset. This should be
         # extracted into an independent schema file. Note that this does not
         # mean to use any xml garbage! Rather, it should be as plain as
