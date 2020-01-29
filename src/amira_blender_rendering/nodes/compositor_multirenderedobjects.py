@@ -54,6 +54,11 @@ class CompositorNodesOutputMultiRenderedObject():
         self.path_mask = self.dirinfo.images.mask[len(prefix) + 1:]
         self.path_mask = os.path.join(self.path_mask, '')
 
+        # TODO: add backdrop in RenderedObjects.dirinfo
+        # self.path_backdrop = self.dirinfo.images.backdrop[len(prefix) + 1:]
+        self.path_backdrop = 'backdrop'
+        self.path_backdrop = os.path.join(self.path_backdrop, '')
+
         return self.path_base, self.path_img_const, self.path_img_rand, self.path_depth, self.path_mask
 
     def setup(self, dirinfo, filename, objs: dict, scene: bpy.types.Scene = bpy.context.scene):
@@ -146,14 +151,23 @@ class CompositorNodesOutputMultiRenderedObject():
         self.sockets['s_backdrop'] = s_obj_mask
 
         # add nodes and sockets for all masks
+        # setup object (this will change the pass index).
+        # The pass_index must be > 0 for the mask to work.
         pass_index = 0
-        o_w = ceil(log(len(self.objs))) if self.objs else 0  # object width format
         for obj_type, obj in self.objs.items():
-            # setup object (this will change the pass index). The pass_index must be > 0 for the mask to work.
-            obj_id = obj['id']
+            o_w = ceil(log(len(self.objs)))  # object width format
+            obj_id = obj['id']  # id of current obj
             i_w = ceil(log(obj['instance_count']))  # instance width format
             for instance in obj['instances']:  # loop over instances of same type
-                inst_id = instance['id']
+                inst_id = instance['id']  # id of current instance
+                
+                # build absolute index for current instance : objid_instid
+                # TODO: can we collapse to simpler strings in case of single object or 
+                # multi objs single instance. In this case the final mask name will be simpler
+                # E.g. frnum_objid_instid -> frnum_instid
+                index_str = f"_{obj_id:0{o_w}}_{inst_id:0{i_w}}"
+                
+                # update pass index
                 instance['obj'].pass_index = pass_index + 1
 
                 # mask
@@ -163,14 +177,18 @@ class CompositorNodesOutputMultiRenderedObject():
                 tree.links.new(n_render_layers.outputs['IndexOB'], n_id_mask.inputs['ID value'])
 
                 # new socket in file output
-                mask_name = f"Mask{pass_index:03}"
-                socket_name = f's_obj_{obj_id:0{o_w}}_{inst_id:0{i_w}}'
+                mask_name = f'Mask{index_str}'
+                socket_name = f's_obj{index_str}'  # socket name format: s_obj_objid_instid
                 n_output_file.file_slots.new(mask_name)
                 s_obj_mask = n_output_file.file_slots[mask_name]
                 s_obj_mask.use_node_format = True
                 tree.links.new(n_id_mask.outputs['Alpha'], n_output_file.inputs[mask_name])
                 self.sockets[socket_name] = s_obj_mask
-                pass_index += 1  # increment sequential pass index
+                instance['socket_name'] = socket_name
+                instance['index'] = index_str
+
+                # increment index
+                pass_index += 1
 
         # set the paths of all sockets
         self.update(dirinfo, self.base_filename, objs)
@@ -225,25 +243,16 @@ class CompositorNodesOutputMultiRenderedObject():
         self.__extract_pathspec()
         self.__update_node_paths()
 
-        # TODO: backdrop is currently not part of the RenderedObjects specification.
-        #       Should be included.
-
         self.sockets['s_render'].path = os.path.join(self.path_img_const, f'{self.base_filename}.png####')
         self.sockets['s_depth_map'].path = os.path.join(self.path_depth, f'{self.base_filename}.exr####')
-        self.sockets['s_backdrop'].path = os.path.join('backdrop', f'{self.base_filename}.png####')
+        self.sockets['s_backdrop'].path = os.path.join(self.path_backdrop, f'{self.base_filename}.png####')
         # update mask sockets
-        o_w = ceil(log(len(self.objs))) if self.objs else 0  # object width format
         for obj_type, obj in self.objs.items():
-            obj_id = obj['id']
-            i_w = ceil(log(obj['instance_count']))  # instance width format
             for instance in obj['instances']:  # loop over instances of same type
-                inst_id = instance['id']
-                # socket name format: s_obj_objid_instid
-                socket_name = f's_obj_{obj_id:0{o_w}}_{inst_id:0{i_w}}'
                 # filename format: imagenum_objid_instid.png####
-                fname = f'{self.base_filename}_{obj_id:0{o_w}}_{inst_id:0{i_w}}.png####'
+                fname = f'{self.base_filename}{instance["index"]}.png####'
                 # update socket path
-                self.sockets[socket_name].path = os.path.join(self.path_mask, fname)
+                self.sockets[instance['socket_name']].path = os.path.join(self.path_mask, fname)
         return self.sockets
 
     def postprocess(self):
@@ -271,13 +280,9 @@ class CompositorNodesOutputMultiRenderedObject():
             os.rename(f, f[:-4])
 
         # store mask filename for other users that currently need the mask
-        o_w = ceil(log(len(self.objs))) if self.objs else 0  # objects width format
         for obj_type, obj in self.objs.items():
-            obj_id = obj['id']
-            i_w = ceil(log(obj['instance_count']))  # instance width format
             for instance in obj['instances']:
-                inst_id = instance['id']
-                mask_name = f'{self.base_filename}_{obj_id:0{o_w}}_{inst_id:0{i_w}}.png{frame_number_str}'
+                mask_name = f'{self.base_filename}{instance["index"]}.png{frame_number_str}'
                 fname_mask = os.path.join(self.dirinfo.images.mask, mask_name)
                 os.rename(fname_mask, fname_mask[:-4])
                 instance['fname_mask'] = fname_mask[:-4]
