@@ -5,25 +5,25 @@ from typing import List
 import bpy
 
 
-class CompositorNodesOutputRenderedObject():
+class CompositorNodesOutputRenderedObjects():
     """This class contains the setup of compositor nodes that is required for
     the RenderedObjects dataset. Using this class will set up FileOutput and ID
     Mask nodes such that we not only get the rendered image, but also Depth
     information (in OpenEXR format), image masks for each object of interest, as
     well as a backdrop (mask excluding any object of interest."""
 
-
-
     def __init__(self):
-        super(CompositorNodesOutputRenderedObject, self).__init__()
+        super(CompositorNodesOutputRenderedObjects, self).__init__()
 
         self.dirinfo = None
         self.sockets = dict()
         self.nodes = dict()
         self.base_filename = ''
+        # list of objects to handle and corresponding unique name.
+        # These are used to setup socket and outputfiles
         self.objs = []
+        self.objs_names = []
         self.scene = None
-
 
     def __extract_pathspec(self):
         """Extract relevant paths from self.dirinfo.
@@ -56,14 +56,16 @@ class CompositorNodesOutputRenderedObject():
         self.path_mask = self.dirinfo.images.mask[len(prefix) + 1:]
         self.path_mask = os.path.join(self.path_mask, '')
 
-        return self.path_base, self.path_img_const, self.path_img_rand, self.path_depth, self.path_mask
+        # TODO: add backdrop in RenderedObjects.dirinfo
+        # self.path_backdrop = self.dirinfo.images.backdrop[len(prefix) + 1:]
+        self.path_backdrop = 'backdrop'
+        self.path_backdrop = os.path.join(self.path_backdrop, '')
 
+        return self.path_base, self.path_img_const, self.path_img_rand, self.path_depth, \
+            self.path_mask, self.path_backdrop
 
-    def setup(self,
-            dirinfo,
-            filename,
-            objs : List[bpy.types.Object],
-            scene: bpy.types.Scene = bpy.context.scene):
+    def setup(self, dirinfo, filename, objs: List[bpy.types.Object], objs_names: [],
+              scene: bpy.types.Scene = bpy.context.scene):
         """Setup all compositor nodes that are required for exporting to the
         RenderObjects dataset format.
 
@@ -72,6 +74,7 @@ class CompositorNodesOutputRenderedObject():
                 dataset. See amira_perception for more details
             filename (str): Filename of output (without file extension)
             objs (List[bpy.types.Object]): list of objects for which to compute an output mask
+            objs_names([str]): list of unique names for objects.
             scene (bpy.types.Scene): blender scene on which to operate
 
         Returns:
@@ -88,6 +91,7 @@ class CompositorNodesOutputRenderedObject():
         self.dirinfo = dirinfo
         self.base_filename = filename
         self.objs = objs
+        self.objs_names = objs_names
         self.scene = scene
         self.__extract_pathspec()
 
@@ -140,11 +144,10 @@ class CompositorNodesOutputRenderedObject():
         tree.links.new(n_id_mask.outputs['Alpha'], n_output_file.inputs[mask_name])
         self.sockets['s_backdrop'] = s_obj_mask
 
-
         # add nodes and sockets for all masks
         for i, obj in enumerate(objs):
             # setup object (this will change the pass index). The pass_index must be > 0 for the mask to work.
-            obj.pass_index = i+1
+            obj.pass_index = i + 1
 
             # mask
             n_id_mask = nodes.new('CompositorNodeIDMask')
@@ -161,9 +164,8 @@ class CompositorNodesOutputRenderedObject():
             self.sockets[f"s_obj_mask{i}"] = s_obj_mask
 
         # set the paths of all sockets
-        self.update(dirinfo, self.base_filename, objs)
+        self.update(dirinfo, self.base_filename, objs, objs_names)
         return self.sockets
-
 
     def __update_node_paths(self):
         """This function will update all base-path knowledge in the node editor"""
@@ -175,12 +177,8 @@ class CompositorNodesOutputRenderedObject():
         n_output_file = nodes['RenderObjectsFileOutputNode']
         n_output_file.base_path = self.path_base
 
-
-    def update(self,
-            dirinfo,
-            filename: str,
-            objs: List[bpy.types.Object],
-            scene: bpy.types.Scene = bpy.context.scene):
+    def update(self, dirinfo, filename: str, objs: List[bpy.types.Object], objs_names: [],
+               scene: bpy.types.Scene = bpy.context.scene):
         """Update the compositor nodes with a new filename.
 
         Args:
@@ -189,6 +187,8 @@ class CompositorNodesOutputRenderedObject():
             objs (List[bpy.types.Object]): list of objects for which a filename
                 needs to be generated. Note that the list should have the same order of
                 objects as used during setup_compositor_nodes_rendered_objects.
+            objs_names([str]): list of unique names for each object, used to setup sockets and outputfiles
+            scene (bpy.types.Scene): blender scene on which to operate
 
         Returns:
             The sockets dictionary
@@ -202,25 +202,19 @@ class CompositorNodesOutputRenderedObject():
         self.dirinfo = dirinfo
         self.base_filename = filename
         self.objs = objs
+        self.objs_names = objs_names
         self.scene = scene
         # extract paths and update in node
         self.__extract_pathspec()
         self.__update_node_paths()
 
-        # TODO: backdrop is currently not part of the RenderedObjects specification.
-        #       Should be included.
-
-        # TODO: this will not work for >1 objects, because they will simply
-        #       overwrite the output file. The RenderedObjects dataset specification
-        #       cannot handle multiple objects at the moment. As soon as this is
-        #       changed, we can also properly set up multiple output sockets.
-        self.sockets['s_render'].path    = os.path.join(self.path_img_const,   f'{self.base_filename}.png####')
-        self.sockets['s_depth_map'].path = os.path.join(self.path_depth,       f'{self.base_filename}.exr####')
-        self.sockets['s_backdrop'].path  = os.path.join('backdrop',            f'{self.base_filename}.png####')
-        for i in range(len(objs)):
-            self.sockets[f"s_obj_mask{i}"].path = os.path.join(self.path_mask, f'{self.base_filename}.png####')
+        self.sockets['s_render'].path = os.path.join(self.path_img_const, f'{self.base_filename}.png####')
+        self.sockets['s_depth_map'].path = os.path.join(self.path_depth, f'{self.base_filename}.exr####')
+        self.sockets['s_backdrop'].path = os.path.join(self.path_backdrop, f'{self.base_filename}.png####')
+        # obj_names are used to setup corresponding output files for masks
+        for i, obj_name in enumerate(objs_names):
+            self.sockets[f"s_obj_mask{i}"].path = os.path.join(self.path_mask, f'{self.base_filename}{obj_name}.png####')
         return self.sockets
-
 
     def postprocess(self):
         """Postprocessing: Repair all filenames.
@@ -240,15 +234,15 @@ class CompositorNodesOutputRenderedObject():
         frame_number_str = f"{frame_number:04}"
 
         # get file names
-        self.fname_render   = os.path.join(self.dirinfo.images.const,                 f'{self.base_filename}.png{frame_number_str}')
-        self.fname_depth    = os.path.join(self.dirinfo.images.depth,                 f'{self.base_filename}.exr{frame_number_str}')
+        self.fname_render = os.path.join(self.dirinfo.images.const, f'{self.base_filename}.png{frame_number_str}')
+        self.fname_depth = os.path.join(self.dirinfo.images.depth, f'{self.base_filename}.exr{frame_number_str}')
         self.fname_backdrop = os.path.join(self.dirinfo.images.base_path, 'backdrop', f'{self.base_filename}.png{frame_number_str}')
         for f in (self.fname_render, self.fname_depth, self.fname_backdrop):
             os.rename(f, f[:-4])
 
         # store mask filename for other users that currently need the mask
         self.fname_masks = []
-        for i in range(len(self.objs)):
-            fname_mask = os.path.join(self.dirinfo.images.mask,                  f'{self.base_filename}.png{frame_number_str}')
+        for obj_name in self.objs_names:
+            fname_mask = os.path.join(self.dirinfo.images.mask, f'{self.base_filename}{obj_name}.png{frame_number_str}')
             os.rename(fname_mask, fname_mask[:-4])
             self.fname_masks.append(fname_mask[:-4])
