@@ -10,6 +10,7 @@ from amira_blender_rendering import utils
 # singleton somehwere. But also singletons are not really a good idea...
 logger = utils.get_logger()
 
+
 class BaseSceneManager():
     """Class for arbitrary scenes that should be set up for rendering data.
 
