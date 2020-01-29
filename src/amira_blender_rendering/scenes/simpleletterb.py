@@ -6,7 +6,6 @@ from mathutils import Vector
 import os
 import numpy as np
 
-from amira_blender_rendering import camera_utils
 from amira_blender_rendering import blender_utils as blnd
 import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
@@ -19,9 +18,8 @@ class SimpleLetterB(
     """Simple letter B scene in which we have three point lighting and can set
     some background image.
     """
-
-    def __init__(self, base_filename: str, dirinfo, K, width, height, **kwargs):
-        super(SimpleLetterB, self).__init__(base_filename, dirinfo, K, width, height)
+    def __init__(self, base_filename: str, dirinfo, camerainfo, **kwargs):
+        super(SimpleLetterB, self).__init__(base_filename, dirinfo, camerainfo)
 
     def setup_object(self):
         # the order of what's done is important. first import and setup the
@@ -31,13 +29,11 @@ class SimpleLetterB(
         self.setup_material()
         self.rescale_objects()
 
-
     def rescale_objects(self):
         # needs to be re-scaled to fit nicely into blender units
         # the B ply file contains an object description that is suitable for 3D
         # printing. This means that we have to drastically scale the object down
         self.obj.scale = Vector((0.001, 0.001, 0.001))
-
 
     def import_mesh(self):
         """Import the mesh of the B from a ply file."""
@@ -47,13 +43,11 @@ class SimpleLetterB(
         self.obj = bpy.context.object
         self.obj.name = 'B'
 
-
     def select_B(self):
         """Select the B, which is the object of interest in this scene."""
         bpy.ops.object.select_all(action='DESELECT')
         self.obj.select_set(state=True)
         bpy.context.view_layer.objects.active = self.obj
-
 
     def setup_material(self):
         """Setup object material"""
@@ -71,30 +65,25 @@ class SimpleLetterB(
         self.B_mat = blnd.add_default_material(self.obj)
         abr_nodes.material_3Dprinted_plastic.setup_material(self.B_mat)
 
-
     def setup_lighting(self):
         # this scene uses classical three point lighting
         self.setup_three_point_lighting()
 
-
     def setup_scene(self):
         """Setup the scene"""
-        bpy.context.scene.render.resolution_x = self.width
-        bpy.context.scene.render.resolution_y = self.height
-
+        bpy.context.scene.render.resolution_x = self.camerainfo.width
+        bpy.context.scene.render.resolution_y = self.camerainfo.height
 
     def setup_environment(self):
         # This simple scene does not have a specific environment which needs to
         # be set up, such as a table or robot or else.
         pass
 
-
     def render(self):
         # Rendering will automatically save images due to the compositor node
         # setup. passing write_still=False prevents writing another file
         bpy.context.scene.render.engine = "CYCLES"
         bpy.ops.render.render(write_still=False)
-
 
     def randomize(self):
         """Set an arbitrary location and rotation for the object"""
@@ -113,4 +102,4 @@ class SimpleLetterB(
 
             # Test if object is still visible. That is, none of the vertices
             # should lie outside the visible pixel-space
-            ok = abr_geom.test_visibility(self.obj, self.cam, self.width, self.height)
+            ok = abr_geom.test_visibility(self.obj, self.cam, self.camerainfo.width, self.camerainfo.height)
