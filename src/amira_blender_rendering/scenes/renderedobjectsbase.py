@@ -10,7 +10,7 @@ import numpy as np
 import imageio
 try:
     import ujson as json
-except:
+except ModuleNotFoundError:
     import json
 
 from amira_blender_rendering import camera_utils
@@ -21,25 +21,29 @@ import amira_blender_rendering.math.geometry as abr_geom
 from amira_blender_rendering.math.conversions import bu_to_mm
 
 # import things from AMIRA Perception Subsystem that are required
-from aps.core.interfaces import PoseRenderResult
+from aps.core.interfaces import PoseRenderResult, ResultsCollection
 from aps.core.cv.camera import boundingbox_from_mask
 
 
 class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
     """This class contains functions that convert a scene to the RenderedObjects format."""
 
-
-    def __init__(self, base_filename, dirinfo, K, width, height, unit_conversion=bu_to_mm):
+    def __init__(self, base_filename, dirinfo, camerainfo, unit_conversion=bu_to_mm):
+        """
+        Args:
+            base_filename(str): name of the frame that is being rendered
+            dirinfo(DynamicStruct): structure with information on output directory storage
+            camerainfo(CameraInfo): structure with camera setup
+            unit_conversion(abr.math.conversions): function to convert blender units into real world unit
+        """
         super(RenderedObjectsBase, self).__init__()
-        self.obj = None
+        self.objs = list()
 
         self.reset()
         self.base_filename = base_filename
         self.dirinfo = dirinfo
 
-        self.K = K
-        self.width = width
-        self.height = height
+        self.camerainfo = camerainfo
         self.unit_conversion = unit_conversion
 
         # setup blender scene, camera, object, and compositors.
@@ -48,7 +52,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         self.setup_scene()
         self.setup_camera()
         self.setup_lighting()
-        self.setup_object()
+        self.setup_objects()
         self.setup_environment()
         self.setup_compositor()
 
@@ -61,7 +65,20 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         pass
 
     @abstractmethod
-    def setup_object():
+    def setup_objects():
+        """
+        Abstract interface for populating the list of objects that are actively manipulated
+        and for which a mask is computed.
+        The list need to adhere to some minimal requirements to allow the compositor to
+        correctly handle the mask creation. That is
+        self.objs = [{
+                'id_mask'(str): string with unique mask id
+                'bpy'(bpy.types.Object): actual bpy object
+            }
+            ...
+        ]
+        """
+        # TODO: would make sense to have this base class to inherit from the compositor?
         pass
 
     @abstractmethod
@@ -95,7 +112,6 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         """
         return None
 
-
     def postprocess(self):
         """Postprocessing the scene.
 
@@ -105,17 +121,19 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         """
 
         # the compositor postprocessing takes care of fixing file names
+        # and saving the masks filename into objs
         self.compositor.postprocess()
 
         # compute bounding boxes and save annotations
-        corners2d = self.compute_2dbbox()
-        aabb, oobb, corners3d =  self.compute_3dbbox()
-        self.save_annotations(corners2d, corners3d, aabb, oobb)
-
+        results = ResultsCollection()
+        for obj in self.objs:
+            render_result = self.build_render_result(obj)
+            results.add_result(render_result)
+        self.save_annotations(results)
 
     def setup_compositor(self):
         """Setup output compositor nodes"""
-        self.compositor = abr_nodes.CompositorNodesOutputRenderedObject()
+        self.compositor = abr_nodes.CompositorNodesOutputRenderedObjects()
 
         # setup all path related information in the compositor
         # TODO: both in amira_perception as well as here we actually only need
@@ -123,17 +141,12 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         # extracted into an independent schema file. Note that this does not
         # mean to use any xml garbage! Rather, it should be as plain as
         # possible.
-        self.compositor.setup(self.dirinfo, self.base_filename, objs=[self.obj], scene=bpy.context.scene)
-
+        self.compositor.setup(self.dirinfo, self.base_filename, self.objs, scene=bpy.context.scene)
 
     def update_dirinfo(self, dirinfo):
         # set dirinfo, and update the compositor with the new filename
         self.dirinfo = dirinfo
-        self.compositor.update(
-                self.dirinfo,
-                self.base_filename,
-                [self.obj])
-
+        self.compositor.update(self.dirinfo, self.base_filename, self.objs)
 
     def set_base_filename(self, filename):
         if filename == self.base_filename:
@@ -141,48 +154,75 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         self.base_filename = filename
         self.update_dirinfo(self.dirinfo)
 
-
     def convert_units(self, render_result):
         """Convert render_result units from blender units to target unit"""
         if self.unit_conversion is None:
             return render_result
 
         # convert all relevant units from blender units to target units
-        result      = render_result
-        result.t    = self.unit_conversion(result.t)
+        result = render_result
+        result.t = self.unit_conversion(result.t)
         result.aabb = self.unit_conversion(result.aabb)
         result.oobb = self.unit_conversion(result.oobb)
 
         return result
 
-
-    def save_annotations(self, corners2d, corners3d, aabb, oobb):
-        """Save annotations of a render result."""
+    def build_render_result(self, obj: dict):
+        """Create render result.
+        
+        Args:
+            obj(dict): object dictionary to operate on
+            
+        Returns:
+            PoseRenderResult
+            """
 
         # create a pose render result. leave image fields empty, they will
         # currenlty not go to the state dict. this is only here to make sure
         # that we actually get the state dict defined in pose render result
-        t = np.asarray(abr_geom.get_relative_translation(self.obj, self.cam))
-        R = np.asarray(abr_geom.get_relative_rotation(self.obj, self.cam).to_matrix())
-        render_result = PoseRenderResult(self.obj.name, None, None, None, None, None, None,
-                R, t, corners2d, corners3d, aabb, oobb)
+        t = np.asarray(abr_geom.get_relative_translation(obj['bpy'], self.cam))
+        R = np.asarray(abr_geom.get_relative_rotation(obj['bpy'], self.cam).to_matrix())
 
-        if not os.path.exists(self.dirinfo.annotations):
-            os.mkdir(self.dirinfo.annotations)
+        # compute bounding boxes
+        corners2d = self.compute_2dbbox(obj['fname_mask'])
+        aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
+            
+        render_result = PoseRenderResult(
+            model_name=obj['model_name'],
+            model_id=obj['model_id'],
+            object_name=obj['bpy'].name,
+            object_id=obj['object_id'],
+            rgb_const=None,
+            rgb_random=None,
+            depth=None,
+            mask=None,
+            T_int=None,
+            T_ext=None,
+            R=R,
+            t=t,
+            corners2d=corners2d,
+            corners3d=corners3d,
+            aabb=aabb,
+            oobb=oobb,
+            mask_name=obj['id_mask'])
 
         # convert to desired units
         render_result = self.convert_units(render_result)
+        return render_result
+
+    def save_annotations(self, results: ResultsCollection):
+        if not os.path.exists(self.dirinfo.annotations):
+            os.mkdir(self.dirinfo.annotations)
 
         # build json name, dump data
         fname_json = f"{self.base_filename}.json"
         fname_json = os.path.join(self.dirinfo.annotations, f"{fname_json}")
-        json_data = render_result.state_dict()
+        json_data = results.state_dict()
         with open(fname_json, 'w') as f:
             json.dump(json_data, f, indent=0)
 
-
-    def compute_2dbbox(self):
-        """Compute the 2D bounding box around an object.
+    def compute_2dbbox(self, fname_mask):
+        """Compute the 2D bounding box around an object given the mask filename
 
         This simply loads the file from disk and gets the pixels. Unfortunately,
         it is not possible right now to work around this with using blender's
@@ -191,13 +231,10 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         which node is currently selected in the node editor... I have yet to find a
         programmatic way that circumvents re-loading the file from disk"""
 
-        # XXX: currently hardcoded for single object
-
         # this is a HxWx3 tensor (RGBA or RGB data)
-        mask = imageio.imread(self.compositor.fname_masks[0])
+        mask = imageio.imread(fname_mask)
         mask = np.sum(mask, axis=2)
         return boundingbox_from_mask(mask)
-
 
     def reorder_bbox(self, aabb, order=[1, 0, 2, 3, 5, 4, 6, 7]):
         """Reorder the vertices in an aab according to a certain permutation order."""
@@ -211,9 +248,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
         return result
 
-
-
-    def compute_3dbbox(self):
+    def compute_3dbbox(self, obj: bpy.types.Object):
         """Compute all 3D bounding boxes (axis aligned, object oriented, and the 3D corners
 
         Blender has the coordinates and bounding box in the following way.
@@ -250,7 +285,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         # applying the objects rotation matrix to the bounding box of the object
 
         # axis aligned (no object rotation)
-        aabb = [Vector(v) for v in self.obj.bound_box]
+        aabb = [Vector(v) for v in obj.bound_box]
         # compute centroid
         aa_centroid = aabb[0] + (aabb[6] - aabb[0]) / 2.0
         # copy aabb before reordering to have access to it later
@@ -260,10 +295,10 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         # convert to numpy
         np_aabb[0, :] = np.array((aa_centroid[0], aa_centroid[1], aa_centroid[2]))
         for i in range(8):
-            np_aabb[i+1, :] = np.array((aabb[i][0], aabb[i][1], aabb[i][2]))
+            np_aabb[i + 1, :] = np.array((aabb[i][0], aabb[i][1], aabb[i][2]))
 
         # object aligned (that is, including object rotation)
-        oobb = [self.obj.matrix_world @ v for v in aabb_orig]
+        oobb = [obj.matrix_world @ v for v in aabb_orig]
         # compute oo centroid
         oo_centroid = oobb[0] + (oobb[6] - oobb[0]) / 2.0
         # fix order for rendered objects
@@ -272,7 +307,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         # convert to numpy
         np_oobb[0, :] = np.array((oo_centroid[0], oo_centroid[1], oo_centroid[2]))
         for i in range(8):
-            np_oobb[i+1, :] = np.array((oobb[i][0], oobb[i][1], oobb[i][2]))
+            np_oobb[i + 1, :] = np.array((oobb[i][0], oobb[i][1], oobb[i][2]))
 
         # project centroid+vertices and convert to pixel coordinates
         corners3d = []
@@ -281,14 +316,13 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         corners3d.append(pix)
         np_corners3d[0, :] = np.array((corners3d[-1][0], corners3d[-1][1]))
 
-        for i,v in enumerate(oobb):
+        for i, v in enumerate(oobb):
             prj = abr_geom.project_p3d(v, bpy.context.scene.camera)
             pix = abr_geom.p2d_to_pixel_coords(prj)
             corners3d.append(pix)
-            np_corners3d[i+1, :] = np.array((corners3d[-1][0], corners3d[-1][1]))
+            np_corners3d[i + 1, :] = np.array((corners3d[-1][0], corners3d[-1][1]))
 
         return np_aabb, np_oobb, np_corners3d
-
 
     def setup_camera(self):
         """Setup camera, and place at a default location"""
@@ -296,15 +330,14 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         # add camera, update with calibration data, and make it active for the scene
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
         self.cam = bpy.context.object
-        if self.K is not None:
+        if self.camerainfo.K is not None:
             print(f"II: Using camera calibration data")
-            self.cam = camera_utils.opencv_to_blender(self.K, self.cam)
+            self.cam = camera_utils.opencv_to_blender(self.camerainfo.K, self.cam)
 
         # re-set camera and set rendering size
         bpy.context.scene.camera = self.cam
-        bpy.context.scene.render.resolution_x = self.width
-        bpy.context.scene.render.resolution_y = self.height
+        bpy.context.scene.render.resolution_x = self.camerainfo.width
+        bpy.context.scene.render.resolution_y = self.camerainfo.height
 
         # look at center
         blnd.look_at(self.cam, Vector((0.0, 0.0, 0.0)))
-
