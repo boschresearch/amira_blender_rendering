@@ -176,11 +176,6 @@ def generate_dataset(cfg, output_path, scene=None, viewsphere_cfg=None):
         height=int(cfg.camera_info.height),
         K=np.fromstring(cfg['camera_info']['K'], sep=',').reshape((3, 3)) if 'K' in cfg.camera_info else None
     )
-    # width = int(cfg['camera_info']['width'])
-    # height = int(cfg['camera_info']['height'])
-    # K = None
-    # if 'K' in cfg['camera_info']:
-    #    K = np.fromstring(cfg['camera_info']['K'], sep=',').reshape((3, 3))
 
     # instantiate scene if necessary
     if scene is None:
