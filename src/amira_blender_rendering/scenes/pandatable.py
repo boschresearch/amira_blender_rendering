@@ -7,6 +7,7 @@ from mathutils import Vector
 import time
 import numpy as np
 from random import randint
+from math import ceil, log
 
 from amira_blender_rendering import camera_utils
 from amira_blender_rendering.utils import expandpath
@@ -75,6 +76,11 @@ class BasePandaTable(abr_scenes.RenderedObjectsBase):
         # leads to a blender segfault
         bpy.context.scene.frame_set(1)
         return self
+
+
+"""
+ SINGLE OBJECT SCENES
+"""
 
 
 class PandaTable(BasePandaTable):
@@ -238,3 +244,110 @@ class ClutteredPandaTable(BasePandaTable):
             ok = abr_geom.test_visibility(self.objs[0]['bpy'], cam, self.camerainfo.width, self.camerainfo.height)
             if not ok:
                 print(f"II: Target object not in view frustum (location = {self.objs[0]['bpy'].location})")
+
+
+"""
+ SINGLE OBJECT SCENES
+"""
+
+
+class MultiObjectsClutteredPandaTable(BasePandaTable):
+    """Cluttered Panda Table scene which will get loaded from blend file"""
+
+    def __init__(self, base_filename: str, dirinfo, camerainfo, **kwargs):
+    
+        self.config = kwargs.get('config', None)
+        self.blend_file_path = expandpath(
+            self.config['blend_file'] if self.config is not None else '~/gfx/modeling/robottable_cluttered.blend')
+        self.primary_camera = 'CameraOrbbec'
+        self.objs = list()
+        self.objs_types = self.config['target_objects']
+        self.nontarget_objs = list()
+        self.nontarget_objs_types = ['RedCube', 'DriveShaft']
+        
+        # parent constructor
+        super(MultiObjectsClutteredPandaTable, self).__init__(base_filename, dirinfo, camerainfo, **kwargs)
+
+        # collect all non controlled movable objects
+        self.setup_objects(objs=self.nontarget_objs, objs_types=self.nontarget_objs_types)
+
+    def setup_objects(self, objs=None, objs_types=None):
+        # objects are already loaded in blend file. make sure to have all the target
+        # objects also available.
+        if objs is None:
+            objs = self.objs
+        if objs_types is None:
+            objs_types = self.objs_types
+
+        objs_counts = [0 for _ in range(len(objs_types))]
+        for i, obj_type in enumerate(objs_types):
+            # fill up object instances
+            for bpy_obj in bpy.context.scene.objects:
+                if obj_type in bpy_obj.name:
+                    objs.append({
+                        'id_mask': '',
+                        'model_name': obj_type,
+                        'model_id': i,
+                        'object_id': objs_counts[i],
+                        'bpy': bpy_obj
+                    })
+                    objs_counts[i] += 1
+
+        # build masks id for compositor
+        m_w = ceil(log(len(objs_types)))  # format width for number of model types
+        o_w = ceil(log(objs_counts[i]))  # format width for number of objects of same model
+        for i, obj in enumerate(objs):
+            id_mask = f"_{obj['model_id']:0{m_w}}_{obj['object_id']:0{o_w}}"
+            obj['id_mask'] = id_mask
+
+    def randomize(self):
+
+        # objects of interest + relative plate
+        plate = bpy.context.scene.objects['RubberPlate']
+
+        # we will set the location relative to the rubber plate. That is,
+        # slightly above the plate. For this scenario, we will not change the
+        # height of the objects!
+        base_location = Vector(plate.location)
+        base_location.x = base_location.x
+        base_location.y = base_location.y
+
+        # range from which to sample random numbers
+        range_x = 0.60
+        range_y = 0.90
+
+        # Iterate animation a couple of times
+        ok = False
+        while not ok:
+
+            # randomize movable object locations
+            for obj in self.objs + self.nontarget_objs:
+                if obj['bpy'] is None:
+                    continue
+                obj['bpy'].location.x = base_location.x + (np.random.rand(1) - .5) * range_x
+                obj['bpy'].location.y = base_location.y + (np.random.rand(1) - .5) * range_y
+                obj['bpy'].rotation_euler = Vector((np.random.rand(3) * np.pi))
+        
+            # update the scene. unfortunately it doesn't always work to just set
+            # the location of the object without recomputing the dependency
+            # graph
+            dg = bpy.context.evaluated_depsgraph_get()
+            dg.update()
+            # forward compute some frames. number of frames is randomly selected
+            n_frames = randint(1, 40)
+
+            print(f"Forward simulation of {n_frames} frames")
+            scene = bpy.context.scene
+            for i in range(n_frames):
+                scene.frame_set(i + 1)
+
+            # test if the objects are visible in the camera scene
+            cam = bpy.context.scene.objects[self.primary_camera]
+            for obj in self.objs:
+                # if any object does not pass the test, set to False and break
+                if not abr_geom.test_visibility(obj['bpy'], cam, self.camerainfo.width, self.camerainfo.height):
+                    ok = False
+                    print(f"II: Object {obj['bpy'].name} not in view frustum (location = {obj['bpy'].location})")
+                    break
+                # otherwise visibility is ok
+                ok = True
