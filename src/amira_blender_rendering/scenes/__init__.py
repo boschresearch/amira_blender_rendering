@@ -8,4 +8,4 @@ from .renderedobjectsbase import RenderedObjectsBase
 # concrete scenes
 from .simpletoolcap import SimpleToolCap
 from .simpleletterb import SimpleLetterB
-from .pandatable import PandaTable, ClutteredPandaTable
+from .pandatable import PandaTable, ClutteredPandaTable, MultiObjectsClutteredPandaTable

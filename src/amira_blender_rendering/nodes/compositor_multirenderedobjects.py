@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 import os
+# from typing import List
 import bpy
+from math import ceil, log
 
 
-class CompositorNodesOutputRenderedObjects():
+class CompositorNodesOutputMultiRenderedObject():
     """This class contains the setup of compositor nodes that is required for
     the RenderedObjects dataset. Using this class will set up FileOutput and ID
     Mask nodes such that we not only get the rendered image, but also Depth
@@ -12,15 +14,13 @@ class CompositorNodesOutputRenderedObjects():
     well as a backdrop (mask excluding any object of interest."""
 
     def __init__(self):
-        super(CompositorNodesOutputRenderedObjects, self).__init__()
+        super(CompositorNodesOutputMultiRenderedObject, self).__init__()
 
         self.dirinfo = None
         self.sockets = dict()
         self.nodes = dict()
         self.base_filename = ''
-        # list of objects to handle and corresponding unique name.
-        # These are used to setup socket and outputfiles
-        self.objs = []
+        self.objs = dict()
         self.scene = None
 
     def __extract_pathspec(self):
@@ -59,10 +59,9 @@ class CompositorNodesOutputRenderedObjects():
         self.path_backdrop = 'backdrop'
         self.path_backdrop = os.path.join(self.path_backdrop, '')
 
-        return self.path_base, self.path_img_const, self.path_img_rand, self.path_depth, \
-            self.path_mask, self.path_backdrop
+        return self.path_base, self.path_img_const, self.path_img_rand, self.path_depth, self.path_mask
 
-    def setup(self, dirinfo, filename, objs: list, scene: bpy.types.Scene = bpy.context.scene):
+    def setup(self, dirinfo, filename, objs: dict, scene: bpy.types.Scene = bpy.context.scene):
         """Setup all compositor nodes that are required for exporting to the
         RenderObjects dataset format.
 
@@ -70,15 +69,19 @@ class CompositorNodesOutputRenderedObjects():
             dirinfo (DynamicStruct): directory information for the rendered_objects
                 dataset. See amira_perception for more details
             filename (str): Filename of output (without file extension)
-            objs (list): list of dictionaries with objects (for which a mask needs to be generated) info.
-                Minimal info needed:
-                [{
-                    'id_mask'(str): string with unique id for mask generation
-                    'bpy'(bpy.types.Object): actual bpy object
-                    ...
+            objs (dict): {  # target objects containing all instance of each target type
+                ObjType1(str): {
+                    id(int):  object id
+                    instance_count(int):  number of instances
+                    instances([{}]): [{
+                        id(int): instance id
+                        name(str): actual name of blender object
+                        obj(bpy.types.Object): actual blender object
+                        }
+                        ...
+                    ]
                 }
                 ...
-                ]
             scene (bpy.types.Scene): blender scene on which to operate
 
         Returns:
@@ -148,23 +151,44 @@ class CompositorNodesOutputRenderedObjects():
         self.sockets['s_backdrop'] = s_obj_mask
 
         # add nodes and sockets for all masks
-        for i, obj in enumerate(objs):
-            # setup object (this will change the pass index). The pass_index must be > 0 for the mask to work.
-            obj['bpy'].pass_index = i + 1
+        # setup object (this will change the pass index).
+        # The pass_index must be > 0 for the mask to work.
+        pass_index = 0
+        for obj_type, obj in self.objs.items():
+            o_w = ceil(log(len(self.objs)))  # object width format
+            obj_id = obj['id']  # id of current obj
+            i_w = ceil(log(obj['instance_count']))  # instance width format
+            for instance in obj['instances']:  # loop over instances of same type
+                inst_id = instance['id']  # id of current instance
+                
+                # build absolute index for current instance : objid_instid
+                # TODO: can we collapse to simpler strings in case of single object or 
+                # multi objs single instance. In this case the final mask name will be simpler
+                # E.g. frnum_objid_instid -> frnum_instid
+                index_str = f"_{obj_id:0{o_w}}_{inst_id:0{i_w}}"
+                
+                # update pass index
+                instance['obj'].pass_index = pass_index + 1
 
-            # mask
-            n_id_mask = nodes.new('CompositorNodeIDMask')
-            n_id_mask.index = obj['bpy'].pass_index
-            n_id_mask.use_antialiasing = True
-            tree.links.new(n_render_layers.outputs['IndexOB'], n_id_mask.inputs['ID value'])
+                # mask
+                n_id_mask = nodes.new('CompositorNodeIDMask')
+                n_id_mask.index = instance['obj'].pass_index
+                n_id_mask.use_antialiasing = True
+                tree.links.new(n_render_layers.outputs['IndexOB'], n_id_mask.inputs['ID value'])
 
-            # new socket in file output
-            mask_name = f"Mask{i:03}"
-            n_output_file.file_slots.new(mask_name)
-            s_obj_mask = n_output_file.file_slots[mask_name]
-            s_obj_mask.use_node_format = True
-            tree.links.new(n_id_mask.outputs['Alpha'], n_output_file.inputs[mask_name])
-            self.sockets[f"s_obj_mask{obj['id_mask']}"] = s_obj_mask
+                # new socket in file output
+                mask_name = f'Mask{index_str}'
+                socket_name = f's_obj{index_str}'  # socket name format: s_obj_objid_instid
+                n_output_file.file_slots.new(mask_name)
+                s_obj_mask = n_output_file.file_slots[mask_name]
+                s_obj_mask.use_node_format = True
+                tree.links.new(n_id_mask.outputs['Alpha'], n_output_file.inputs[mask_name])
+                self.sockets[socket_name] = s_obj_mask
+                instance['socket_name'] = socket_name
+                instance['index'] = index_str
+
+                # increment index
+                pass_index += 1
 
         # set the paths of all sockets
         self.update(dirinfo, self.base_filename, objs)
@@ -186,16 +210,21 @@ class CompositorNodesOutputRenderedObjects():
         Args:
             dirinfo: directory information struct of RenderedObject datasets
             filename (str): new filename (without file extension)
-            objs (list): list of dictionaries with objects (for which a mask needs to be generated) info.
-                Minimal info needed:
-                [{
-                    'id_mask'(str): string with unique id for mask generation
-                    'bpy'(bpy.types.Object): actual bpy object
-                    ...
+            objs (dict): {  # target objects containing all instance of each target type
+                ObjType1(str): {
+                    id(int):  object id
+                    instance_count(int):  number of instances
+                    instances([{}]): [{
+                        id(int): instance id
+                        name(str): actual name of blender object
+                        obj(bpy.types.Object): actual blender object
+                        }
+                        ...
+                    ]
                 }
                 ...
-                ]
-            scene (bpy.types.Scene): blender scene on which to operate
+            }
+            scene(bpy.types.Scene): blender scene on which to operate
 
         Returns:
             The sockets dictionary
@@ -217,15 +246,17 @@ class CompositorNodesOutputRenderedObjects():
         self.sockets['s_render'].path = os.path.join(self.path_img_const, f'{self.base_filename}.png####')
         self.sockets['s_depth_map'].path = os.path.join(self.path_depth, f'{self.base_filename}.exr####')
         self.sockets['s_backdrop'].path = os.path.join(self.path_backdrop, f'{self.base_filename}.png####')
-        # obj_names are used to setup corresponding output files for masks
-        for obj in objs:
-            self.sockets[f's_obj_mask{obj["id_mask"]}'].path = os.path.join(
-                self.path_mask, f'{self.base_filename}{obj["id_mask"]}.png####')
+        # update mask sockets
+        for obj_type, obj in self.objs.items():
+            for instance in obj['instances']:  # loop over instances of same type
+                # filename format: imagenum_objid_instid.png####
+                fname = f'{self.base_filename}{instance["index"]}.png####'
+                # update socket path
+                self.sockets[instance['socket_name']].path = os.path.join(self.path_mask, fname)
         return self.sockets
 
     def postprocess(self):
-        """Postprocessing: Repair all filenames and make mask filenames accessible to
-        each corresponding object.
+        """Postprocessing: Repair all filenames.
 
         Blender adds the frame number in filenames. It is not possible to change
         this behavior, even in file output nodes in the compsitor. The
@@ -244,16 +275,14 @@ class CompositorNodesOutputRenderedObjects():
         # get file names
         self.fname_render = os.path.join(self.dirinfo.images.const, f'{self.base_filename}.png{frame_number_str}')
         self.fname_depth = os.path.join(self.dirinfo.images.depth, f'{self.base_filename}.exr{frame_number_str}')
-        self.fname_backdrop = os.path.join(
-            self.dirinfo.images.base_path, 'backdrop', f'{self.base_filename}.png{frame_number_str}')
+        self.fname_backdrop = os.path.join(self.dirinfo.images.base_path, 'backdrop', f'{self.base_filename}.png{frame_number_str}')
         for f in (self.fname_render, self.fname_depth, self.fname_backdrop):
             os.rename(f, f[:-4])
 
         # store mask filename for other users that currently need the mask
-        for obj in self.objs:
-            fname_mask = os.path.join(
-                self.dirinfo.images.mask, f'{self.base_filename}{obj["id_mask"]}.png{frame_number_str}')
-            os.rename(fname_mask, fname_mask[:-4])
-            # store name of mask file into dict of corresponding obj
-            # TODO: not sure is good to modify the dict but I like more than the list of fname_masks
-            obj['fname_mask'] = fname_mask[:-4]
+        for obj_type, obj in self.objs.items():
+            for instance in obj['instances']:
+                mask_name = f'{self.base_filename}{instance["index"]}.png{frame_number_str}'
+                fname_mask = os.path.join(self.dirinfo.images.mask, mask_name)
+                os.rename(fname_mask, fname_mask[:-4])
+                instance['fname_mask'] = fname_mask[:-4]
