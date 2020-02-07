@@ -9,8 +9,8 @@ import numpy as np
 
 
 def project_p3d(p: Vector,
-            camera: bpy.types.Object = bpy.context.scene.camera,
-            render: bpy.types.RenderSettings = bpy.context.scene.render) -> Vector:
+                camera: bpy.types.Object = bpy.context.scene.camera,
+                render: bpy.types.RenderSettings = bpy.context.scene.render) -> Vector:
     """Project a point p onto the image plane of a camera. The returned value is
     in normalized device coordiantes. That is, left upper corner is -1,1, right
     bottom lower corner is 1/-1.
@@ -31,14 +31,14 @@ def project_p3d(p: Vector,
         raise Exception(f"Vector {p} needs to be 3 dimensional")
 
     # get model-view and projection matrix
-    depsgraph  = bpy.context.evaluated_depsgraph_get()
-    modelview  = camera.matrix_world.inverted()
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    modelview = camera.matrix_world.inverted()
     projection = camera.calc_matrix_camera(
-            depsgraph,
-            x=render.resolution_x,
-            y=render.resolution_y,
-            scale_x=render.pixel_aspect_x,
-            scale_y=render.pixel_aspect_y)
+        depsgraph,
+        x=render.resolution_x,
+        y=render.resolution_y,
+        scale_x=render.pixel_aspect_x,
+        scale_y=render.pixel_aspect_y)
 
     # project point (generates homogeneous coordinate)
     p_hom = projection @ modelview @ Vector((p.x, p.y, p.z, 1))
@@ -49,11 +49,10 @@ def project_p3d(p: Vector,
     if p_hom.w == 0.0:
         return None
     else:
-        return Vector((p_hom.x/p_hom.w, p_hom.y/p_hom.w))
+        return Vector((p_hom.x / p_hom.w, p_hom.y / p_hom.w))
 
 
-def p2d_to_pixel_coords(p: Vector,
-        render: bpy.types.RenderSettings = bpy.context.scene.render) -> Vector:
+def p2d_to_pixel_coords(p: Vector, render: bpy.types.RenderSettings = bpy.context.scene.render) -> Vector:
     """Take a 2D point in normalized device coordiantes to pixel coordinates
     using specified render settings.
 
@@ -69,12 +68,11 @@ def p2d_to_pixel_coords(p: Vector,
     if len(p) != 2:
         raise Exception(f"Vector {p} needs to be 2 dimensinoal")
 
-    return Vector(((render.resolution_x - 1) * (p.x+1.0) / +2.0,
-                   (render.resolution_y - 1) * (p.y-1.0) / -2.0))
+    return Vector(((render.resolution_x - 1) * (p.x + 1.0) / +2.0,
+                   (render.resolution_y - 1) * (p.y - 1.0) / -2.0))
 
 
-def get_relative_rotation(obj1: bpy.types.Object,
-        obj2: bpy.types.Object = bpy.context.scene.camera) -> Euler:
+def get_relative_rotation(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.context.scene.camera) -> Euler:
 
     """Get the relative rotation between two objects in terms of the second
     object's coordinate system. Note that the second object will be default
@@ -91,8 +89,7 @@ def get_relative_rotation(obj1: bpy.types.Object,
     return rel_rotation_e
 
 
-def get_relative_translation(obj1: bpy.types.Object,
-        obj2: bpy.types.Object = bpy.context.scene.camera) -> Vector:
+def get_relative_translation(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.context.scene.camera) -> Vector:
     """Get the relative translation between two objects in terms of the second
     object's coordinate system. Note that the second object will be default
     initialized to the scene's camera.
@@ -112,8 +109,7 @@ def get_relative_translation(obj1: bpy.types.Object,
     return rot.inverted() @ v
 
 
-def get_relative_transform(obj1: bpy.types.Object,
-        obj2: bpy.types.Object = bpy.context.scene.camera):
+def get_relative_transform(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.context.scene.camera):
     """Get the relative transform between obj1 and obj2 in obj2's coordinate
     frame.
 
@@ -136,8 +132,8 @@ def get_relative_transform(obj1: bpy.types.Object,
 def test_visibility(obj, cam, width, height):
     # Test if object is still visible. That is, none of the vertices
     # should lie outside the visible pixel-space
-    vs  = [obj.matrix_world @ Vector(v) for v in obj.bound_box]
-    ps  = [project_p3d(v, cam) for v in vs]
+    vs = [obj.matrix_world @ Vector(v) for v in obj.bound_box]
+    ps = [project_p3d(v, cam) for v in vs]
     # Test if we encountered a "point at infinity"
     if None in ps:
         return False

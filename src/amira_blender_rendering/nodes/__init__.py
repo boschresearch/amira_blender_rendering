@@ -7,7 +7,7 @@
 #
 
 # compositor nodes
-from .compositor_renderedobjects import CompositorNodesOutputRenderedObject
+from .compositor_renderedobjects import CompositorNodesOutputRenderedObjects
 
 # material nodes
 from . import material_metal_tool_cap
