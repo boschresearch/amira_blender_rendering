@@ -200,3 +200,20 @@ def get_world_to_object_tranform(cam2obj_pose: dict, camera: bpy.types.Object = 
 
     # pack into dictionary to maintain input format and return
     return {'R': R, 't': t}
+
+
+def gl2cv(R, t):
+    """Convert transform from OpenGL to OpenCV
+    
+    Args:
+        R(np.array(3,3): rotation matrix
+        t(np.array(3,): translation vector
+    Returns:
+        R_cv
+        t_cv
+    """
+    M_gl = np.eye(4)
+    M_gl[:3, :3] = R
+    M_gl[:3, 3] = t
+    Ccv_Cgl = np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
+    return Ccv_Cgl @ M_gl
