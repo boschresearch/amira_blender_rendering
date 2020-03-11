@@ -17,7 +17,7 @@ from amira_blender_rendering import camera_utils
 from amira_blender_rendering import blender_utils as blnd
 import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
-import amira_blender_rendering.math.geometry as abr_geom
+import amira_blender_rendering.math.geometry as abr_geom, gl2cv
 from amira_blender_rendering.math.conversions import bu_to_mm
 
 # import things from AMIRA Perception Subsystem that are required
@@ -125,11 +125,13 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         self.compositor.postprocess()
 
         # compute bounding boxes and save annotations
-        results = ResultsCollection()
+        results_gl = ResultsCollection()
+        results_cv = ResultsCollection()
         for obj in self.objs:
-            render_result = self.build_render_result(obj)
-            results.add_result(render_result)
-        self.save_annotations(results)
+            render_result_gl, render_result_cv = self.build_render_result(obj)
+            results_gl.add_result(render_result_gl)
+            results_cv.add_result(render_result_cv)
+        self.save_annotations(results_gl, results_cv)
 
     def setup_compositor(self):
         """Setup output compositor nodes"""
@@ -187,7 +189,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         corners2d = self.compute_2dbbox(obj['fname_mask'])
         aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
             
-        render_result = PoseRenderResult(
+        render_result_gl = PoseRenderResult(
             model_name=obj['model_name'],
             model_id=obj['model_id'],
             object_name=obj['bpy'].name,
@@ -206,19 +208,56 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
             oobb=oobb,
             mask_name=obj['id_mask'])
 
+        # build results in OpenCV format
+        R_cv, t_cv = gl2cv(R, t)
+        render_result_cv = PoseRenderResult(
+            model_name=obj['model_name'],
+            model_id=obj['model_id'],
+            object_name=obj['bpy'].name,
+            object_id=obj['object_id'],
+            rgb_const=None,
+            rgb_random=None,
+            depth=None,
+            mask=None,
+            T_int=None,
+            T_ext=None,
+            rotation=R_cv,
+            translation=t_cv,
+            corners2d=corners2d,
+            corners3d=corners3d,
+            aabb=aabb,
+            oobb=oobb,
+            mask_name=obj['id_mask'])
+
         # convert to desired units
-        render_result = self.convert_units(render_result)
-        return render_result
+        render_result_gl = self.convert_units(render_result_gl)
+        render_result_cv = self.convert_units(render_result_cv)
+        return render_result_gl, render_result_cv
 
-    def save_annotations(self, results: ResultsCollection):
-        if not os.path.exists(self.dirinfo.annotations):
-            os.mkdir(self.dirinfo.annotations)
+    def save_annotations(self, results_gl: ResultsCollection, results_cv: ResultsCollection):
+        """
+        Save annotations of Render Results given in ResultsCollection
 
-        # build json name, dump data
+        Args:
+            results_gl(ResultsCollection): collection of <PoseRenderResult> in OpenGL convetion
+            results_cv(ResultsCollection): collection of <PoseRenderResult> in OpenCV convetion
+        """
+        # check if directory structure is already there
+        for k in self.dirinfo.annotations:
+            if not os.path.exists(self.dirinfo.annotations[k]):
+                os.makedirs(self.dirinfo.annotations[k], exist_ok=True)  # create entire tree if necessary
+
+        # first dump to json opengl data
         fname_json = f"{self.base_filename}.json"
-        fname_json = os.path.join(self.dirinfo.annotations, f"{fname_json}")
-        json_data = results.state_dict()
-        with open(fname_json, 'w') as f:
+        fpath_json = os.path.join(self.dirinfo.annotations.opengl, f"{fname_json}")
+        json_data = results_gl.state_dict()
+        with open(fpath_json, 'w') as f:
+            json.dump(json_data, f, indent=0)
+
+        # second dump to json opencv data
+        fpath_json = os.path.join(self.dirinfo.annotations.opencv, f'{fname_json}')
+        json_data = results_cv.state_dict()
+        with open(fpath_json, 'w') as f:
             json.dump(json_data, f, indent=0)
 
     def compute_2dbbox(self, fname_mask):
