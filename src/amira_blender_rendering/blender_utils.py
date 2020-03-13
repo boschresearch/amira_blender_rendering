@@ -13,20 +13,6 @@ assets_dir = osp.join(pkg_dir, "assets")
 
 logger = utils.get_logger()
 
-version_ge_2_8 = bpy.app.version[1] >= 80
-
-
-def _unlink_279():
-    for scene in bpy.data.scenes:
-        for obj in scene.objects:
-            try:
-                scene.objects.unlink(obj)
-            except RuntimeError:
-                bpy.data.objects[obj.name].select = True
-                bpy.context.scene.objects.active = obj
-                bpy.ops.object.mode_set(mode='OBJECT')
-                scene.objects.unlink(obj)
-
 
 def _unlink_280():
     for scene in bpy.data.scenes:
@@ -68,20 +54,13 @@ def activate_cuda_devices():
 def clear_all_objects():
     """Remove all objects, meshes, lights, and cameras from a scene"""
 
-    if version_ge_2_8:
-        _unlink_280()
-    else:
-        _unlink_279()
-
+    _unlink_280()
     data_collections = list((
         bpy.data.objects,
         bpy.data.meshes,
         bpy.data.cameras,
     ))
-    if version_ge_2_8:
-        data_collections.append(bpy.data.lights)
-    else:
-        data_collections.append(bpy.data.lamps)
+    data_collections.append(bpy.data.lights)
 
     for clc in data_collections:
         for id_data in clc:
@@ -98,6 +77,19 @@ def clear_orphaned_materials():
     for mat in mats:
         mat.user_clear()
         bpy.data.materials.remove(mat)
+
+
+def select_object(obj_name: str):
+    if obj_name not in bpy.data.objects:
+        # TODO: raise exception?
+        return
+
+    # grab the object
+    obj = bpy.data.objects[obj_name]
+    # we first deselect all, then select and activate the target object
+    bpy.ops.object.select_all(action='DESELECT')
+    obj.select_set(True)
+    bpy.context.view_layer.objects.active = obj
 
 
 
@@ -186,10 +178,7 @@ def set_image_texture(obj, image_path, material_name):
 
     img = load_img(image_path)
 
-    if version_ge_2_8:
-        clc = obj.data.uv_layers
-    else:
-        clc = obj.data.uv_textures
+    clc = obj.data.uv_layers
     if len(clc) == 0:
         clc.new()
 
@@ -263,10 +252,7 @@ def create_room_corner():
 def load_cad_part(cad_part):
     current_objects = bpy.data.objects.keys()
     blendfile = osp.join(assets_dir, "CAD_parts_{}.blend")
-    if version_ge_2_8:
-        blendfile = blendfile.format(280)
-    else:
-        blendfile = blendfile.format(279)
+    blendfile = blendfile.format(280)
     bpy.ops.wm.append(filename=cad_part, directory=blendfile + "\\Object\\")
     for o in bpy.data.objects.keys():
         if o not in current_objects:
