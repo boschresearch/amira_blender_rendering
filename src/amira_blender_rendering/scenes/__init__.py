@@ -9,3 +9,7 @@ from .renderedobjectsbase import RenderedObjectsBase
 from .simpletoolcap import SimpleToolCap
 from .simpleletterb import SimpleLetterB
 from .pandatable import PandaTable, ClutteredPandaTable, MultiObjectsClutteredPandaTable
+from .workstationscenarios import WorkstationScenarios
+
+
+
