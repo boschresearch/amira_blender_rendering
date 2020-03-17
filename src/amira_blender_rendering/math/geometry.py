@@ -204,7 +204,7 @@ def get_world_to_object_tranform(cam2obj_pose: dict, camera: bpy.types.Object = 
 
 def gl2cv(R, t):
     """Convert transform from OpenGL to OpenCV
-    
+
     Args:
         R(np.array(3,3): rotation matrix
         t(np.array(3,): translation vector
@@ -217,3 +217,117 @@ def gl2cv(R, t):
     M_gl[:3, 3] = t
     Ccv_Cgl = np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
     return Ccv_Cgl @ M_gl
+
+
+def euler_x_to_matrix(angle):
+    """Get rotation matrix from euler angle rotation around X."""
+    return np.array([
+        [1, 0, 0],
+        [0, np.cos(angle), -np.sin(angle)],
+        [0, np.sin(angle), np.cos(angle)]])
+
+
+def euler_y_to_matrix(angle):
+    """Get rotation matrix from euler angle rotation around Y."""
+    return np.array([
+        [np.cos(angle), 0, np.sin(angle)],
+        [0, 1, 0],
+        [-np.sin(angle), 0, np.cos(angle)]])
+
+
+def euler_z_to_matrix(angle):
+    """Get rotation matrix from euler angle rotation around Z."""
+    return np.array([
+        [np.cos(angle), -np.sin(angle), 0],
+        [np.sin(angle), np.cos(angle), 0],
+        [0, 0, 1]])
+
+
+def rotation_matrix(alpha, axis, homogeneous=False):
+    """Euler rotation matrices
+
+    Args:
+        alpha (float): angle in radians
+        axis (str): x/y/z
+        homogeneous (bool): output homogeneous coordinates
+
+    Returns:
+        rotation matrix
+
+    """
+
+    # make sure axis is lower case
+    axis = axis.lower()
+
+    if axis == 'x':
+        # rotation around x
+        rot = euler_x_to_matrix(alpha)
+    elif axis == 'y':
+        # rotation around y
+        rot = euler_y_to_matrix(alpha)
+    elif axis == 'z':
+        # rotation around z
+        rot = euler_z_to_matrix(alpha)
+    else:
+        logger.error('Axis needs to be x/y/z!')
+        raise ValueError
+
+    # create homogeneous matrix
+    if homogeneous is True:
+        h = np.eye(4)
+        h[:3, :3] = rot
+        return h
+    else:
+        return rot
+
+
+# the two following method have been implemented in the amira_lfd pipeline
+def rotation_matrix_to_quaternion(rot_mat):
+    """
+    Computes the quaternion (with convention WXYZ) out of a given rotation matrix
+    Inverse funtion of quaternion_to_rotation_matrix
+
+    Parameters
+    ----------
+    :param rot_mat:  np.array of shape (3, 3)
+
+    Returns
+    -------
+    :return q: np.array of shape (4,), quaternion (WXYZ) corresponding to the rotation matrix rot_mat
+    """
+    qs = min(np.sqrt(np.trace(rot_mat) + 1) / 2.0, 1.0)
+    kx = rot_mat[2, 1] - rot_mat[1, 2]  # Oz - Ay
+    ky = rot_mat[0, 2] - rot_mat[2, 0]  # Ax - Nz
+    kz = rot_mat[1, 0] - rot_mat[0, 1]  # Ny - Ox
+    if (rot_mat[0, 0] >= rot_mat[1, 1]) and (rot_mat[0, 0] >= rot_mat[2, 2]):
+        kx1 = rot_mat[0, 0] - rot_mat[1, 1] - rot_mat[2, 2] + 1  # Nx - Oy - Az + 1
+        ky1 = rot_mat[1, 0] + rot_mat[0, 1]  # Ny + Ox
+        kz1 = rot_mat[2, 0] + rot_mat[0, 2]  # Nz + Ax
+        add = (kx >= 0)
+    elif rot_mat[1, 1] >= rot_mat[2, 2]:
+        kx1 = rot_mat[1, 0] + rot_mat[0, 1]  # Ny + Ox
+        ky1 = rot_mat[1, 1] - rot_mat[0, 0] - rot_mat[2, 2] + 1  # Oy - Nx - Az + 1
+        kz1 = rot_mat[2, 1] + rot_mat[1, 2]  # Oz + Ay
+        add = (ky >= 0)
+    else:
+        kx1 = rot_mat[2, 0] + rot_mat[0, 2]  # Nz + Ax
+        ky1 = rot_mat[2, 1] + rot_mat[1, 2]  # Oz + Ay
+        kz1 = rot_mat[2, 2] - rot_mat[0, 0] - rot_mat[1, 1] + 1  # Az - Nx - Oy + 1
+        add = (kz >= 0)
+    if add:
+        kx = kx + kx1
+        ky = ky + ky1
+        kz = kz + kz1
+    else:
+        kx = kx - kx1
+        ky = ky - ky1
+        kz = kz - kz1
+    nm = np.linalg.norm(np.array([kx, ky, kz]))
+    if nm == 0:
+        q = np.array([1., 0., 0., 0.])
+    else:
+        s = np.sqrt(1 - qs**2) / nm
+        qv = s * np.array([kx, ky, kz])
+        q = np.append(qs, qv)
+    return q
+
