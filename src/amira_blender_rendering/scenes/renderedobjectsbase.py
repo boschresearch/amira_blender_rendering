@@ -17,12 +17,12 @@ from amira_blender_rendering import camera_utils
 from amira_blender_rendering import blender_utils as blnd
 import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
-import amira_blender_rendering.math.geometry as abr_geom, gl2cv
+import amira_blender_rendering.math.geometry as abr_geom
 from amira_blender_rendering.math.conversions import bu_to_mm
 
 # import things from AMIRA Perception Subsystem that are required
-from aps.core.interfaces import PoseRenderResult, ResultsCollection
-from aps.core.cv.camera import boundingbox_from_mask
+from amira_blender_rendering.interfaces import PoseRenderResult, ResultsCollection
+from amira_blender_rendering.postprocessing import boundingbox_from_mask
 
 
 class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
@@ -171,10 +171,10 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
     def build_render_result(self, obj: dict):
         """Create render result.
-        
+
         Args:
             obj(dict): object dictionary to operate on
-            
+
         Returns:
             PoseRenderResult
             """
@@ -188,7 +188,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         # compute bounding boxes
         corners2d = self.compute_2dbbox(obj['fname_mask'])
         aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
-            
+
         render_result_gl = PoseRenderResult(
             model_name=obj['model_name'],
             model_id=obj['model_id'],
@@ -209,7 +209,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
             mask_name=obj['id_mask'])
 
         # build results in OpenCV format
-        R_cv, t_cv = gl2cv(R, t)
+        R_cv, t_cv = abr_geom.gl2cv(R, t)
         render_result_cv = PoseRenderResult(
             model_name=obj['model_name'],
             model_id=obj['model_id'],
@@ -380,3 +380,5 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
         # look at center
         blnd.look_at(self.cam, Vector((0.0, 0.0, 0.0)))
+
+
