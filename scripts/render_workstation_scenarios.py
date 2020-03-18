@@ -82,7 +82,7 @@ def get_cmd_argparser():
 
     parser.add_argument(
             '--config',
-            default='config/workstation_scenarios.cfg',
+            default='config/workstation_scenario01.cfg',
             help='Path to configuration file')
 
     parser.add_argument(
