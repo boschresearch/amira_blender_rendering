@@ -1,13 +1,31 @@
 #!/usr/bin/env python
 
 import os
+from math import ceil
 from amira_blender_rendering.utils import expandpath
 from amira_blender_rendering.datastructures import DynamicStruct
 
 
+def get_environment_textures(base_path):
+    """Determine if the user wants to set specific environment texture, or
+    randomly select from a directory
+
+    Args:
+        cfg(Configuration): config with render setup
+    """
+    # this rise a KeyError if 'environment_texture' not in cfg
+    environment_textures = expandpath(base_path)
+    if os.path.isdir(environment_textures):
+        files = os.listdir(environment_textures)
+        environment_textures = [os.path.join(environment_textures, f) for f in files]
+    else:
+        environment_textures = [environment_textures]
+
+    return environment_textures
+
 #
 #
-# NOTE: the functions and classes below were taken from amira_perception. Make
+# NOTE: the functions and classes below were partially taken from amira_perception. Make
 #       sure to keep in sync as long as we don't have a core library that is
 #       restricted to such functionality
 #
@@ -31,15 +49,15 @@ def build_directory_info(base_path: str, **kwargs):
     dir_info.annotations = DynamicStruct()
 
     # setup all path related information
-    dir_info.base_path = base_path
-    dir_info.annotations.base_path = os.path.join(dir_info.base_path, 'Annotations')
-    dir_info.annotations.opengl = os.path.join(dir_info.annotations.base_path, 'OpenGL')
-    dir_info.annotations.opencv = os.path.join(dir_info.annotations.base_path, 'OpenCV')
-    dir_info.images.base_path = os.path.join(dir_info.base_path, 'Images')
-    dir_info.images.const = os.path.join(dir_info.images.base_path, 'constant_light')
-    dir_info.images.random = os.path.join(dir_info.images.base_path, 'random_light')
-    dir_info.images.depth = os.path.join(dir_info.images.base_path, 'depth')
-    dir_info.images.mask = os.path.join(dir_info.images.base_path, 'mask')
+    dir_info.base_path             = expandpath(base_path)
+    dir_info.annotations.base_path = os.path.join(dir_info.base_path             , 'Annotations')
+    dir_info.annotations.opengl    = os.path.join(dir_info.annotations.base_path , 'OpenGL')
+    dir_info.annotations.opencv    = os.path.join(dir_info.annotations.base_path , 'OpenCV')
+    dir_info.images.base_path      = os.path.join(dir_info.base_path             , 'Images')
+    dir_info.images.const          = os.path.join(dir_info.images.base_path      , 'constant_light')
+    dir_info.images.random         = os.path.join(dir_info.images.base_path      , 'random_light')
+    dir_info.images.depth          = os.path.join(dir_info.images.base_path      , 'depth')
+    dir_info.images.mask           = os.path.join(dir_info.images.base_path      , 'mask')
 
     dense_features = kwargs.get('dense_features', False)
     if dense_features:

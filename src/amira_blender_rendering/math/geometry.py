@@ -216,7 +216,9 @@ def gl2cv(R, t):
     M_gl[:3, :3] = R
     M_gl[:3, 3] = t
     Ccv_Cgl = np.array([[1, 0, 0, 0], [0, -1, 0, 0], [0, 0, -1, 0], [0, 0, 0, 1]])
-    return Ccv_Cgl @ M_gl
+    Cgl_W = Ccv_Cgl @ M_gl
+    # return as R and t, as expected by the docstring
+    return Cgl_W[:3, :3], Cgl_W[:3, 3]
 
 
 def euler_x_to_matrix(angle):

@@ -39,10 +39,12 @@ def import_abr(path=None): # {{{
     if path is not None:
         sys.path.append(expandpath(path))
 
-    global abr
+    global abr, WorkstationScenarios, WorkstationScenariosConfiguration
     import amira_blender_rendering as abr
+    import amira_blender_rendering.dataset
     import amira_blender_rendering.blender_utils
     import amira_blender_rendering.scenes
+    from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
     # }}}
 
 def get_environment_textures(cfg): # {{{
@@ -77,47 +79,39 @@ def get_cmd_argparser():
     parser = argparse.ArgumentParser(
         description='Render dataset in blender', prog="blender -b -P " + __file__,
         add_help=False)
-    parser.add_argument('--config', default='config/render_toolcap.cfg', help='Path to configuration file')
-    parser.add_argument('--aps-path', default='~/dev/vision/amira_perception',
-                        help='Path where AMIRA Perception Subsystem (aps) can be found')
-    parser.add_argument('--abr-path', default='~/dev/vision/amira_blender_rendering/src',
-                        help='Path where amira_blender_rendering (abr) can be found')
-    parser.add_argument('--only-viewsphere', action='store_true', help='Generate only Viewsphere dataset')
-    parser.add_argument('--print-config', action="store_true", help='Print configuration and exit')
-    parser.add_argument('-h', '--help', action='store_true', help='Print this help message and exit')
+
+    parser.add_argument(
+            '--config',
+            default='config/workstation_scenarios.cfg',
+            help='Path to configuration file')
+
+    parser.add_argument(
+            '--aps-path',
+            default='~/amira/amira_perception',
+            help='Path where AMIRA Perception Subsystem (aps) can be found')
+
+    parser.add_argument(
+            '--abr-path',
+            default='~/amira/amira_blender_rendering/src',
+            help='Path where amira_blender_rendering (abr) can be found')
+
+    parser.add_argument(
+            '--only-viewsphere',
+            action='store_true',
+            help='Generate only Viewsphere dataset')
+
+    parser.add_argument(
+            '--print-config',
+            action="store_true",
+            help='Print configuration and exit')
+
+    parser.add_argument(
+            '-h',
+            '--help',
+            action='store_true',
+            help='Print this help message and exit')
 
     return parser
-
-
-# TODO
-# maybe allow registration of configurations similar to the process in APS
-def get_basic_config():
-    "Setup script specific configuration"
-
-    # basic config parameters
-    config = abr.datastructures.Configuration()
-
-    # general dataset configuration
-    config.add_param('dataset.image_count', 0, 'Number of images to generate')
-    config.add_param('dataset.output_path', '', 'Path to storage directory')
-
-    # camera configuration
-    config.add_param('camera_info.name', 'none', 'Name for camera')
-    config.add_param('camera_info.width', 640, 'Rendered image resolution (pixel) along x (width)')
-    config.add_param('camera_info.height', 480, 'Rendered image resolution (pixel) along y (height)')
-
-    # render and scenario configuration
-    config.add_param('render_setup.backend', 'blender-cycles', 'Render backend. Blender only one supported')
-    config.add_param('render_setup.target_objects', '', '(List of) target objects in the scene', special='maybe_list')
-    config.add_param('render_setup.blend_file', '~/gfx/modeling/workstation_scenarios.blend', 'Path to .blend file with modeled scene')
-
-    # currently, the scenarios are simply enumerated from 0 - 5 (have a look at
-    # the .blend file)
-    config.add_param('render_setup.scenario', 0, 'Scene type to be rendered')
-    config.add_param('render_setup.cameras', 'lcr', 'String containing which of the cameras to render (l = left, c = center, r = right)')
-
-    return config
-
 
 def main():
     # parse command arguments
@@ -126,26 +120,36 @@ def main():
 
     # TODO: fix hard paths, and read configuration from file
     import_abr(expandpath('~/amira/amira_blender_rendering/src'))
-    config = get_basic_config()
+    config = WorkstationScenariosConfiguration()
 
-    # combine parsers and parse
+    # combine parsers and parse command line arguments
     parser = argparse.ArgumentParser(
         prog="blender -b -P " + __file__,
         parents=[cmd_parser] + config.get_argparsers(),
         add_help=False)
     args = parser.parse_args(args=get_argv())
 
-    # check if there's a config file
-    if ('config' in args) and (args.config is None):
-        print("Please specify a configuration file with the '--config' argument.")
-        parser.print_help()
-        sys.exit()
-
     # check if the configuration file exists
     configfile = expandpath(args.config)
     if not os.path.exists(configfile):
         raise RuntimeError(f"Configuration file '{configfile}' does not exist")
 
+    # parse configuration from file, and then update with arguments
+    config.parse_file(configfile)
+    config.parse_args()
+
+    # build split configuration
+    splitting_configs = abr.dataset.build_splitting_configs(config)
+
+    # start generating datasets
+    for cfg in splitting_configs:
+        scene = WorkstationScenarios(config=config)
+        if scene.generate_dataset():
+            # save configuration alongside the dataset
+            # abr.dataset.dump_config(cfg, expandpath(cfg.dataset.base_path))
+            print(f"II: Success")
+        else:
+            print(f"EE: Error while generating dataset")
 
 
 if __name__ == "__main__":

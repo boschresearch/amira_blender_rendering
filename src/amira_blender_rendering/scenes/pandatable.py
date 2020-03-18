@@ -255,7 +255,7 @@ class MultiObjectsClutteredPandaTable(BasePandaTable):
     """Cluttered Panda Table scene which will get loaded from blend file"""
 
     def __init__(self, base_filename: str, dirinfo, camerainfo, **kwargs):
-    
+
         self.config = kwargs.get('config', None)
         self.blend_file_path = expandpath(
             self.config['blend_file'] if self.config is not None else '~/gfx/modeling/robottable_cluttered.blend')
@@ -264,7 +264,7 @@ class MultiObjectsClutteredPandaTable(BasePandaTable):
         self.objs_types = self.config['target_objects']
         self.nontarget_objs = list()
         self.nontarget_objs_types = ['RedCube', 'DriveShaft']
-        
+
         # parent constructor
         super(MultiObjectsClutteredPandaTable, self).__init__(base_filename, dirinfo, camerainfo, **kwargs)
 
@@ -293,6 +293,8 @@ class MultiObjectsClutteredPandaTable(BasePandaTable):
                     })
                     objs_counts[i] += 1
 
+        # TODO: how can this work? line 300 uses i, which is not defined in this
+        # scope
         # build masks id for compositor
         m_w = ceil(log(len(objs_types)))  # format width for number of model types
         o_w = ceil(log(objs_counts[i]))  # format width for number of objects of same model
@@ -327,7 +329,7 @@ class MultiObjectsClutteredPandaTable(BasePandaTable):
                 obj['bpy'].location.x = base_location.x + (np.random.rand(1) - .5) * range_x
                 obj['bpy'].location.y = base_location.y + (np.random.rand(1) - .5) * range_y
                 obj['bpy'].rotation_euler = Vector((np.random.rand(3) * np.pi))
-        
+
             # update the scene. unfortunately it doesn't always work to just set
             # the location of the object without recomputing the dependency
             # graph

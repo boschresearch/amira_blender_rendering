@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# TODO: this file is not used anywhere. Remove
+
 import os
 # from typing import List
 import bpy
@@ -160,13 +162,13 @@ class CompositorNodesOutputMultiRenderedObject():
             i_w = ceil(log(obj['instance_count']))  # instance width format
             for instance in obj['instances']:  # loop over instances of same type
                 inst_id = instance['id']  # id of current instance
-                
+
                 # build absolute index for current instance : objid_instid
-                # TODO: can we collapse to simpler strings in case of single object or 
+                # TODO: can we collapse to simpler strings in case of single object or
                 # multi objs single instance. In this case the final mask name will be simpler
                 # E.g. frnum_objid_instid -> frnum_instid
                 index_str = f"_{obj_id:0{o_w}}_{inst_id:0{i_w}}"
-                
+
                 # update pass index
                 instance['obj'].pass_index = pass_index + 1
 
