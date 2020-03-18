@@ -286,6 +286,7 @@ class WorkstationScenarios():
             self.forward_simulate()
 
             # loop through all cameras
+            repeat_frame = False
             for i_cam, cam in enumerate(self.config.scene_setup.cameras):
                 # activate camera
                 self.activate_camera(cam)
@@ -296,25 +297,20 @@ class WorkstationScenarios():
 
                 # postprocess. this will take care of creating additional
                 # information, as well as fix filenames
-                self.renderman.postprocess(self.dirinfos[i_cam], base_filename, bpy.context.scene.camera, self.objs)
+                try:
+                    self.renderman.postprocess(self.dirinfos[i_cam], base_filename, bpy.context.scene.camera, self.objs)
+                except ValueError:
+                    # This issue happens every now and then. The reason might be (not
+                    # yet verified) that the target-object is occluded. In turn, this
+                    # leads to a zero size 2D bounding box...
+                    print(f"ValueError during post-processing, re-generating image index {i}")
+                    repeat_frame = True
 
+                    # no need to continue with other cameras
+                    break
 
-            # for each camera
-            #   setup dirinfo (-> compositor) -> #   self.renderman.setup_pathspec(dirinfo, filename, self.objs)
-            #   render
-
-
-            try:
-                # self.renderman.postprocess()
-                pass
-            except ValueError:
-                # This issue happens every now and then. The reason might be (not
-                # yet verified) that the target-object is occluded. In turn, this
-                # leads to a zero size 2D bounding box...
-                print(f"ValueError during post-processing, re-generating image index {i}")
-            else:
-                # increment loop counter
+            # if we need to repeat this frame, then do not increment the counter
+            if not repeat_frame:
                 i = i + 1
-            break
 
         return True
