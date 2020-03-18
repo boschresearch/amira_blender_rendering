@@ -42,12 +42,12 @@ class WorkstationScenariosConfiguration(Configuration):
         # scene configuration
         self.add_param('scene_setup.blend_file', '~/gfx/modeling/workstation_scenarios.blend', 'Path to .blend file with modeled scene')
         self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images', 'Path to background images / environment textures')
-        self.add_param('scene_setup.cameras', ['CameraLeft', 'Camera', 'CameraRight'], 'Cameras to render', special='maybe_list')
+        self.add_param('scene_setup.cameras', ['CameraLeft', 'Camera', 'CameraRight'], 'Cameras to render')
         self.add_param('scene_setup.forward_frames', 15, 'Number of frames in physics forward-simulation')
 
         # scenario configuration
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
-        self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment', special='maybe_list')
+        self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
 
 
 
@@ -78,6 +78,9 @@ class WorkstationScenarios():
                 self.config.render_setup.integrator,
                 self.config.render_setup.denoising,
                 self.config.render_setup.samples)
+
+        # grab environment textures
+        self.setup_environment_textures()
 
         # setup all camera information according to the configuration
         self.setup_cameras()
@@ -282,6 +285,7 @@ class WorkstationScenarios():
 
             # randomize scene: move objects at random locations, and forward
             # simulate physics
+            self.randomize_environment_texture()
             self.randomize_object_transforms()
             self.forward_simulate()
 
