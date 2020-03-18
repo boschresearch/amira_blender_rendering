@@ -5,11 +5,13 @@ from .basescenemanager import BaseSceneManager
 from .threepointlighting import ThreePointLighting
 from .renderedobjectsbase import RenderedObjectsBase
 
+# composition classes, if inheritance should or cannot be used
+from .rendermanager import RenderManager
+
 # concrete scenes
 from .simpletoolcap import SimpleToolCap
 from .simpleletterb import SimpleLetterB
 from .pandatable import PandaTable, ClutteredPandaTable, MultiObjectsClutteredPandaTable
 from .workstationscenarios import WorkstationScenarios
-
 
 
