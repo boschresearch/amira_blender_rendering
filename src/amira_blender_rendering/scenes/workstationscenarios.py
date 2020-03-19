@@ -48,6 +48,8 @@ class WorkstationScenarios():
 
         # extract configuration
         self.config = kwargs.get('config', WorkstationScenariosConfiguration())
+        if self.config.dataset.scene_type.lower() != 'WorkstationScenarios'.lower():
+            raise RuntimeError(f"Invalid configuration of scene type {self.config.dataset.scene_type} for class WorkstationScenarios")
 
         # we do composition here, not inheritance anymore because it is too
         # limiting in its capabilities. Using a render manager is a better way
