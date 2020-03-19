@@ -72,14 +72,18 @@ def get_cmd_argparser():
             help='Path where amira_blender_rendering (abr) can be found')
 
     parser.add_argument(
+            'scenario',
+            help='Scenario to generate dataset for')
+
+    parser.add_argument(
             '--viewsphere',
             action='store_true',
             help='Generate Viewsphere instead of RenderedObjects dataset')
 
     parser.add_argument(
-            '--list-scenarios',
+            '--list-scenes',
             action='store_true',
-            help='Print list of scenarios and exit')
+            help='Print list of scenes and exit')
 
     parser.add_argument(
             '--print-config',
@@ -95,13 +99,65 @@ def get_cmd_argparser():
     return parser
 
 
+def get_scene_types():
+    from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
+
+    # each scenario consists of a name, and a tuple containing the scenario as
+    # well as its configuration
+    return {'WorkstationScenarios': [WorkstationScenarios, WorkstationScenariosConfiguration]}
+
+def get_scene_type(type_str: str):
+    """Get the (literal) type of a scene given a string.
+
+    Essentially, this is what literal_cast does in C++, but for user-defined
+    types.
+
+    Args:
+        type_str(str): type-string of a scene without module-prefix
+
+    Returns:
+        type corresponding to type_str
+    """
+    # specify mapping from str -> type to get the scene
+    # TODO: this might be too simple at the moment, because some scenes might
+    #       require more arguments. But we could think about passing along a
+    #       Configuration object, similar to whats happening in aps
+    scene_types = {
+        'SimpleToolCap': abr.scenes.SimpleToolCap,
+        'SimpleLetterB': abr.scenes.SimpleLetterB,
+        'PandaTable': abr.scenes.PandaTable,
+        'ClutteredPandaTable': abr.scenes.ClutteredPandaTable,
+        'MultiObjectsClutteredPandaTable': abr.scenes.MultiObjectsClutteredPandaTable
+    }
+    if type_str not in scene_types:
+        known_types = str([k for k in scene_types.keys()])[1:-1]
+        raise Exception(f"Scene type {type_str} unknown. Known types: {known_types}. Note: types are case sensitive.")
+    return scene_types[type_str]
+
 
 def main():
     # parse command arguments
     cmd_parser = get_cmd_argparser()
     cmd_args = cmd_parser.parse_args(args=get_argv())  # need to parse to get aps and abr
 
-    # import ABR and get the target scenario configuration
+    # TODO: this can be removed as soon as we have an installable abr
+    # check if user specified abr_path
+    if cmd_args.abr_path is None:
+        print("Please specify the path under which the amira_blender_rendering python package (abr) can be found.")
+        print("Note that abr should be found below the repository's src/ directory")
+        sys.exit(1)
+
+    abr_path = expandpath(cmd_args.abr_path)
+    if not os.path.exists(abr_path):
+        print("Please specify a valid path under which the amira_blender_rendering python package (abr) can be found.")
+        print("Note that abr should be found below the repository's src/ directory")
+        sys.exit(1)
+
+    if cmd_args.list_scenes:
+        scenarios = get_scenario_dict()
+
+    scenario = cmd_args.scenario
+
     import_abr(expandpath(cmd_args.abr_path))
     config = WorkstationScenariosConfiguration()
 

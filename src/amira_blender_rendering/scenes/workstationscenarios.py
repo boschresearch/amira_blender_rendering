@@ -22,36 +22,19 @@ import amira_blender_rendering.math.geometry as abr_geom
 import amira_blender_rendering.utils.blender as blnd
 
 
-class WorkstationScenariosConfiguration(Configuration):
+class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
     """This class specifies all configuration options for WorkstationScenarios"""
 
     def __init__(self):
-        super(WorkstationScenariosConfiguration, self).__init__(name="WorkstationScenarios")
+        super(WorkstationScenariosConfiguration, self).__init__("WorkstationScenarios")
 
-        # general dataset configuration
-        self.add_param('dataset.image_count', 1, 'Number of images to generate')
-        self.add_param('dataset.base_path', '', 'Path to storage directory')
-
-        # camera configuration
-        self.add_param('camera_info.name', 'Pinhole Camera', 'Name for the camera')
-        self.add_param('camera_info.model', 'pinhole', 'Camera model type')
-        self.add_param('camera_info.width', 640, 'Rendered image resolution (pixel) along x (width)')
-        self.add_param('camera_info.height', 480, 'Rendered image resolution (pixel) along y (height)')
-        self.add_param('camera_info.k', [], 'calibration matrix K', special='maybe_list')
-
-        # render configuration
-        self.add_param('render_setup.backend', 'blender-cycles', 'Render backend. Blender only one supported')
-        self.add_param('render_setup.integrator', 'BRANCHED_PATH', 'Integrator used during path tracing. Either of PATH, BRANCHED_PATH')
-        self.add_param('render_setup.denoising', True, 'Use denoising algorithms during rendering')
-        self.add_param('render_setup.samples', 128, 'Samples to use during rendering')
-
-        # scene configuration
+        # specific scene configuration
         self.add_param('scene_setup.blend_file', '~/gfx/modeling/workstation_scenarios.blend', 'Path to .blend file with modeled scene')
         self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images', 'Path to background images / environment textures')
         self.add_param('scene_setup.cameras', ['CameraLeft', 'Camera', 'CameraRight'], 'Cameras to render')
         self.add_param('scene_setup.forward_frames', 15, 'Number of frames in physics forward-simulation')
 
-        # scenario configuration
+        # specific scenario configuration
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
         self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
 
@@ -324,3 +307,7 @@ class WorkstationScenarios():
                 i = i + 1
 
         return True
+
+
+    def generate_viewsphere_dataset():
+        raise NotImplementedError()
