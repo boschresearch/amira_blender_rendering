@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+"""
+This file implements generation of datasets for workstation scenarios. The file
+depends on a suitable workstation scenarion blender file such as
+worstationscenarios.blend.
+"""
+
 import bpy
 from mathutils import Vector
 import time
