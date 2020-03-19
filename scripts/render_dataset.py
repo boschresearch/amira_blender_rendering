@@ -21,6 +21,7 @@ Example:
 import bpy
 import sys
 import os
+import re
 import argparse
 import numpy as np
 import random
@@ -72,10 +73,6 @@ def get_cmd_argparser():
             help='Path where amira_blender_rendering (abr) can be found')
 
     parser.add_argument(
-            'scenario',
-            help='Scenario to generate dataset for')
-
-    parser.add_argument(
             '--viewsphere',
             action='store_true',
             help='Generate Viewsphere instead of RenderedObjects dataset')
@@ -106,33 +103,22 @@ def get_scene_types():
     # well as its configuration
     return {'WorkstationScenarios': [WorkstationScenarios, WorkstationScenariosConfiguration]}
 
-def get_scene_type(type_str: str):
-    """Get the (literal) type of a scene given a string.
 
-    Essentially, this is what literal_cast does in C++, but for user-defined
-    types.
+def determine_scene_type(config_file):
+    # we don't want to parse the entire ini file, but only look for the
+    # scene_type, to be able to instantiate the correct scene and configuration
+    scene_type = None
+    pattern = re.compile('^\s*scene_type\s*=\s*(.*)\s*$', re.IGNORECASE)
+    with open(config_file) as f:
+        for line in f:
+            match = pattern.match(line)
+            if match is not None:
+                scene_type = match.group(1)
+    if scene_type is None:
+        raise RuntimeError("scene_type missing from configuration file. Is your config valid?")
+    return scene_type
 
-    Args:
-        type_str(str): type-string of a scene without module-prefix
 
-    Returns:
-        type corresponding to type_str
-    """
-    # specify mapping from str -> type to get the scene
-    # TODO: this might be too simple at the moment, because some scenes might
-    #       require more arguments. But we could think about passing along a
-    #       Configuration object, similar to whats happening in aps
-    scene_types = {
-        'SimpleToolCap': abr.scenes.SimpleToolCap,
-        'SimpleLetterB': abr.scenes.SimpleLetterB,
-        'PandaTable': abr.scenes.PandaTable,
-        'ClutteredPandaTable': abr.scenes.ClutteredPandaTable,
-        'MultiObjectsClutteredPandaTable': abr.scenes.MultiObjectsClutteredPandaTable
-    }
-    if type_str not in scene_types:
-        known_types = str([k for k in scene_types.keys()])[1:-1]
-        raise Exception(f"Scene type {type_str} unknown. Known types: {known_types}. Note: types are case sensitive.")
-    return scene_types[type_str]
 
 
 def main():
@@ -152,14 +138,26 @@ def main():
         print("Please specify a valid path under which the amira_blender_rendering python package (abr) can be found.")
         print("Note that abr should be found below the repository's src/ directory")
         sys.exit(1)
-
-    if cmd_args.list_scenes:
-        scenarios = get_scenario_dict()
-
-    scenario = cmd_args.scenario
-
     import_abr(expandpath(cmd_args.abr_path))
-    config = WorkstationScenariosConfiguration()
+
+    # pretty print available scenarios?
+    scene_types = get_scene_types()
+    if cmd_args.list_scenes:
+        print("List of possible scenes:")
+        for k, _ in scene_types.items():
+            print(f"   {k}")
+        sys.exit(0)
+
+    # change all keys to lower-case
+    scene_types = dict((k.lower(), v) for k, v in scene_types.items())
+
+    # check scene_type in config
+    scene_type_str = determine_scene_type(cmd_args.config)
+    if scene_type_str.lower() not in scene_types:
+        raise RuntimeError(f"Invalid configuration: Unknown scene_type {scene_type_str}")
+
+    # instantiate configuration
+    config = scene_types[scene_type_str.lower()][1]()
 
     # combine parsers and parse command line arguments
     parser = argparse.ArgumentParser(
@@ -182,7 +180,8 @@ def main():
 
     # start generating datasets
     for cfg in splitting_configs:
-        scene = WorkstationScenarios(config=config)
+        # instantiate corresponding scene
+        scene = scene_types[scene_type_str.lower()][0](config=config)
         if scene.generate_dataset():
             # save configuration alongside the dataset
             # abr.dataset.dump_config(cfg, expandpath(cfg.dataset.base_path))
