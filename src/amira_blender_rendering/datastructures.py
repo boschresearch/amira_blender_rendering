@@ -735,3 +735,12 @@ class Filter:
             dict_put_nested(new_sample, key, dict_get_nested(sample, key), type=self.dict_type)
         return new_sample
 
+
+def filter_state_keys(data, retain_keys: list = None):
+    """Filter state dict keys from list"""
+    if retain_keys is None:
+        retain_keys = []
+    if len(retain_keys) != 0:
+        filter_results = Filter(retain_keys)
+        return filter_results(data)
+    return data
