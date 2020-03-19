@@ -105,8 +105,8 @@ def get_scene_types():
 
 
 def determine_scene_type(config_file):
-    # we don't want to parse the entire ini file, but only look for the
-    # scene_type, to be able to instantiate the correct scene and configuration
+    """Determine the scene type given a configuration file."""
+    # don't parse the entire ini file, only look for scene_type
     scene_type = None
     pattern = re.compile('^\s*scene_type\s*=\s*(.*)\s*$', re.IGNORECASE)
     with open(config_file) as f:
@@ -117,8 +117,6 @@ def determine_scene_type(config_file):
     if scene_type is None:
         raise RuntimeError("scene_type missing from configuration file. Is your config valid?")
     return scene_type
-
-
 
 
 def main():
@@ -182,13 +180,15 @@ def main():
     for cfg in splitting_configs:
         # instantiate corresponding scene
         scene = scene_types[scene_type_str.lower()][0](config=config)
-        if scene.generate_dataset():
-            # save configuration alongside the dataset
-            # abr.dataset.dump_config(cfg, expandpath(cfg.dataset.base_path))
-            print(f"II: Success")
-        else:
-            print(f"EE: Error while generating dataset")
 
+        # TODO: check if viewsphere or dataset
+        success = False
+        if cmd_args.viewsphere:
+            success = scene.generate_viewsphere_dataset()
+        else:
+            success = scene.generate_dataset()
+        if not success:
+            print(f"EE: Error while generating dataset")
 
 if __name__ == "__main__":
     main()
