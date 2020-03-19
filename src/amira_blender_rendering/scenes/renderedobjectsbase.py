@@ -61,7 +61,6 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
     @abstractmethod
     def setup_scene(self):
-        # TODO: maybe set the rendering width and height?
         pass
 
     @abstractmethod

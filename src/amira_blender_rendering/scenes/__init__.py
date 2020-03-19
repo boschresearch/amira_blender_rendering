@@ -2,6 +2,7 @@
 
 # base classes
 from .basescenemanager import BaseSceneManager
+from .baseconfiguration import BaseConfiguration
 from .threepointlighting import ThreePointLighting
 from .renderedobjectsbase import RenderedObjectsBase
 
