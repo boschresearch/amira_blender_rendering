@@ -31,8 +31,15 @@ the software was shipped.
 
 ## How to use it<a name="use"></a>
 
+0. Setup the global variable $AMIRA_BLENDER_RENDERING_ASSETS to point to the
+   rendering directory. For instance, add the following line to your .bashrc or
+   .zshrc:
+
+    export AMIRA_BLENDER_RENDERING_ASSETS="~/path/to/assets/directory"
+
 1. Via GUI - install Blender, open a python window, set system.path to include the module and asset directories and launch the desired commands.
 2. As a python package - not supported yet, TBD
+
 
 ## How to build and test it<a name="build"></a>
 

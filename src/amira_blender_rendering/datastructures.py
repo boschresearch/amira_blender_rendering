@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+"""
+This file contains various convenience data structures and functions, in
+particular such that operate on nested dictionaries. This file also provides a
+Configuration class, which can read nested configs from ini files.
+"""
+
 import copy
 from functools import partialmethod, partial
 import argparse
@@ -705,6 +711,7 @@ class Configuration():
             else:
                 self[k] = right[k]
         return self
+
 
 class Filter:
     """Discard all elements of a sample except some specified ones."""

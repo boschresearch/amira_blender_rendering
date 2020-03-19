@@ -17,8 +17,8 @@ import bpy
 from mathutils import Vector
 
 from amira_blender_rendering import robot_driver, utils
-from amira_blender_rendering import blender_utils as blnd
-from amira_blender_rendering import demo_utils
+from amira_blender_rendering.utils import blender as blnd
+from amira_blender_rendering.utils import demo as demo_utils
 
 scripts_dir = utils.get_my_dir(__file__)
 pkg_dir = osp.split(scripts_dir)[0]

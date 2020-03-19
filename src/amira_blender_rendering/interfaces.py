@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+"""
+This file contains classes and prototypes that are shared with amira_perception.
+In particular, it specifies how rendering results should be stored.
+"""
+
 from amira_blender_rendering.datastructures import Filter, DynamicStruct
 from amira_blender_rendering.math.geometry import rotation_matrix_to_quaternion
 
