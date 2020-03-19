@@ -311,5 +311,5 @@ class WorkstationScenarios():
         return True
 
 
-    def generate_viewsphere_dataset():
+    def generate_viewsphere_dataset(self):
         raise NotImplementedError()
