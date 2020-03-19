@@ -18,6 +18,7 @@ from mathutils import Vector, Matrix
 
 from amira_blender_rendering import robot_driver, utils
 from amira_blender_rendering import blender_utils as blnd
+from amira_blender_rendering import demo_utils
 
 scripts_dir = utils.get_my_dir(__file__)
 pkg_dir = osp.split(scripts_dir)[0]
@@ -74,7 +75,7 @@ def run():
     scene, render = scene_setup()
 
     blnd.clear_all_objects()
-    blnd.create_room_corner()
+    demo_utils.create_room_corner()
 
     # lighting
     if version_ge_2_8:
@@ -105,11 +106,11 @@ def run():
     panda = robot_driver.PandaIKDriver()
 
     # eBike parts
-    gear = blnd.load_cad_part("Gear-Wheel")
-    blnd.translate_object(gear, (0.45, -0.2, 0.0))
+    gear = demo_utils.load_cad_part("Gear-Wheel")
+    demo_utils.translate_object(gear, (0.45, -0.2, 0.0))
 
-    shaft = blnd.load_cad_part("Shaft")
-    shaft_bbox = blnd.get_mesh_bounding_box(shaft)
+    shaft = demo_utils.load_cad_part("Shaft")
+    shaft_bbox = demo_utils.get_mesh_bounding_box(shaft)
 
     panda.gripper.set_to(shaft_bbox.x.max)
 

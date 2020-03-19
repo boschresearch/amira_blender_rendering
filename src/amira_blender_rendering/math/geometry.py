@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
-"""This module contains functions for (projective) geometry calculations."""
+"""This module contains functions for (projective) geometry.
+
+The file also contains functions that are commonly used in this domain, such as
+rotation matrix computations, conversions between OpenGL and OpenCV, etc.
+"""
 
 import bpy
 from mathutils import Vector, Euler
@@ -130,6 +134,17 @@ def get_relative_transform(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.
 
 
 def test_visibility(obj, cam, width, height):
+    """Test if an object is visible from a camera
+
+    Args:
+        obj : Object to test visibility for
+        cam : Camera object
+        width : Viewport width
+        height : Viewport height
+
+    Returns:
+        True, if object is visible, false if not.
+    """
     # Test if object is still visible. That is, none of the vertices
     # should lie outside the visible pixel-space
     vs = [obj.matrix_world @ Vector(v) for v in obj.bound_box]
@@ -144,6 +159,14 @@ def test_visibility(obj, cam, width, height):
 
 
 def _get_bvh(obj):
+    """Get the BVH for an object
+
+    Args:
+        obj (variant): object to get the BVH for
+
+    Returns:
+        BVH for obj
+    """
     mat = obj.matrix_world
     vs = [mat @ v.co for v in obj.data.vertices]
     ps = [p.vertices for p in obj.data.polygons]
