@@ -3,7 +3,6 @@
 import bpy
 import logging
 from amira_blender_rendering import utils
-from . import material_utils
 
 
 def check_default_material(material: bpy.types.Material):

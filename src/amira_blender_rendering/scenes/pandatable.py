@@ -9,8 +9,8 @@ import numpy as np
 from random import randint
 from math import ceil, log
 
-from amira_blender_rendering import camera_utils
-from amira_blender_rendering.utils import expandpath
+import amira_blender_rendering.utils.camera as camera_utils
+from amira_blender_rendering.utils.io import expandpath
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 

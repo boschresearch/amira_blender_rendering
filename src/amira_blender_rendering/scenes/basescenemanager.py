@@ -2,14 +2,10 @@
 
 import os
 import bpy
-from amira_blender_rendering import blender_utils as blnd
-from amira_blender_rendering import utils
+from amira_blender_rendering.utils import blender as blnd
+from amira_blender_rendering.utils.logging import get_logger
 
-# XXX: i don't like these global variables, but taken from other files from
-# within amira_blender_rendering. Essentially, this just works around having a
-# singleton somehwere. But also singletons are not really a good idea...
-logger = utils.get_logger()
-
+logger = get_logger()
 
 class BaseSceneManager():
     """Class for arbitrary scenes that should be set up for rendering data.

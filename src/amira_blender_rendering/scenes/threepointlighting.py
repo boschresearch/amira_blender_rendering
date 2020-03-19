@@ -4,7 +4,7 @@
 rendering a single object"""
 
 import bpy
-import amira_blender_rendering.blender_utils as blnd
+import amira_blender_rendering.utils.blender as blnd
 from mathutils import Vector
 
 

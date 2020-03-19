@@ -13,13 +13,13 @@ import numpy as np
 import random
 from math import ceil, log
 
-from amira_blender_rendering import camera_utils
-from amira_blender_rendering.utils import expandpath
+from amira_blender_rendering.utils import camera as camera_utils
+from amira_blender_rendering.utils.io import expandpath
 from amira_blender_rendering.datastructures import Configuration
+from amira_blender_rendering.dataset import get_environment_textures, build_directory_info
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
-import amira_blender_rendering.blender_utils as blender_utils
-from amira_blender_rendering.dataset import get_environment_textures, build_directory_info
+import amira_blender_rendering.utils.blender as blnd
 
 
 class WorkstationScenariosConfiguration(Configuration):
@@ -150,7 +150,7 @@ class WorkstationScenarios():
             cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
             # select the camera. Blender often operates on the active object, to
             # make sure that this happens here, we select it
-            blender_utils.select_object(cam_name)
+            blnd.select_object(cam_name)
             # modify camera according to K
             blender_camera = bpy.context.scene.objects[cam_name]
             camera_utils.opencv_to_blender(K, blender_camera)
@@ -185,7 +185,7 @@ class WorkstationScenarios():
             n_instances.append(int(obj_count))
             for j in range(int(obj_count)):
                 # duplicate proto-object
-                blender_utils.select_object(obj_type)
+                blnd.select_object(obj_type)
                 bpy.ops.object.duplicate()
                 new_obj = bpy.context.object
 

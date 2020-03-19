@@ -73,16 +73,6 @@ def set_materials(out_parent,
         set_part_id(osp.join(out_parent, "Part_ID"), nodes, "Root", links)
 
 
-def remove_nodes(scene):
-    nodes = scene.node_tree.nodes
-    for node in nodes:
-        nodes.remove(node)
-
-
-def disable_nodes(scene):
-    scene.use_nodes = False
-    scene.render.use_compositing = False
-    remove_nodes(scene)
 
 
 def set_rgb(rgb_out, nodes, root_node, links):

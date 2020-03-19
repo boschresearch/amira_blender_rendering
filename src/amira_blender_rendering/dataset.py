@@ -1,8 +1,13 @@
 #!/usr/bin/env python
 
+"""
+This file contains functions that are required to generate a dataset, or to add
+things to certain scenarios which has an impact on the generated dataset.
+"""
+
 import os
 from math import ceil
-from amira_blender_rendering.utils import expandpath
+from amira_blender_rendering.utils.io import expandpath
 from amira_blender_rendering.datastructures import DynamicStruct
 
 

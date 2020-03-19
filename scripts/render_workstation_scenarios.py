@@ -42,7 +42,7 @@ def import_abr(path=None): # {{{
     global abr, WorkstationScenarios, WorkstationScenariosConfiguration
     import amira_blender_rendering as abr
     import amira_blender_rendering.dataset
-    import amira_blender_rendering.blender_utils
+    import amira_blender_rendering.utils.blender as blender_utils
     import amira_blender_rendering.scenes
     from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
     # }}}

@@ -6,7 +6,7 @@ from mathutils import Vector, Matrix
 import os
 import numpy as np
 
-from amira_blender_rendering import blender_utils as blnd
+import amira_blender_rendering.utils.blender as blnd
 import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
@@ -127,7 +127,7 @@ class SimpleToolCap(
         """
         # get desired rototranslation (this is in OpenGL coordinate system) in camera frame
         world_pose = abr_geom.get_world_to_object_tranform(pose, self.cam)
-        
+
         # set pose
         self.obj.location = Vector((world_pose['t']))
         self.obj.rotation_euler = Matrix(world_pose['R']).to_euler()

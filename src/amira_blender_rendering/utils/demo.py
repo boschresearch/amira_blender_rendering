@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
 import bpy
+from amira_blender_rendering import utils
 from amira_blender_rendering.utils import load_img
+
+assets_dir = utils.expandpath("$AMIRA_BLENDER_RENDERING_ASSETS")
 
 def create_room_corner():
     bpy.ops.mesh.primitive_plane_add(
@@ -38,44 +41,6 @@ def create_room_corner():
         osp.join(assets_dir, "brick_simple_45-color.jpg"),
         "brick_simple_45",
     )
-
-
-def get_mesh_bounding_box(mesh):
-    """Returns Bounding-Box of Mesh-Object at zero position (Edit mode)"""
-
-    try:
-        xyz = mesh.data.vertices[0].co
-    except AttributeError as err:
-        print('expecting a mesh object, but no data.vertices attribute in object {}'.format(mesh))
-        raise err
-
-    bb = [[xyz[0], xyz[0]], [xyz[1], xyz[1]], [xyz[2], xyz[2]]]
-    for v in mesh.data.vertices:
-        xyz = v.co
-        for i in range(3):
-            bb[i][0] = min(bb[i][0], xyz[i])
-            bb[i][1] = max(bb[i][1], xyz[i])
-
-    bounding_box = BoundingBox3D(bb[0][0], bb[0][1], bb[1][0], bb[1][1], bb[2][0], bb[2][1])
-    return bounding_box
-
-
-class Range1D():
-
-    def __init__(self, _min, _max):
-        if _max < _min:
-            raise AssertionError('_max {} must be greater than _min {}'.format(_max, _min))
-        self.min = _min
-        self.max = _max
-
-
-class BoundingBox3D():
-
-    def __init__(self, x_min, x_max, y_min, y_max, z_min, z_max):
-        self.x = Range1D(x_min, x_max)
-        self.y = Range1D(y_min, y_max)
-        self.z = Range1D(z_min, z_max)
-
 
 
 def load_cad_part(cad_part):

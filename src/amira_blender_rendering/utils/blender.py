@@ -1,23 +1,27 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-import os.path as osp
-import numpy as np
 
 import bpy
+import numpy as np
 from mathutils import Vector
+from amira_blender_rendering.utils import logging
 
-from amira_blender_rendering import utils
+logger = logging.get_logger()
 
-pkg_dir = utils.get_my_dir(__file__)
-assets_dir = osp.join(pkg_dir, "assets")
-
-logger = utils.get_logger()
-
-
-def _unlink_280():
+def unlink_objects():
     for scene in bpy.data.scenes:
         for c in scene.collection.children:
             scene.collection.children.unlink(c)
+
+def remove_nodes(scene):
+    nodes = scene.node_tree.nodes
+    for node in nodes:
+        nodes.remove(node)
+
+
+def disable_nodes(scene):
+    scene.use_nodes = False
+    scene.render.use_compositing = False
+    remove_nodes(scene)
 
 
 def activate_cuda_devices():
@@ -54,7 +58,7 @@ def activate_cuda_devices():
 def clear_all_objects():
     """Remove all objects, meshes, lights, and cameras from a scene"""
 
-    _unlink_280()
+    unlink_objects()
     data_collections = list((
         bpy.data.objects,
         bpy.data.meshes,
@@ -177,3 +181,37 @@ def load_img(filepath):
             return img
     return bpy.data.images.load(filepath)
 
+
+class Range1D():
+    def __init__(self, _min, _max):
+        if _max < _min:
+            raise AssertionError('_max {} must be greater than _min {}'.format(_max, _min))
+        self.min = _min
+        self.max = _max
+
+
+class BoundingBox3D():
+    def __init__(self, x_min, x_max, y_min, y_max, z_min, z_max):
+        self.x = Range1D(x_min, x_max)
+        self.y = Range1D(y_min, y_max)
+        self.z = Range1D(z_min, z_max)
+
+
+def get_mesh_bounding_box(mesh):
+    """Returns Bounding-Box of Mesh-Object at zero position (Edit mode)"""
+
+    try:
+        xyz = mesh.data.vertices[0].co
+    except AttributeError as err:
+        print('expecting a mesh object, but no data.vertices attribute in object {}'.format(mesh))
+        raise err
+
+    bb = [[xyz[0], xyz[0]], [xyz[1], xyz[1]], [xyz[2], xyz[2]]]
+    for v in mesh.data.vertices:
+        xyz = v.co
+        for i in range(3):
+            bb[i][0] = min(bb[i][0], xyz[i])
+            bb[i][1] = max(bb[i][1], xyz[i])
+
+    bounding_box = BoundingBox3D(bb[0][0], bb[0][1], bb[1][0], bb[1][1], bb[2][0], bb[2][1])
+    return bounding_box
