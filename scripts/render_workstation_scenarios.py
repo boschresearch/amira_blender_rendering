@@ -47,24 +47,6 @@ def import_abr(path=None): # {{{
     from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
     # }}}
 
-def get_environment_textures(cfg): # {{{
-    """Determine if the user wants to set specific environment texture, or
-    randomly select from a directory
-
-    Args:
-        cfg(Configuration): config with render setup
-    """
-    # this rise a KeyError if 'environment_texture' not in cfg
-    environment_textures = expandpath(cfg.environment_texture)
-    if os.path.isdir(environment_textures):
-        files = os.listdir(environment_textures)
-        environment_textures = [os.path.join(environment_textures, f) for f in files]
-    else:
-        environment_textures = [environment_textures]
-
-    return environment_textures
-    # }}}
-
 
 def get_argv():
     """Get argv after --"""
@@ -84,11 +66,6 @@ def get_cmd_argparser():
             '--config',
             default='config/workstation_scenario01.cfg',
             help='Path to configuration file')
-
-    parser.add_argument(
-            '--aps-path',
-            default='~/amira/amira_perception',
-            help='Path where AMIRA Perception Subsystem (aps) can be found')
 
     parser.add_argument(
             '--abr-path',
@@ -118,8 +95,8 @@ def main():
     cmd_parser = get_cmd_argparser()
     cmd_args = cmd_parser.parse_args(args=get_argv())  # need to parse to get aps and abr
 
-    # TODO: fix hard paths, and read configuration from file
-    import_abr(expandpath('~/amira/amira_blender_rendering/src'))
+    # import ABR and get the target scenario configuration
+    import_abr(expandpath(cmd_args.abr_path))
     config = WorkstationScenariosConfiguration()
 
     # combine parsers and parse command line arguments
