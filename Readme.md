@@ -21,6 +21,7 @@ Tools for photorealistic rendering with Blender, for perception pipeline.
 ## Contributors<a name="contributors"></a>
 
 * [Yoel Shapiro](mailto:Yoel.Shapiro@il.bosch.com)
+* [Nicolai Waniek](mailto:Nicolai.Waniek@de.bosch.com)
 
 ## License<a name="license"></a>
 
