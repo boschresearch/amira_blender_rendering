@@ -28,6 +28,7 @@ def get_environment_textures(base_path):
 
     return environment_textures
 
+
 #
 #
 # NOTE: the functions and classes below were partially taken from amira_perception. Make
@@ -35,7 +36,6 @@ def get_environment_textures(base_path):
 #       restricted to such functionality
 #
 #
-
 
 def build_directory_info(base_path: str, **kwargs):
     """Build a dynamic struct with the directory configuration of a RenderedObject dataset.
