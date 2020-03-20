@@ -1,8 +1,9 @@
 """
-This script is used to determine blender behavior.
+This script is only used to determine blender behavior.
 
-For instance, blender segfaults after running a python script. It is currently
-unclear what the reason for the segfault is.
+For instance, blender might segfault after running a python script. It is
+currently unclear what the reason for the segfault is, but this script can help
+to identify and trace issues.
 """
 import bpy
 
