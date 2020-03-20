@@ -46,15 +46,15 @@ class WorkstationScenarios():
     def __init__(self, **kwargs):
         super(WorkstationScenarios, self).__init__()
 
-        # extract configuration
-        self.config = kwargs.get('config', WorkstationScenariosConfiguration())
-        if self.config.dataset.scene_type.lower() != 'WorkstationScenarios'.lower():
-            raise RuntimeError(f"Invalid configuration of scene type {self.config.dataset.scene_type} for class WorkstationScenarios")
-
         # we do composition here, not inheritance anymore because it is too
         # limiting in its capabilities. Using a render manager is a better way
         # to handle compositor nodes
         self.renderman = abr_scenes.RenderManager()
+
+        # extract configuration, then build and activate a split config
+        self.config = kwargs.get('config', WorkstationScenariosConfiguration())
+        if self.config.dataset.scene_type.lower() != 'WorkstationScenarios'.lower():
+            raise RuntimeError(f"Invalid configuration of scene type {self.config.dataset.scene_type} for class WorkstationScenarios")
 
         # setup directory information for each camera
         self.setup_dirinfo()
@@ -89,12 +89,13 @@ class WorkstationScenarios():
         This will be required to setup all path information in compositor nodes
         """
         # compute directory information for each of the cameras
-        self.dirinfos = []
+        self.dirinfos = list()
         for cam in self.config.scene_setup.cameras:
             # paths are set up as: base_path + Scenario## + CameraName
             camera_base_path = f"{self.config.dataset.base_path}-Scenario{self.config.scenario_setup.scenario:02}-{cam}"
             dirinfo = build_directory_info(camera_base_path)
             self.dirinfos.append(dirinfo)
+
 
     def setup_scene(self):
         """Set up the entire scene.
@@ -312,4 +313,19 @@ class WorkstationScenarios():
 
 
     def generate_viewsphere_dataset(self):
+        # TODO: This dataset does not yet suppor viewsphere data generation
         raise NotImplementedError()
+
+
+    def dump_config(self):
+        """Dump configuration to a file in the output folder(s)."""
+        # dump config to each of the dir-info base locations, i.e. for each
+        # camera that was rendered we store the configuration
+        for dirinfo in self.dirinfos:
+            output_path = dirinfo.base_path
+            dataset.dump_config(self.config, output_path)
+
+    def teardown():
+        """Tear down the scene"""
+        # nothing to do
+        pass

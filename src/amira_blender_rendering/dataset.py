@@ -99,29 +99,3 @@ def check_paths(cfg):
 
     return cfg
 
-
-def build_splitting_configs(cfg):
-    pv = int(cfg['dataset'].get('percentage_validation', 0)) / 100
-    assert(0 <= pv <= 1)
-    if pv == 0 or pv == 1:
-        return [cfg]
-    image_count = int(cfg['dataset']['image_count'])
-    output_path = cfg['dataset']['output_path']
-    cfgs = list()
-    output_paths = [os.path.join(output_path, 'Train'), os.path.join(output_path, 'Test')]
-    image_count_train = ceil(image_count * (1 - pv))
-    image_count_val = image_count - image_count_train
-    image_counts = [str(image_count_train), str(image_count_val)]
-    # using tmpfiles is a bit involved but apparently neither pickle nor copy/deepcopy work
-    tmp = NamedTemporaryFile()
-    with open(tmp.name, 'w') as f:
-        f.write(cfg.to_cfg())
-    with open(tmp.name, 'r') as f:
-        for od, ic in zip(output_paths, image_counts):
-            c = Configuration()
-            c.parse_file(tmp.name)
-            c['dataset']['output_path'] = od
-            c['dataset']['image_count'] = ic
-            cfgs.append(c)
-    return cfgs
-
