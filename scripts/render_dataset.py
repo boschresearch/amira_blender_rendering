@@ -64,7 +64,7 @@ def get_cmd_argparser():
 
     parser.add_argument(
             '--config',
-            default='config/workstation_scenario01.cfg',
+            default='config/workstation_scenario01_train.cfg',
             help='Path to configuration file')
 
     parser.add_argument(
@@ -173,22 +173,30 @@ def main():
     config.parse_file(configfile)
     config.parse_args()
 
-    # build split configuration
-    splitting_configs = abr.dataset.build_splitting_configs(config)
+    # instantiate the scene.
+    # NOTE: we do not automatically create splitting configs anymore. You need
+    #       to run the script twice, with two different configurations, to
+    #       generate the split. This is significantly easier than internally
+    #       maintaining split configurations.
+    scene = scene_types[scene_type_str.lower()][0](config=config)
 
-    # start generating datasets
-    for cfg in splitting_configs:
-        # instantiate corresponding scene
-        scene = scene_types[scene_type_str.lower()][0](config=config)
+    # generate the dataset
+    success = False
+    if cmd_args.viewsphere:
+        success = scene.generate_viewsphere_dataset()
+    else:
+        success = scene.generate_dataset()
 
-        # TODO: check if viewsphere or dataset
-        success = False
-        if cmd_args.viewsphere:
-            success = scene.generate_viewsphere_dataset()
-        else:
-            success = scene.generate_dataset()
-        if not success:
-            print(f"EE: Error while generating dataset")
+    # after finishing, dump the configuration(s) to the target locations (which
+    # might depend on scene-internal state)
+    if success:
+        scene.dump_config()
+    else:
+        print(f"EE: Error while generating dataset")
+
+    # tear down scene. should be handled by blender, but a scene might have
+    # other things opened that it should close gracefully
+    scene.teardown()
 
 if __name__ == "__main__":
     main()

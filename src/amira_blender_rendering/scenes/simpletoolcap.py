@@ -11,20 +11,24 @@ import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 
+class SimpleToolCapConfiguration(abr_scenes.BaseConfiguration):
+    def __init__(self):
+        super(SimpleToolCapConfiguration, self).__init__(name="SimpleToolCap")
 
-class SimpleToolCap(
-        # TODO: maybe multiple inheritance is not the best way to set up scenes.
-        #       Rather, it could be done using composition and having a setup()
-        #       function. Not sure if there are significant benefits with either
-        #       variant, so let's just go with multiple inheritance for the time
-        #       being.
-        abr_scenes.RenderedObjectsBase,
-        abr_scenes.ThreePointLighting):
+
+class SimpleToolCap():
+
     """Simple toolcap scene in which we have three point lighting and can set
     some background image.
     """
     def __init__(self, base_filename: str, dirinfo, camerainfo, **kwargs):
         super(SimpleToolCap, self).__init__(base_filename, dirinfo, camerainfo)
+
+        # abr_scenes.RenderedObjectsBase,
+        # abr_scenes.ThreePointLighting):
+
+
+
 
     def setup_object(self):
         # the order of what's done is important. first import and setup the
@@ -147,9 +151,28 @@ class SimpleToolCap(
         dg = bpy.context.evaluated_depsgraph_get()
         dg.update()
 
+
     def _test_visibility(self):
         vs = [self.obj.matrix_world @ Vector(v) for v in self.obj.bound_box]
         ps = [abr_geom.project_p3d(v, self.cam) for v in vs]
         pxs = [abr_geom.p2d_to_pixel_coords(p) for p in ps]
         oks = [0 <= px[0] < self.camerainfo.width and 0 <= px[1] < self.camerainfo.height for px in pxs]
         return all(oks)
+
+    #
+    #
+    # TODO: new configurations
+    #
+    #
+
+    def dump_config(self):
+        raise NotImplementedError()
+
+    def generate_dataset(self):
+        raise NotImplementedError()
+
+    def generate_viewsphere_dataset(self):
+        raise NotImplementedError()
+
+    def teardown():
+        raise NotImplementedError()
