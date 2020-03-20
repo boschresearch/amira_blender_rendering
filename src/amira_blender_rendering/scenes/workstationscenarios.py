@@ -16,10 +16,11 @@ from math import ceil, log
 from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
 from amira_blender_rendering.datastructures import Configuration
-from amira_blender_rendering.dataset import get_environment_textures, build_directory_info
+from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 import amira_blender_rendering.utils.blender as blnd
+import amira_blender_rendering.interfaces as interfaces
 
 
 class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
@@ -40,7 +41,7 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
 
 
 
-class WorkstationScenarios():
+class WorkstationScenarios(interfaces.ABRScene):
     """base class for all workstation scenarios"""
 
     def __init__(self, **kwargs):
@@ -199,7 +200,7 @@ class WorkstationScenarios():
 
     def setup_environment_textures(self):
         # get list of environment textures
-        self.environment_textures = get_environment_textures(self.config.scene_setup.environment_texture)
+        self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
 
 
     def randomize_object_transforms(self):
@@ -261,9 +262,6 @@ class WorkstationScenarios():
         was passed in the constructor.
         """
 
-        # NOTE: this is mostly taken and adapted from
-        #       scripts/render_dataset_RenderedObjects.py
-
         # filename setup
         image_count = self.config.dataset.image_count
         if image_count <= 0:
@@ -323,9 +321,10 @@ class WorkstationScenarios():
         # camera that was rendered we store the configuration
         for dirinfo in self.dirinfos:
             output_path = dirinfo.base_path
-            dataset.dump_config(self.config, output_path)
+            dump_config(self.config, output_path)
 
-    def teardown():
+
+    def teardown(self):
         """Tear down the scene"""
         # nothing to do
         pass

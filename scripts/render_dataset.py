@@ -98,10 +98,16 @@ def get_cmd_argparser():
 
 def get_scene_types():
     from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
+    from amira_blender_rendering.scenes.simpletoolcap import SimpleToolCap, SimpleToolCapConfiguration
 
     # each scenario consists of a name, and a tuple containing the scenario as
     # well as its configuration
-    return {'WorkstationScenarios': [WorkstationScenarios, WorkstationScenariosConfiguration]}
+    return {
+        'SimpleToolCap':
+            [SimpleToolCap, SimpleToolCapConfiguration],
+        'WorkstationScenarios':
+            [WorkstationScenarios, WorkstationScenariosConfiguration]
+        }
 
 
 def determine_scene_type(config_file):

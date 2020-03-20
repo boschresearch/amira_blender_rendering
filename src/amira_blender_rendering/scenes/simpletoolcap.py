@@ -4,67 +4,171 @@
 import bpy
 from mathutils import Vector, Matrix
 import os
+from math import ceil, log
+import random
 import numpy as np
 
+from amira_blender_rendering.utils import camera as camera_utils
+from amira_blender_rendering.utils.io import expandpath
+from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
 import amira_blender_rendering.utils.blender as blnd
 import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
+import amira_blender_rendering.interfaces as interfaces
+
+
 
 class SimpleToolCapConfiguration(abr_scenes.BaseConfiguration):
     def __init__(self):
         super(SimpleToolCapConfiguration, self).__init__(name="SimpleToolCap")
 
+        # scene specific configuration
+        #
+        # we wish to load a specific mesh from a ply file. so let's specify the
+        # path to this file
+        self.add_param('scene_setup.ply_path', '$AMIRA_DATASETS/CADModels/tool_cap.ply', 'Path to Tool.Cap mesh')
+        # the mesh needs to be re-scaled to fit nicely into blender units. This
+        # way, the Toolcap will be about 0.05 blender units high, which
+        # corresponds to 0.05m and, thus about 5cm
+        self.add_param('scene_setup.ply_scale', [0.010, 0.010, 0.010], 'Rescale factors in X, Y, Z direction of the ply mesh')
+        # let's be able to specify environment textures
+        self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images', 'Path to background images / environment textures')
 
-class SimpleToolCap():
 
+
+class SimpleToolCap(interfaces.ABRScene):
     """Simple toolcap scene in which we have three point lighting and can set
     some background image.
     """
-    def __init__(self, base_filename: str, dirinfo, camerainfo, **kwargs):
-        super(SimpleToolCap, self).__init__(base_filename, dirinfo, camerainfo)
+    def __init__(self, **kwargs):
+        super(SimpleToolCap, self).__init__()
+        # we make use of the RenderManager
+        self.renderman = abr_scenes.RenderManager()
 
-        # abr_scenes.RenderedObjectsBase,
-        # abr_scenes.ThreePointLighting):
+        # get the configuration, if one was passed in
+        self.config = kwargs.get('config', SimpleToolCapConfiguration())
+
+        # set up directory information that will be used
+        self.setup_dirinfo()
+
+        # set up anything that we need for the scene before doing anything else.
+        # For instance, removing all default objects
+        self.setup_scene()
+
+        # now that we have setup the scene, let's set up the render manager
+        self.renderman.setup_renderer(
+                self.config.render_setup.integrator,
+                self.config.render_setup.denoising,
+                self.config.render_setup.samples)
+
+        # setup environment texture information
+        self.setup_environment_textures()
+
+        # setup the camera that we wish to use
+        self.setup_cameras()
+
+        # setup the object that we want to render
+        self.setup_objects()
+
+        # finally, let's setup the compositor
+        self.setup_compositor()
 
 
+    def setup_dirinfo(self):
+        """Setup directory information."""
+        # For this simple scene, there is just one dirinfo required
+        self.dirinfo = build_directory_info(self.config.dataset.base_path)
 
 
-    def setup_object(self):
+    def setup_scene(self):
+        """Setup the scene. """
+        # first, delete everything in the scene
+        blnd.clear_all_objects()
+
+        # now we also setup lighting. We use a simple three point lighting in
+        # this simple scene
+        self.lighting = abr_scenes.ThreePointLighting()
+
+
+    def setup_lighting(self):
+        # this scene uses classical three point lighting
+        self.setup_three_point_lighting()
+
+
+    def setup_cameras(self):
+        """Setup camera, and place at a default location"""
+
+        # add camera, update with calibration data, and make it active for the scene
+        bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
+        self.cam = bpy.context.object
+        if self.config.camera_info.k is not None:
+            print(f"II: Using camera calibration data")
+            if isinstance(self.config.camera_info.k, str):
+                K = np.fromstring(self.config.camera_info.k, sep=',', dtype=np.float32).reshape((3, 3))
+            elif isinstance(self.config.camera_info.k, list):
+                K = np.asarray(self.config.camera_info.k, dtype=np.float32).reshape((3, 3))
+            else:
+                raise RuntimeError("invalid value for camera_info.k")
+            self.cam = camera_utils.opencv_to_blender(K, self.cam)
+
+        # re-set camera and set rendering size
+        bpy.context.scene.camera = self.cam
+        bpy.context.scene.render.resolution_x = self.config.camera_info.width
+        bpy.context.scene.render.resolution_y = self.config.camera_info.height
+
+        # look at center
+        blnd.look_at(self.cam, Vector((0.0, 0.0, 0.0)))
+
+
+    def setup_objects(self):
         # the order of what's done is important. first import and setup the
         # object and its material, then rescale it. otherwise, values from
         # shader nodes might not reflect the correct sizes (the metal-tool-cap
         # material depends on an empty that is placed on top of the object.
         # scaling the empty will scale the texture)
-        self.import_mesh()
-        self.setup_material()
-        self.rescale_objects()
+        self._import_mesh()
+        self._setup_material()
+        self._rescale_objects()
 
-    def rescale_objects(self):
-        # needs to be re-scaled to fit nicely into blender units. This way, the
-        # Toolcap will be about 0.05 blender units high, which corresponds to
-        # 0.05m and, thus about 5cm
-        self.obj.scale = Vector((0.010, 0.010, 0.010))
+        # we also need to create a dictionary with the object for the compositor
+        # to do its job, as well as the annotation generation
+        self.objs = list()
+        self.objs.append({
+            'id_mask': '_0_0',        # the format of the masks is usually _modelid_objectid
+            'model_name': 'Tool.Cap', # model name is hardcoded here
+            'model_id': 0,            # we only have one model type, so id = 0
+            'object_id': 0,           # we only have this single instance, so id = 0
+            'bpy': self.obj})         # also add reference to the blender object
 
-    def import_mesh(self):
+
+    def setup_compositor(self):
+        # we let renderman handle the compositor. For this, we need to pass in a
+        # list of objects
+        self.renderman.setup_compositor(self.objs)
+
+    def setup_environment_textures(self):
+        # get list of environment textures
+        self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
+
+
+    def _rescale_objects(self):
+        self.obj.scale = Vector(self.config.scene_setup.ply_scale)
+
+
+    def _import_mesh(self):
         """Import the mesh of the cap from a ply file."""
-        # load mesh from assets directory
-        self.ply_path = os.path.join(blnd.assets_dir, 'tool_cap.ply')
-        bpy.ops.import_mesh.ply(filepath=self.ply_path)
+        path = expandpath(self.config.scene_setup.ply_path)
+        bpy.ops.import_mesh.ply(filepath=path)
         self.obj = bpy.context.object
         self.obj.name = 'Tool.Cap'
 
-    def select_cap(self):
-        """Select the cap, which is the object of interest in this scene."""
-        bpy.ops.object.select_all(action='DESELECT')
-        self.obj.select_set(state=True)
-        bpy.context.view_layer.objects.active = self.obj
 
-    def setup_material(self):
+    def _setup_material(self):
         """Setup object material"""
 
         # make sure cap is selected
-        self.select_cap()
+        blnd.select_object(self.obj.name)
 
         # remove any material that's currently assigned to the object and then
         # setup the metal for the cap
@@ -76,27 +180,8 @@ class SimpleToolCap():
         self.cap_mat = blnd.add_default_material(self.obj)
         abr_nodes.material_metal_tool_cap.setup_material(self.cap_mat)
 
-    def setup_lighting(self):
-        # this scene uses classical three point lighting
-        self.setup_three_point_lighting()
 
-    def setup_scene(self):
-        """Setup the scene"""
-        bpy.context.scene.render.resolution_x = self.camerainfo.width
-        bpy.context.scene.render.resolution_y = self.camerainfo.height
-
-    def setup_environment(self):
-        # This simple scene does not have a specific environment which needs to
-        # be set up, such as a table or robot or else.
-        pass
-
-    def render(self):
-        # Rendering will automatically save images due to the compositor node
-        # setup. passing write_still=False prevents writing another file
-        bpy.context.scene.render.engine = "CYCLES"
-        bpy.ops.render.render(write_still=False)
-
-    def randomize(self):
+    def randomize_object_transforms(self):
         """Set an arbitrary location and rotation for the object"""
 
         ok = False
@@ -112,7 +197,14 @@ class SimpleToolCap():
 
             # Test if object is still visible. That is, none of the vertices
             # should lie outside the visible pixel-space
-            ok = self._test_visibility()
+            ok = self._test_obj_visibility()
+
+
+    def randomize_environment_texture(self):
+        # set some environment texture, randomize, and render
+        env_txt_filepath = expandpath(random.choice(self.environment_textures))
+        self.renderman.set_environment_texture(env_txt_filepath)
+
 
     def set_pose(self, pose):
         """
@@ -143,36 +235,64 @@ class SimpleToolCap():
 
         # Test if object is still visible. That is, none of the vertices
         # should lie outside the visible pixel-space
-        ok = self._test_visibility()
-        if not ok:
+        if not self._test_obj_visibility():
             raise ValueError('Given pose is lying outside the scene')
+
+
+    def _test_obj_visibility(self):
+        return abr_geom.test_visibility(
+                    self.obj,
+                    self.cam,
+                    self.config.camera_info.width,
+                    self.config.camera_info.height)
+
 
     def _update_scene(self):
         dg = bpy.context.evaluated_depsgraph_get()
         dg.update()
 
 
-    def _test_visibility(self):
-        vs = [self.obj.matrix_world @ Vector(v) for v in self.obj.bound_box]
-        ps = [abr_geom.project_p3d(v, self.cam) for v in vs]
-        pxs = [abr_geom.p2d_to_pixel_coords(p) for p in ps]
-        oks = [0 <= px[0] < self.camerainfo.width and 0 <= px[1] < self.camerainfo.height for px in pxs]
-        return all(oks)
-
-    #
-    #
-    # TODO: new configurations
-    #
-    #
-
     def dump_config(self):
-        raise NotImplementedError()
+        dump_config(self.config, self.dirinfo.base_path)
+
 
     def generate_dataset(self):
-        raise NotImplementedError()
+        # filename setup
+        image_count = self.config.dataset.image_count
+        if image_count <= 0:
+            return False
+        format_width = int(ceil(log(image_count, 10)))
+
+        i = 0
+        while i < self.config.dataset.image_count:
+            # generate render filename
+            base_filename = "{:0{width}d}".format(i, width=format_width)
+
+            # randomize environment and object transform
+            self.randomize_environment_texture()
+            self.randomize_object_transforms()
+
+            # setup render managers' path specification
+            self.renderman.setup_pathspec(self.dirinfo, base_filename, self.objs)
+
+            # render the image
+            self.renderman.render()
+
+            # try to postprocess. This might fail, in which case we should
+            # attempt to re-render the scene with different randomization
+            try:
+                self.renderman.postprocess(self.dirinfo, base_filename, bpy.context.scene.camera, self.objs)
+            except ValueError:
+                print(f"ValueError during post-processing, re-generating image index {i}")
+            else:
+                i = i + 1
+
+        return True
+
 
     def generate_viewsphere_dataset(self):
         raise NotImplementedError()
 
-    def teardown():
-        raise NotImplementedError()
+
+    def teardown(self):
+        pass

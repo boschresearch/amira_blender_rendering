@@ -8,6 +8,27 @@ In particular, it specifies how rendering results should be stored.
 from amira_blender_rendering.datastructures import filter_state_keys, DynamicStruct
 from amira_blender_rendering.math.geometry import rotation_matrix_to_quaternion
 
+
+
+# TODO: derive scenes in abr.scenes from this class
+class ABRScene():
+    """interface of functions that each sccene needs to adhere to"""
+    def __init__(self):
+        pass
+
+    def dump_config(self):
+        raise NotImplementedError()
+
+    def generate_dataset(self):
+        raise NotImplementedError()
+
+    def generate_viewsphere_dataset(self):
+        raise NotImplementedError()
+
+    def teardown():
+        raise NotImplementedError()
+
+
 #
 #
 # NOTE: the functions and classes below were taken from amira_perception. Make
