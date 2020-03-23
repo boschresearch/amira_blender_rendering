@@ -4,11 +4,11 @@
 
 The script must be run in blender, for instance from the command line using:
 
-    $ blender -b -P scripts/render_workstation_scenarios.py -- other-params
+    $ blender -b -P scripts/render_dataset.py -- other-params
 
 Example:
 
-    $ blender -b -P scripts/render_workstation_scenarios.py -- --arb-path ~/amira/amira_blender_rendering --aps-path ~/amira/amira_perception
+    $ blender -b -P scripts/render_dataset.py -- --abr-path ~/amira/amira_blender_rendering
 
 """
 
