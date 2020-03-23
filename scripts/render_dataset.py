@@ -142,7 +142,7 @@ def main():
         print("Please specify a valid path under which the amira_blender_rendering python package (abr) can be found.")
         print("Note that abr should be found below the repository's src/ directory")
         sys.exit(1)
-    import_abr(expandpath(cmd_args.abr_path))
+    import_abr(cmd_args.abr_path)
 
     # pretty print available scenarios?
     scene_types = get_scene_types()
