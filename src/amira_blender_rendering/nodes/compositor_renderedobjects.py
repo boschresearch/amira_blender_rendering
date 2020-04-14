@@ -59,17 +59,24 @@ class CompositorNodesOutputRenderedObjects():
         self.path_backdrop = 'backdrop'
         self.path_backdrop = os.path.join(self.path_backdrop, '')
 
-        return self.path_base, self.path_img_const, self.path_img_rand, self.path_depth, \
-            self.path_mask, self.path_backdrop
 
-    def setup(self, dirinfo, filename, objs: list, scene: bpy.types.Scene = bpy.context.scene):
+    def __update_node_paths(self):
+        """This function will update all base-path knowledge in the node editor"""
+
+        # get node tree
+        tree = bpy.context.scene.node_tree
+        nodes = tree.nodes
+
+        n_output_file = nodes['RenderObjectsFileOutputNode']
+        n_output_file.base_path = self.path_base
+
+
+    # NOTE: setup was split into setup_nodes and setup_pathspec
+    def setup_nodes(self, objs: list, scene: bpy.types.Scene = bpy.context.scene):
         """Setup all compositor nodes that are required for exporting to the
         RenderObjects dataset format.
 
         Args:
-            dirinfo (DynamicStruct): directory information for the rendered_objects
-                dataset. See amira_perception for more details
-            filename (str): Filename of output (without file extension)
             objs (list): list of dictionaries with objects (for which a mask needs to be generated) info.
                 Minimal info needed:
                 [{
@@ -86,19 +93,9 @@ class CompositorNodesOutputRenderedObjects():
             update_compositor_nodes_rendered_objects in case of dynamic filename changes.
         """
 
-        # TODO: at the moment we get the dirinfo passed in here instead of just
-        # importing RenderedObjects from amira_perception. This is because of
-        # the torch-import issue that is documented in the amira_perception
-        # repository. As soon as this is fixed, and either the amira_perception
-        # repository is on sys.path, or the aps package (amira perception
-        # subsystem) is installed, we can simpy import it.
-        self.dirinfo = dirinfo
-        self.base_filename = filename
-        self.objs = objs
-        self.scene = scene
-        self.__extract_pathspec()
-
         # prevent blender from adding file extensions
+        if self.scene is None:
+            self.scene = bpy.context.scene
         self.scene.render.use_file_extension = False
 
         # enable nodes, and enable object index pass (required for mask)
@@ -111,7 +108,7 @@ class CompositorNodesOutputRenderedObjects():
         # add file output node and setup format (16bit RGB without alpha channel)
         n_output_file = nodes.new('CompositorNodeOutputFile')
         n_output_file.name = 'RenderObjectsFileOutputNode'
-        n_output_file.base_path = self.path_base
+        # n_output_file.base_path = self.path_base
 
         # the following format will be used for all sockets, except when setting a
         # socket's use_node_format to False (see depth map as example)
@@ -166,26 +163,16 @@ class CompositorNodesOutputRenderedObjects():
             tree.links.new(n_id_mask.outputs['Alpha'], n_output_file.inputs[mask_name])
             self.sockets[f"s_obj_mask{obj['id_mask']}"] = s_obj_mask
 
-        # set the paths of all sockets
-        self.update(dirinfo, self.base_filename, objs)
         return self.sockets
 
-    def __update_node_paths(self):
-        """This function will update all base-path knowledge in the node editor"""
 
-        # get node tree
-        tree = bpy.context.scene.node_tree
-        nodes = tree.nodes
-
-        n_output_file = nodes['RenderObjectsFileOutputNode']
-        n_output_file.base_path = self.path_base
-
-    def update(self, dirinfo, filename: str, objs: dict, scene: bpy.types.Scene = bpy.context.scene):
-        """Update the compositor nodes with a new filename.
+    # NOTE: this function was called update, but was renamed
+    def setup_pathspec(self, dirinfo, render_filename: str, objs: dict, scene: bpy.types.Scene = bpy.context.scene):
+        """Update the compositor nodes with new filenames and base directory information
 
         Args:
             dirinfo: directory information struct of RenderedObject datasets
-            filename (str): new filename (without file extension)
+            render_filename (str): new filename (without file extension)
             objs (list): list of dictionaries with objects (for which a mask needs to be generated) info.
                 Minimal info needed:
                 [{
@@ -207,7 +194,7 @@ class CompositorNodesOutputRenderedObjects():
 
         # set all members and compute path related specifications
         self.dirinfo = dirinfo
-        self.base_filename = filename
+        self.base_filename = render_filename
         self.objs = objs
         self.scene = scene
         # extract paths and update in node
@@ -228,7 +215,7 @@ class CompositorNodesOutputRenderedObjects():
         each corresponding object.
 
         Blender adds the frame number in filenames. It is not possible to change
-        this behavior, even in file output nodes in the compsitor. The
+        this behavior, even in file output nodes in the compositor. The
         workaround that we use here is to store everything as
         desired-filename.ext0001, and then, within this function, rename these
         files to desired-filename.ext.
@@ -247,7 +234,10 @@ class CompositorNodesOutputRenderedObjects():
         self.fname_backdrop = os.path.join(
             self.dirinfo.images.base_path, 'backdrop', f'{self.base_filename}.png{frame_number_str}')
         for f in (self.fname_render, self.fname_depth, self.fname_backdrop):
-            os.rename(f, f[:-4])
+            if not os.path.exists(f):
+                print(f"EE: File {f} expected, but does not exist")
+            else:
+                os.rename(f, f[:-4])
 
         # store mask filename for other users that currently need the mask
         for obj in self.objs:

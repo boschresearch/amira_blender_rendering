@@ -1,5 +1,11 @@
-"""This module specifies a base class for scenes that should be stored in the
-RenderedObjects dataset format."""
+#!/usr/bin/env python
+
+"""This module specifies a render manager that takes care of several
+intermediate steps.
+
+This class is similar to RenderedObjectsBase, but is designed for composition
+and not inheritance."""
+
 
 import bpy
 from mathutils import Vector
@@ -25,93 +31,19 @@ from amira_blender_rendering.interfaces import PoseRenderResult, ResultsCollecti
 from amira_blender_rendering.postprocessing import boundingbox_from_mask
 
 
-class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
-    """This class contains functions that convert a scene to the RenderedObjects format."""
 
-    def __init__(self, base_filename, dirinfo, camerainfo, unit_conversion=bu_to_mm):
-        """
-        Args:
-            base_filename(str): name of the frame that is being rendered
-            dirinfo(DynamicStruct): structure with information on output directory storage
-            camerainfo(CameraInfo): structure with camera setup
-            unit_conversion(abr.math.conversions): function to convert blender units into real world unit
-        """
-        super(RenderedObjectsBase, self).__init__()
-        self.objs = list()
+class RenderManager(abr_scenes.BaseSceneManager):
+    # NOTE: you must call setup_compositor manually when using this class!
 
-        self.reset()
-        self.base_filename = base_filename
-        self.dirinfo = dirinfo
-
-        self.camerainfo = camerainfo
+    def __init__(self, unit_conversion=bu_to_mm):
+        # this will initialize a BaseSceneManager, which is used for setting
+        # environment textures, to reset blender, or to initialize default
+        # blender settings
+        super(RenderManager, self).__init__()
         self.unit_conversion = unit_conversion
 
-        # setup blender scene, camera, object, and compositors.
-        # Note that the compositor setup needs to come after setting up the objects
 
-        self.setup_scene()
-        self.setup_camera()
-        self.setup_lighting()
-        self.setup_objects()
-        self.setup_environment()
-        self.setup_compositor()
-
-    # the following abstract methods are the interface that a scene needs to
-    # implement
-
-    @abstractmethod
-    def setup_scene(self):
-        pass
-
-    @abstractmethod
-    def setup_objects():
-        """
-        Abstract interface for populating the list of objects that are actively manipulated
-        and for which a mask is computed.
-        The list need to adhere to some minimal requirements to allow the compositor to
-        correctly handle the mask creation. That is
-        self.objs = [{
-                'id_mask'(str): string with unique mask id
-                'bpy'(bpy.types.Object): actual bpy object
-            }
-            ...
-        ]
-        """
-        # TODO: would make sense to have this base class to inherit from the compositor?
-        pass
-
-    @abstractmethod
-    def setup_lighting():
-        pass
-
-    @abstractmethod
-    def setup_environment():
-        pass
-
-    @abstractmethod
-    def randomize():
-        pass
-
-    def reset(self):
-        """Reset / Tear down a scene.
-
-        Some scenes require a tear-down before quitting. Otherwhise, this might
-        lead to a blender segfault.
-
-        Moreover, some scenes should not be reloaded. In the above example, this
-        lead to erroneous behavior and state of the physics engine. In such a case
-        it's better to re-use the already loaded scene. This can be accomplished
-        by returning the scene during reset. If the scene can be re-loaded, then
-        simply return None.
-
-
-        Example: pandatable scenes perform forward-simulation of the physics.
-                 Leaving the scene at the last frame which was used for
-                 rendering leads to a segfault.
-        """
-        return None
-
-    def postprocess(self):
+    def postprocess(self, dirinfo, base_filename, camera, objs):
         """Postprocessing the scene.
 
         This step will compute all the data that is relevant for
@@ -126,34 +58,57 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         # compute bounding boxes and save annotations
         results_gl = ResultsCollection()
         results_cv = ResultsCollection()
-        for obj in self.objs:
-            render_result_gl, render_result_cv = self.build_render_result(obj)
+        for obj in objs:
+            render_result_gl, render_result_cv = self.build_render_result(obj, camera)
             results_gl.add_result(render_result_gl)
             results_cv.add_result(render_result_cv)
-        self.save_annotations(results_gl, results_cv)
+        self.save_annotations(dirinfo, base_filename, results_gl, results_cv)
 
-    def setup_compositor(self):
+
+    def setup_renderer(self, integrator, enable_denoising, samples):
+        """Setup blender CUDA rendering, and specify number of samples per pixel to
+        use during rendering. If the setting render_setup.samples is not set in the
+        configuration, the function defaults to 128 samples per image.
+        """
+        blnd.activate_cuda_devices()
+        # TODO: this hardcodes cycles, but we want a user to specify this
+        bpy.context.scene.render.engine = "CYCLES"
+
+        # determine which path tracer is setup in the blender file
+        if integrator == 'BRANCHED_PATH':
+            print(f"II: integrator set to branched path tracing")
+            bpy.context.scene.cycles.progressive = integrator
+            bpy.context.scene.cycles.aa_samples = samples
+        else:
+            print(f"II: integrator set to path tracing")
+            bpy.context.scene.cycles.progressive = integrator
+            bpy.context.scene.cycles.samples = samples
+
+        # setup denoising option
+        bpy.context.scene.view_layers[0].cycles.use_denoising = enable_denoising
+        print(f"II: Denoising enabled" if enable_denoising else f"Denoising disabled")
+
+
+    def setup_compositor(self, objs):
         """Setup output compositor nodes"""
         self.compositor = abr_nodes.CompositorNodesOutputRenderedObjects()
 
-        # setup all path related information in the compositor
+        # setup all path related information in the compositor. Note that path
+        # related information can be changed via update_dirinfo
         # TODO: both in amira_perception as well as here we actually only need
         # some schema that defines the layout of the dataset. This should be
         # extracted into an independent schema file. Note that this does not
         # mean to use any xml garbage! Rather, it should be as plain as
         # possible.
-        self.compositor.setup(self.dirinfo, self.base_filename, self.objs, scene=bpy.context.scene)
+        self.compositor.setup_nodes(objs, scene=bpy.context.scene)
 
-    def update_dirinfo(self, dirinfo):
-        # set dirinfo, and update the compositor with the new filename
-        self.dirinfo = dirinfo
-        self.compositor.update(self.dirinfo, self.base_filename, self.objs)
+    def render(self):
+        bpy.ops.render.render(write_still=False)
 
-    def set_base_filename(self, filename):
-        if filename == self.base_filename:
-            return
-        self.base_filename = filename
-        self.update_dirinfo(self.dirinfo)
+
+    def setup_pathspec(self, dirinfo, render_filename: str, objs):
+        self.compositor.setup_pathspec(dirinfo, render_filename, objs)
+
 
     def convert_units(self, render_result):
         """Convert render_result units from blender units to target unit"""
@@ -168,11 +123,13 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
         return result
 
-    def build_render_result(self, obj: dict):
+
+    def build_render_result(self, obj: dict, camera):
         """Create render result.
 
         Args:
             obj(dict): object dictionary to operate on
+            camera: blender camera object
 
         Returns:
             PoseRenderResult
@@ -181,8 +138,8 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         # create a pose render result. leave image fields empty, they will
         # currenlty not go to the state dict. this is only here to make sure
         # that we actually get the state dict defined in pose render result
-        t = np.asarray(abr_geom.get_relative_translation(obj['bpy'], self.cam))
-        R = np.asarray(abr_geom.get_relative_rotation(obj['bpy'], self.cam).to_matrix())
+        t = np.asarray(abr_geom.get_relative_translation(obj['bpy'], camera))
+        R = np.asarray(abr_geom.get_relative_rotation(obj['bpy'], camera).to_matrix())
 
         # compute bounding boxes
         corners2d = self.compute_2dbbox(obj['fname_mask'])
@@ -209,6 +166,8 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
 
         # build results in OpenCV format
         R_cv, t_cv = abr_geom.gl2cv(R, t)
+
+
         render_result_cv = PoseRenderResult(
             model_name=obj['model_name'],
             model_id=obj['model_id'],
@@ -233,7 +192,7 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
         render_result_cv = self.convert_units(render_result_cv)
         return render_result_gl, render_result_cv
 
-    def save_annotations(self, results_gl: ResultsCollection, results_cv: ResultsCollection):
+    def save_annotations(self, dirinfo, base_filename, results_gl: ResultsCollection, results_cv: ResultsCollection):
         """
         Save annotations of Render Results given in ResultsCollection
 
@@ -242,19 +201,19 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
             results_cv(ResultsCollection): collection of <PoseRenderResult> in OpenCV convetion
         """
         # check if directory structure is already there
-        for k in self.dirinfo.annotations:
-            if not os.path.exists(self.dirinfo.annotations[k]):
-                os.makedirs(self.dirinfo.annotations[k], exist_ok=True)  # create entire tree if necessary
+        for k in dirinfo.annotations:
+            if not os.path.exists(dirinfo.annotations[k]):
+                os.makedirs(dirinfo.annotations[k], exist_ok=True)  # create entire tree if necessary
 
         # first dump to json opengl data
-        fname_json = f"{self.base_filename}.json"
-        fpath_json = os.path.join(self.dirinfo.annotations.opengl, f"{fname_json}")
+        fname_json = f"{base_filename}.json"
+        fpath_json = os.path.join(dirinfo.annotations.opengl, f"{fname_json}")
         json_data = results_gl.state_dict()
         with open(fpath_json, 'w') as f:
             json.dump(json_data, f, indent=0)
 
         # second dump to json opencv data
-        fpath_json = os.path.join(self.dirinfo.annotations.opencv, f'{fname_json}')
+        fpath_json = os.path.join(dirinfo.annotations.opencv, f'{fname_json}')
         json_data = results_cv.state_dict()
         with open(fpath_json, 'w') as f:
             json.dump(json_data, f, indent=0)
@@ -361,23 +320,5 @@ class RenderedObjectsBase(ABC, abr_scenes.BaseSceneManager):
             np_corners3d[i + 1, :] = np.array((corners3d[-1][0], corners3d[-1][1]))
 
         return np_aabb, np_oobb, np_corners3d
-
-    def setup_camera(self):
-        """Setup camera, and place at a default location"""
-
-        # add camera, update with calibration data, and make it active for the scene
-        bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
-        self.cam = bpy.context.object
-        if self.camerainfo.K is not None:
-            print(f"II: Using camera calibration data")
-            self.cam = camera_utils.opencv_to_blender(self.camerainfo.K, self.cam)
-
-        # re-set camera and set rendering size
-        bpy.context.scene.camera = self.cam
-        bpy.context.scene.render.resolution_x = self.camerainfo.width
-        bpy.context.scene.render.resolution_y = self.camerainfo.height
-
-        # look at center
-        blnd.look_at(self.cam, Vector((0.0, 0.0, 0.0)))
 
 

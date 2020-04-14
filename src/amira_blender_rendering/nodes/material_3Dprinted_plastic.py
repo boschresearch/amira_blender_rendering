@@ -4,8 +4,8 @@ import bpy
 import logging
 from mathutils import Vector
 from amira_blender_rendering import utils
-from amira_blender_rendering.blender_utils import clear_orphaned_materials, remove_material_nodes, add_default_material
-from . import material_utils
+from amira_blender_rendering.utils.blender import clear_orphaned_materials, remove_material_nodes, add_default_material
+import amira_blender_rendering.utils.material as mutil
 
 # TODO: comments from material_metal_tool_cap.py apply
 
@@ -16,7 +16,7 @@ def setup_material(material: bpy.types.Material):
     nodes = tree.nodes
 
     # check if we have default nodes
-    n_output, n_bsdf = material_utils.check_default_material(material)
+    n_output, n_bsdf = mutil.check_default_material(material)
 
     # setup BSDF
     n_bsdf.inputs['Base Color'].default_value = (0.691, 0.010, 0.009, 1.000)

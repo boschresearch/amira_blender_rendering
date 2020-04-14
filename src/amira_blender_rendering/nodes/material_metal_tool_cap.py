@@ -4,8 +4,9 @@ import bpy
 import logging
 from mathutils import Vector
 from amira_blender_rendering import utils
-from amira_blender_rendering.blender_utils import clear_orphaned_materials, remove_material_nodes, add_default_material
-from . import material_utils
+from amira_blender_rendering.utils.blender import clear_orphaned_materials, remove_material_nodes, add_default_material
+from amira_blender_rendering.utils import material as mutil
+from amira_blender_rendering.utils.logging import get_logger
 
 
 # TODO: change into MaterialNodesMetalToolCap class
@@ -18,12 +19,12 @@ def setup_material(material: bpy.types.Material, empty: bpy.types.Object = None)
     """Setup material nodes for the metal tool cap"""
     # TODO: refactor into smaller node-creation functions that can be re-used elsewhere
 
-    logger = utils.get_logger()
+    logger = get_logger()
     tree = material.node_tree
     nodes = tree.nodes
 
     # check if we have default nodes
-    n_output, n_bsdf = material_utils.check_default_material(material)
+    n_output, n_bsdf = mutil.check_default_material(material)
 
     # set BSDF default values
     n_bsdf.inputs['Subsurface'].default_value = 0.6

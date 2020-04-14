@@ -65,26 +65,10 @@ def import_abr(path=None):
 
     global abr
     import amira_blender_rendering as abr
-    import amira_blender_rendering.blender_utils
+    import amira_blender_rendering.utils.blender as blender_utils
     import amira_blender_rendering.scenes
+    import amira_blender_rendering.dataset
 
-
-def get_environment_textures(cfg):
-    """Determine if the user wants to set specific environment texture, or
-    randomly select from a directory
-    
-    Args:
-        cfg(Configuration): config with render setup
-    """
-    # this rise a KeyError if 'environment_texture' not in cfg
-    environment_textures = expandpath(cfg.environment_texture)
-    if os.path.isdir(environment_textures):
-        files = os.listdir(environment_textures)
-        environment_textures = [os.path.join(environment_textures, f) for f in files]
-    else:
-        environment_textures = [environment_textures]
-
-    return environment_textures
 
 
 def get_scene_type(type_str: str):
@@ -120,7 +104,7 @@ def setup_renderer(cfg):
     """Setup blender CUDA rendering, and specify number of samples per pixel to
     use during rendering. If the setting render_setup.samples is not set in the
     configuration, the function defaults to 128 samples per image.
-    
+
     Args:
         cfg(Configuration): render configuration
     """
@@ -163,7 +147,7 @@ def generate_dataset(cfg, output_path, scene=None, viewsphere_cfg=None):
     # setup the render backend and retrieve paths to environment textures
     render_cfg = cfg.render_setup
     setup_renderer(render_cfg)
-    environment_textures = get_environment_textures(render_cfg)
+    environment_textures = abr.dataset.get_environment_textures(render_cfg)
 
     # filename setup
     format_width = int(ceil(log(image_count, 10)))
@@ -310,13 +294,13 @@ def get_cmd_argparser():
     parser.add_argument('--only-viewsphere', action='store_true', help='Generate only Viewsphere dataset')
     parser.add_argument('--print-config', action="store_true", help='Print configuration and exit')
     parser.add_argument('-h', '--help', action='store_true', help='Print this help message and exit')
-    
+
     return parser
 
 
 def get_basic_config():
     "Setup script specific configuration"
-    
+
     # basic config parameters
     config = aps.core.utils.datastructures.Configuration()
 

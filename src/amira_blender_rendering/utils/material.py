@@ -3,7 +3,7 @@
 import bpy
 import logging
 from amira_blender_rendering import utils
-from . import material_utils
+from amira_blender_rendering.utils.logging import get_logger
 
 
 def check_default_material(material: bpy.types.Material):
@@ -17,7 +17,7 @@ def check_default_material(material: bpy.types.Material):
         tuple containing the output node, and the bsdf node
     """
 
-    logger = utils.get_logger()
+    logger = get_logger()
     tree = material.node_tree
     nodes = tree.nodes
 

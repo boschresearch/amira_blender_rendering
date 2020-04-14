@@ -1,13 +1,11 @@
-import os
-import shutil
+#!/usr/bin/env python
+
+# logging setup
+
 import logging
-import os.path as osp
 
 logger_name = "amira_blender_rendering"
 
-
-def expandpath(path):
-    return os.path.expandvars(os.path.expanduser(path))
 
 def get_logger(stream=True):
     logger = logging.getLogger(logger_name)
@@ -60,35 +58,4 @@ def set_level(logger, level="debug"):
             logger.warning('unsupported level "{}"'.format(level))
 
 
-def get_my_dir(my_path):
-    fullpath = osp.abspath(osp.realpath(my_path))
-    if osp.isfile(fullpath):
-        return osp.split(fullpath)[0]
-    return fullpath
 
-
-def try_func(func, *args, **kwargs):
-
-    def wrapper(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception as err:
-            logger = get_logger()
-            logger.warning(str(err))
-
-    return wrapper
-
-
-@try_func
-def try_makedirs(fullpath):
-    os.makedirs(fullpath)
-
-
-@try_func
-def try_rmtree(fullpath):
-    shutil.rmtree(fullpath)
-
-
-@try_func
-def try_move(src, dst):
-    shutil.move(src, dst)

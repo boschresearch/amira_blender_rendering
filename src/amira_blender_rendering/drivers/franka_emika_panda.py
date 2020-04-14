@@ -1,173 +1,22 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""Classes to animate a rigged robot model in blender"""
+
+"""
+Classes to animate a Franka Emika Panda robot model in blender.
+"""
+
 import os.path as osp
 import numpy as np
 
 import bpy
 from mathutils import Vector, Matrix, Quaternion
 
-from amira_blender_rendering import utils
-from amira_blender_rendering import blender_utils as blnd
+import amira_blender_rendering.utils.io as ioutils
+import amira_blender_rendering.utils.blender as blnd
+from amria_blender_rendering.drivers.rigidbody import RigidBody
+from amira_blender_rendering.drivers.grippers import TwoJawGripper
+from amira_blender_rendering.utils.logging import get_logger
 
-version_ge_2_8 = bpy.app.version[1] >= 80
-
-logger = utils.get_logger()
-
-
-class RigidBody():
-
-    def __init__(self, obj_handle):
-        self._obj = obj_handle
-
-    def __getattr__(self, attr):
-        """Provides acces to native blender functionality
-        __getattribute__ is called before __getattr__, so RigidBody attributes will not get here
-        """
-        try:
-            return getattr(self._obj, attr)
-        except AttributeError:
-            raise AttributeError(attr)
-
-    @property
-    def position(self):
-        return self._obj.location
-
-    @property
-    def rotation_matrix(self):
-        return Matrix(np.array(self.matrix_world)[:3, :3])
-
-    # TODO : add test
-    def keyframe_insert(self, data_path, frame=None):
-        if frame is None:
-            frame = bpy.context.scene.frame_current
-        self._obj.keyframe_insert(data_path=data_path, frame=(frame))
-
-    def check_position(self, position):
-        pos = Vector(position)
-        assert len(pos) == 3, "position must be a 1D 3-element vector"
-        return pos
-
-    def set_position(self, position):
-        pos = self.check_position(position)
-        self._obj.location = pos
-
-    def translate(self, translation):
-        t = self.check_position(translation)
-        target = self._obj.location + t
-        self.set_position(target)
-
-    def make_rotation_matrix(self, theta, axis, deg=True, R_SIZE=4):
-        """Make a blender rotation matrix
-        
-        Parameters
-        ----------
-        theta : float
-            Rotation angle
-        axis : Vector, tuple, list, ndarray
-            Rotation axis, can be given with norm != 1
-        deg : bool, optional
-            Indicates *theta* units: True=degree, False=radian, by default True
-        R_SIZE : int, optional
-            Blender rotation matrix can be 3x3 or 4x4, by default 4
-        
-        Returns
-        -------
-        Matrix
-            Rotation matrix, Blender Matrix type
-        """
-        if deg:
-            theta_rad = np.deg2rad(theta)
-        else:
-            theta_rad = theta
-        return Matrix.Rotation(theta_rad, R_SIZE, axis)
-
-    def set_rotation_matrix(self, theta, axis, deg=True):
-        R = self.make_rotation_matrix(theta, axis, deg=deg)
-        self.set_rotation_matrix_to_R(R)
-
-    def set_rotation_matrix_to_R(self, R):
-        if len(R) == 4:
-            self._obj.matrix_world = R
-        elif len(R) == 3:
-            H = self.matrix_world
-            for k in range(3):
-                H[k][:3] = R[k]
-            self._obj.matrix_world = H
-
-    def rotate(self, theta, axis, deg=True):
-        R_relative = self.make_rotation_matrix(theta, axis, deg=deg)
-        self.rotate_by_R(R_relative)
-
-    def rotate_by_R(self, R):
-        # FIXME: so far this was only tested with R 4x4 (H)
-        # should work for both R and H, need to check dimensions
-        R_current = self.matrix_world
-        if version_ge_2_8:
-            R_final = R @ R_current
-        else:
-            R_final = R * R_current
-        self.set_rotation_matrix_to_R(R_final)
-
-
-# TODO : add tests
-class Gripper():  # use a AnimatedObject base class for TwoJawGripper and RigidBody ?
-
-    def __init__(self, obj_handle):
-        self._obj = obj_handle
-
-    def keyframe_insert(self, data_path, frame=None):
-        if frame is None:
-            frame = bpy.context.scene.frame_current
-        self._obj.keyframe_insert(data_path=data_path, frame=(frame))
-
-
-class TwoJawGripper(Gripper):
-
-    def __init__(self, obj_handle, axis="y"):
-        super(TwoJawGripper, self).__init__(obj_handle)
-        self._constraint = obj_handle.constraints['Limit Location']
-        self._set_axis(axis)
-
-    def _set_axis(self, axis):
-        """Assuming the gripper constraint uses a primary axis"""
-        if axis == "x":
-            self._axis = 0
-            self._min = self._constraint.min_x
-            self._max = self._constraint.max_x
-        elif axis == "y":
-            self._axis = 1
-            self._min = self._constraint.min_y
-            self._max = self._constraint.max_y
-        elif axis == "z":
-            self._axis = 2
-            self._min = self._constraint.min_z
-            self._max = self._constraint.max_z
-
-    def _get_axis(self):
-        return Vector(self.matrix_world[self._axis][:3])
-
-    def get_openning(self):
-        return self._obj.location[self._axis]
-
-    def _apply_limits(self, distance):
-        if distance < self._min:
-            logger.warning("desired distance {:.6f} exceeds lower limit {:.6f}".format(distance, self._min))
-            return self._min
-        if distance > self._max:
-            logger.warning("desired distance {:.6f} exceeds upper limit {:.6f}".format(distance, self._max))
-            return self._max
-        return distance
-
-    def set_to(self, distance):
-        dist = self._apply_limits(distance)
-        self._obj.location[self._axis] = dist
-
-    def open_by(self, step):
-        current = self.get_openning()
-        target = current + step
-        self.set_to(target)
-
+logger = get_logger()
 
 class PandaDriverParent():
     """Contains shared functionality, cannot drive the robot"""
@@ -187,15 +36,10 @@ class PandaDriverParent():
         pre_existing = bpy.data.objects.keys()
         pkg = utils.get_my_dir(__file__)
 
-        blendfile = osp.join(pkg, "assets/Panda_IK_{}.blend")
-        if version_ge_2_8:
-            blendfile = blendfile.format(280)
-            bpy.ops.wm.append(filename="Panda", directory=blendfile + "\\Collection\\")
-        else:
-            blendfile = blendfile.format(279)
-            bpy.ops.wm.append(filename="Panda", directory=blendfile + "\\Group\\")
-            bpy.ops.wm.append(filename="Panda", directory=blendfile + "\\Material\\")
-        
+        blendfile = ioutils.expandpath(f"$AMIRA_BLENDER_RENDERING_ASSETS/Panda_IK_280.blend")
+        bpy.ops.wm.append(filename="Panda", directory=blendfile + "\\Collection\\")
+
+
         # TODO : might need to remove duplicate material names
         for key in bpy.data.objects.keys():
             if key in pre_existing:
@@ -269,7 +113,7 @@ class PandaIKDriver(PandaDriverParent):
         if ylim is not None:
             xyz[1] = min(ylim[1], max(ylim[0], xyz[1]))
         if zlim is not None:
-            xyz[2] = min(zlim[1], max(zlim[0], xyz[2]))       
+            xyz[2] = min(zlim[1], max(zlim[0], xyz[2]))
 
         # Avoiding self-colision [coarse]
         r_xy = np.sqrt(xyz[0]**2 + xyz[1]**2)
@@ -277,7 +121,7 @@ class PandaIKDriver(PandaDriverParent):
         if ratio > 1.0:
             xyz[0] *= ratio
             xyz[1] *= ratio
-            
+
         # Adding base position
         for k in range(3):
             xyz[k] += self.base.position[k]
@@ -286,7 +130,7 @@ class PandaIKDriver(PandaDriverParent):
 
         theta_x = -0.5 * np.pi * np.random.rand(1)
         theta_z = theta - (0.5 * np.pi)
-        
+
         # FIXME: think of better implementation, in respect to encapsulation
         current_mode = self.tcp._obj.rotation_mode
         self.tcp._obj.rotation_mode = "XYZ"
@@ -297,7 +141,7 @@ class PandaIKDriver(PandaDriverParent):
 
 class PandaFKDriver(PandaDriverParent):
     """FK enables joint position control
-    
+
     Each joint has 1 legal DOF: Y rotation
     """
 

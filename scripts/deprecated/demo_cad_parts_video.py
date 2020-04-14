@@ -17,7 +17,8 @@ import bpy
 from mathutils import Vector
 
 from amira_blender_rendering import robot_driver, utils
-from amira_blender_rendering import blender_utils as blnd
+from amira_blender_rendering.utils import blender as blnd
+from amira_blender_rendering.utils import demo as demo_utils
 
 scripts_dir = utils.get_my_dir(__file__)
 pkg_dir = osp.split(scripts_dir)[0]
@@ -65,7 +66,7 @@ def run():
         print(err)
 
     blnd.clear_all_objects()
-    blnd.create_room_corner()
+    demo_utils.create_room_corner()
 
     # lighting
     bpy.ops.object.lamp_add(
@@ -94,11 +95,11 @@ def run():
     scene.camera = cam
 
     # eBike parts
-    shaft = blnd.load_cad_part("Shaft")
-    blnd.translate_object(shaft, (0.4, -0.1, 0.0))
+    shaft = demo_utils.load_cad_part("Shaft")
+    demo_utils.translate_object(shaft, (0.4, -0.1, 0.0))
 
-    gear = blnd.load_cad_part("Gear-Wheel")
-    blnd.translate_object(gear, (0.45, -0.2, 0.0))
+    gear = demo_utils.load_cad_part("Gear-Wheel")
+    demo_utils.translate_object(gear, (0.45, -0.2, 0.0))
 
     # robot
     panda = robot_driver.PandaIKDriver()
