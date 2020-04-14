@@ -122,7 +122,7 @@ def import_object(blendfile : str, obj : str):
 
     Note: this function is a synonym for append_object.
     """
-    return append_object(blendfile, obj)
+    append_object(blendfile, obj)
 
 
 def append_object(blendfile : str, obj : str):
