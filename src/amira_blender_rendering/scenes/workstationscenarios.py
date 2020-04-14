@@ -35,6 +35,10 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scene_setup.cameras', ['CameraLeft', 'Camera', 'CameraRight'], 'Cameras to render')
         self.add_param('scene_setup.forward_frames', 15, 'Number of frames in physics forward-simulation')
 
+        # specific parts configuration. This is just a dummy entry for purposes
+        # of demonstration and help message generation
+        self.add_param('parts.example_dummy', '/path/to/example_dummy.blend', 'Path to additional blender files containing invidual parts. Format must be partname = /path/to/blendfile.blend')
+
         # specific scenario configuration
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
         self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
@@ -170,11 +174,33 @@ class WorkstationScenarios(interfaces.ABRScene):
             obj_type, obj_count = obj_spec.split(':')
             n_types += 1
             n_instances.append(int(obj_count))
+
+            # here we distinguish if we copy a part from the proto objects
+            # within a scene, or if we have to load it from file
+            is_proto_object = not obj_type.startswith('parts.')
+            if not is_proto_object:
+                # split off the prefix for all files that we load from blender
+                obj_type = obj_type[6:]
+
             for j in range(int(obj_count)):
-                # duplicate proto-object
-                blnd.select_object(obj_type)
-                bpy.ops.object.duplicate()
-                new_obj = bpy.context.object
+                # First, deselect everything
+                bpy.ops.object.select_all(action='DESELECT')
+                if is_proto_object:
+                    # duplicate proto-object
+                    blnd.select_object(obj_type)
+                    bpy.ops.object.duplicate()
+                    new_obj = bpy.context.object
+                else:
+                    # we need to load this object from file.
+                    blendfile = expandpath(self.config.parts[obj_type], check_file=True)
+                    # we can now load the object into blender
+                    blnd.append_object(blendfile, obj_type)
+                    # NOTE: bpy.context.object is **not** the object that we are
+                    # interested in here! We need to select it via original name
+                    # first, then we rename it to be able to select additional
+                    # objects later on
+                    new_obj = bpy.data.objects[obj_type]
+                    new_obj.name = f'{obj_type}.{j:03d}'
 
                 # append all information
                 self.objs.append({
