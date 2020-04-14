@@ -84,6 +84,14 @@ class SimpleToolCap(interfaces.ABRScene):
         bpy.context.scene.render.resolution_x = self.config.camera_info.width
         bpy.context.scene.render.resolution_y = self.config.camera_info.height
 
+        # Setting the resolution can have an impact on the calibration matrix
+        # that was used for rendering. Hence, we will store the effective
+        # calibration matrix K alongside.
+        # First, get the effective K
+        effective_k = camera_utils.get_calibration_matrix(bpy.context.scene, self.cam)
+        # Second, store in configuration
+        self.config.camera_info.effective_k = flatten([list(V) for V in K])
+
 
     def setup_dirinfo(self):
         """Setup directory information."""
@@ -112,6 +120,7 @@ class SimpleToolCap(interfaces.ABRScene):
         # add camera, update with calibration data, and make it active for the scene
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
         self.cam = bpy.context.object
+        self.cam = bpy.data.cameras[self.cam.name]
         if self.config.camera_info.k is not None:
             print(f"II: Using camera calibration data")
             if isinstance(self.config.camera_info.k, str):
@@ -120,7 +129,7 @@ class SimpleToolCap(interfaces.ABRScene):
                 K = np.asarray(self.config.camera_info.k, dtype=np.float32).reshape((3, 3))
             else:
                 raise RuntimeError("invalid value for camera_info.k")
-            self.cam = camera_utils.opencv_to_blender(K, self.cam)
+            self.cam = camera_utils.set_calibration_matrix(bpy.context.scene, self.cam, K)
 
         # re-set camera and set rendering size
         bpy.context.scene.camera = self.cam
