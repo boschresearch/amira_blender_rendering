@@ -68,11 +68,21 @@ class SimpleToolCap(interfaces.ABRScene):
         # setup the camera that we wish to use
         self.setup_cameras()
 
+        # setup render / output settings
+        self.setup_render_output()
+
         # setup the object that we want to render
         self.setup_objects()
 
         # finally, let's setup the compositor
         self.setup_compositor()
+
+
+    def setup_render_output():
+        # setup render output dimensions. This is not set for a specific camera,
+        # but in renders render environment
+        bpy.context.scene.render.resolution_x = self.config.camera_info.width
+        bpy.context.scene.render.resolution_y = self.config.camera_info.height
 
 
     def setup_dirinfo(self):
