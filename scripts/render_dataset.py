@@ -28,10 +28,24 @@ import random
 from math import log, ceil
 
 
-def expandpath(path): # {{{
-    """Expand all variables and users in a path"""
-    return os.path.expandvars(os.path.expanduser(path))
-    # }}}
+# NOTE: this is a copy of src/amira_blender_rendering/utils/io.py#expandpath.
+def expandpath(path, check_file=False):
+    """Expand global variables and users given a path or a list of paths.
+
+    Args:
+        path (str or list): path to expand
+
+    Returns:
+        Expanded path
+    """
+    if isinstance(path, str):
+        path = os.path.expanduser(os.path.expandvars(path))
+        if not check_file or os.path.exists(path):
+            return path
+        else:
+            raise FileNotFoundError(f'Path {path} does not exist - are all environment variables set?')
+    elif isinstance(path, list):
+        return [expandpath(p) for p in path]
 
 
 def import_abr(path=None): # {{{
@@ -137,11 +151,7 @@ def main():
         print("Note that abr should be found below the repository's src/ directory")
         sys.exit(1)
 
-    abr_path = expandpath(cmd_args.abr_path)
-    if not os.path.exists(abr_path):
-        print("Please specify a valid path under which the amira_blender_rendering python package (abr) can be found.")
-        print("Note that abr should be found below the repository's src/ directory")
-        sys.exit(1)
+    abr_path = expandpath(cmd_args.abr_path, check_file=True)
     import_abr(cmd_args.abr_path)
 
     # pretty print available scenarios?
@@ -171,9 +181,7 @@ def main():
     args = parser.parse_args(args=get_argv())
 
     # check if the configuration file exists
-    configfile = expandpath(args.config)
-    if not os.path.exists(configfile):
-        raise RuntimeError(f"Configuration file '{configfile}' does not exist")
+    configfile = expandpath(args.config, check_file=True)
 
     # parse configuration from file, and then update with arguments
     config.parse_file(configfile)

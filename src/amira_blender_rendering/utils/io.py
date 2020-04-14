@@ -6,16 +6,24 @@ import os
 import shutil
 from amira_blender_rendering.utils.logging import get_logger
 
-def expandpath(path):
-    """Expand global variables and users given a path.
+def expandpath(path, check_file=False):
+    """Expand global variables and users given a path or a list of paths.
 
     Args:
-        path (str): path to expand
+        path (str or list): path to expand
 
     Returns:
         Expanded path
     """
-    return os.path.expandvars(os.path.expanduser(path))
+    if isinstance(path, str):
+        path = os.path.expanduser(os.path.expandvars(path))
+        if not check_file or os.path.exists(path):
+            return path
+        else:
+            raise FileNotFoundError(f'Path {path} does not exist - are all environment variables set?')
+    elif isinstance(path, list):
+        return [expandpath(p) for p in path]
+
 
 
 def get_my_dir(my_path):
