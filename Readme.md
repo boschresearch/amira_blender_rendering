@@ -67,13 +67,30 @@ $AMIRA_DATASETS | Path to datasets, such as the one produced here, or OpenImages
 $AMIRA_BLENDER_RENDERING_ASSETS | Path to additional assets, such as textures
 
 
-## How to extend with your own scene<a name="extending"><a/>
+## How to extend with your own scene or parts<a name="extending"><a/>
 
 If you wish to extend `amira_blender_rendering` with your own scenes, you might
 want to have a look at the workstation scenario file describe in the previous
 section. You can also find backend implementations for simpler scenes in the
 folder [src/amira_blender_rendering/scenes](src/amira_blender_rendering/scenes)
 in those files starting with `simple*`.
+
+### Adding custom parts to existing scenes
+
+If your scene supports loading additional parts from blender files (such as,
+for instance, the WorkstationScenarios), you can specify these files and parts
+in an appropriate section in the config file. As an example, have a look at the
+aforementioned configuration file.
+
+**Important Note**. For this to work properly, make sure that your parts have
+the correct scale, as well as rigid object properties. In particular, do not
+forget to make the object an active rigid object with appropriate weight and
+margins for sensitivity. Also, make sure that the object's center is
+approximately at its real-world physical center.
+
+We currently use a default weight of **0.01kg** for most (small) objects and a
+sensitivity margin of **0.0001m** for numerical stability.
+
 
 ## How to build and test it<a name="build"></a>
 
