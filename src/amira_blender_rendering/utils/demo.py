@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+"""This file contains a simple demo to set up a small environment with a fully
+rigged Panda robot arm. Note that you will require a panda model, which you can
+either build by yourself from the files provided by Franka Emika, or which you
+can obtain from turbosquid.com"""
+
 import bpy
 from amira_blender_rendering import utils
 from amira_blender_rendering.utils import load_img
