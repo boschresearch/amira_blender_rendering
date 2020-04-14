@@ -81,6 +81,9 @@ class WorkstationScenarios(interfaces.ABRScene):
         # setup all camera information according to the configuration
         self.setup_cameras()
 
+        # setup global render output configuration
+        self.setup_render_output()
+
         # populate the scene with objects
         self.setup_objects()
 
@@ -110,6 +113,17 @@ class WorkstationScenarios(interfaces.ABRScene):
         bpy.ops.wm.open_mainfile(filepath=expandpath(self.config.scene_setup.blend_file))
 
 
+    def setup_render_output(self):
+        """setup render output dimensions. This is not set for a specific camera,
+        but in renders render environment.
+
+        Note that this should be called _after_ cameras were set up, because
+        their setup might influence these values.
+        """
+        bpy.context.scene.render.resolution_x = self.config.camera_info.width
+        bpy.context.scene.render.resolution_y = self.config.camera_info.height
+
+
     def setup_cameras(self):
         """Set up all cameras.
 
@@ -117,10 +131,6 @@ class WorkstationScenarios(interfaces.ABRScene):
         be selected elsewhere.
         """
 
-        # setup render output dimensions. This is not set for a specific camera,
-        # but in renders render environment
-        bpy.context.scene.render.resolution_x = self.config.camera_info.width
-        bpy.context.scene.render.resolution_y = self.config.camera_info.height
 
         # set up cameras from calibration information (if any)
         if self.config.camera_info.k is None or len(self.config.camera_info.k) <= 0:
