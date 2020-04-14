@@ -133,7 +133,7 @@ def append_object(blendfile : str, obj : str):
         obj (str): Name of object in blender file
     """
     # blender files are organized in directories or sections
-    section_object = '\\Object\\'
+    section_object = '/Object/'
     # the path specifies where the object is inside the blender file
     path = blendfile + section_object + obj
     # the directory where to look for the object
