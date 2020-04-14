@@ -117,6 +117,32 @@ def add_default_material(
     return mat
 
 
+def import_object(blendfile : str, obj : str):
+    """Import an object from a blender Library file to the currently loaded file.
+
+    Note: this function is a synonym for append_object.
+    """
+    return append_object(blendfile, obj)
+
+
+def append_object(blendfile : str, obj : str):
+    """Append an object from a blender Lirbary file to the currently loaded file.
+
+    Args:
+        blendfile (str): path on disk to blender file
+        obj (str): Name of object in blender file
+    """
+    # blender files are organized in directories or sections
+    section_object = '\\Object\\'
+    # the path specifies where the object is inside the blender file
+    path = blendfile + section_object + obj
+    # the directory where to look for the object
+    dir = blendfile + section_object
+    # this call blenders Wm operator to append from blender file. For more
+    # documentation, see https://docs.blender.org/api/current/bpy.ops.wm.html
+    bpy.ops.wm.append(filepath=path, filename=obj, directory=dir)
+
+
 def remove_material_nodes(obj: bpy.types.Object = bpy.context.object):
     """Remove all material nodes from an object"""
     obj.data.materials.clear()
