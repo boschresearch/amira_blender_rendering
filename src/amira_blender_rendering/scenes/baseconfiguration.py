@@ -18,6 +18,7 @@ class BaseConfiguration(Configuration):
         self.add_param('camera_info.width', 640, 'Rendered image resolution (pixel) along x (width)')
         self.add_param('camera_info.height', 480, 'Rendered image resolution (pixel) along y (height)')
         self.add_param('camera_info.k', [], 'calibration matrix K', special='maybe_list')
+        self.add_param('camera_info.effective_k', [], 'Effective calibration matrix K that was used during rendering (read-only!)', special='maybe_list')
 
         # render configuration
         self.add_param('render_setup.backend', 'blender-cycles', 'Render backend. Blender only one supported')
