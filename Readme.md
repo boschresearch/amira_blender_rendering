@@ -4,60 +4,105 @@
 * [Maintainers](#maintainers)
 * [Contributors](#contributors)
 * [License](#license)
-* [How to use it](#use)
+* [How it works and how to use it](#use)
+* [How to extend with your own scene](#extending)
 * [How to build and test it](#build)
+* [Blender installation and modification of default python](#blenderinstall)
 * [Headless Rendering on the GPU Cluster](#clusterrendering)
 * [Used 3rd party Licenses](#licenses)
 
 ## About<a name="about"></a>
 
-Tools for photorealistic rendering with Blender, for perception pipeline.
+Tools for photorealistic rendering with Blender.
 
 ## Maintainers<a name="maintainers"></a>
 
-* [Yoel Shapiro](mailto:Yoel.Shapiro@il.bosch.com)
 * [Nicolai Waniek](mailto:Nicolai.Waniek@de.bosch.com)
 
 ## Contributors<a name="contributors"></a>
 
-* [Yoel Shapiro](mailto:Yoel.Shapiro@il.bosch.com)
 * [Nicolai Waniek](mailto:Nicolai.Waniek@de.bosch.com)
+* [Marco Todescato](mailto:Marco.Todescato@de.bosch.com)
+* [Markus Spies](mailto:Markus.Spies2@de.bosch.com)
+* [Yoel Shapiro](mailto:Yoel.Shapiro@il.bosch.com)
 
 ## License<a name="license"></a>
 
-TODO
-Especially for external mirrored repos it has to be clear under which license
-the software was shipped.
+**TODO**: Add proper licens
 
-## How to use it<a name="use"></a>
+**TODO**: check license of all external / mirrored repositories / software /
+parts that ended up in amira_blender_rendering
 
-0. Setup the global variable $AMIRA_BLENDER_RENDERING_ASSETS to point to the
-   rendering directory. For instance, add the following line to your .bashrc or
-   .zshrc:
+## How it works and how to use it<a name="use"></a>
 
-    export AMIRA_BLENDER_RENDERING_ASSETS="~/path/to/assets/directory"
+amira_blender_rendering is intended to operate in a headless fashion to render
+datasets from pre-defined blender files. For this, we provide a single entry
+point [render_dataset.py](scripts/render_dataset.py) which can be called from
+the command line using `blender -b -P scripts/render_dataset.py -- additional-parameters`.
+Note that this script has some standard parameters that you can query via
+``-h``, passed as the additional parameters above. Also, each scene might
+provide configurable options.
 
-1. Via GUI - install Blender, open a python window, set system.path to include the module and asset directories and launch the desired commands.
-2. As a python package - not supported yet, TBD
+Each scene requires what we call a *backend implementation*. This implementation
+takes care of loading a blender file, setting up everything that is required
+such as camera information, objects, randomization, etc. It also contains a
+*main loop* which does the rendering for the number of desired images. An
+exemplary backend implementation can be found in
+[workstationscenarios.py](src/amira_blender_rendering/scenes/workstationscenarios.py).
+This backend implementation reads all optional configuration parameters either
+from a configuration file that is passed along to the rendering script, or from
+the additional parameters passed during execution.
 
+An example for a configuration that contains documentation for all options can
+be found in [workstation_scenario01_test.cfg](config/workstation_scenario01_test.cfg).
+Note that configuration options depend on the specifid blender scene and backend
+implementation.
+
+Note that some scenes or configurations might require you to setup global
+varianles. Here's a list of the variables that we usually use:
+
+Name | Description
+---
+$AMIRA_DATASETS | Path to datasets, such as the one produced here, or OpenImagesV4
+$AMIRA_BLENDER_RENDERING_ASSETS | Path to additional assets, such as textures
+
+
+## How to extend with your own scene<a name="extending"><a/>
+
+If you wish to extend `amira_blender_rendering` with your own scenes, you might
+want to have a look at the workstation scenario file describe in the previous
+section. You can also find backend implementations for simpler scenes in the
+folder [src/amira_blender_rendering/scenes](src/amira_blender_rendering/scenes)
+in those files starting with `simple*`.
 
 ## How to build and test it<a name="build"></a>
 
 The test folder uses unittest, you can run it according to deployment method (GUI\package)
 
+## Cluster rendering, blender installation, and modification of default python<a name="blenderinstall"></a>
 
+Despite our best efforts, `amira_blender_rendering` might depend on external
+libraries that go beyond what blender is shipping. However, installing third
+party dependencies using pip might not directly work, depending on your blender
+version. It is, however, possible, to replace python version that ships with
+blender with a locally installed version. Here, we outline the steps that are
+required to setup a python that is installed in a local virtual environment as
+the blender version that blender should use.
 
-## Headless Rendering on the GPU Cluster<a name="clusterrendering"></a>
-
-To render on the GPU cluster using blender 2.80, use the scripts within the
-folder `scripts/gpu_cluster`.
-
-First, however, you need to install blender 2.80 locally in your home folder,
-because there is no Ubuntu package for it available yet. Note that blender 2.x
-is cleared Bosch wide ('accepted') and hence no further clearance is required.
+Note that these steps might also be required if you intend to render datasets on
+a GPU Cluster that has specific needs for python version, dedicated PIP
+backends, etc.
 
 
 ### Installing blender
+
+The example below uses blender-2.80. However, this should also work for later
+blender versions. Important is that the python version that should replace
+blender's shipped version has the same major and minor version number. For
+instance, you should be able to replace a python 3.7.0 with python 3.7.5. We
+were only partially successfull in replacing version when the minor version
+number differred (i.e. 3.7.0 vs 3.8.0) due to blender's internal bindings, which
+require certain variants of the package `encodings`.
 
 Download the 64bit linux version of blender from blender.org to your local
 computer. Then, copy the downloaded .tar.bz2 file to the cluster (for
@@ -137,6 +182,9 @@ For instance
 
 ## Installing the blender-render scripts
 
+The following items are of interest if you plan to render on BCAI's internal GPU
+cluster.
+
 Copy the scripts from `scripts/gpu_cluster` to the GPU cluster to ~/bin. Then,
 make the script `blender_headless_render` executable
 
@@ -166,6 +214,7 @@ The function is also available as`amira_blender_rendering.blender_utils:activate
 It is recommended to use this function and not the script provided in
 `scripts/gpu_cluster` whenever possible.
 
+You could also provide a blend file which has this option already set.
 
 
 ## Used 3rd party Licenses<a name="licenses"></a>
