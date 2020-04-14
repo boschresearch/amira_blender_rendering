@@ -89,9 +89,11 @@ blender with a locally installed version. Here, we outline the steps that are
 required to setup a python that is installed in a local virtual environment as
 the blender version that blender should use.
 
-Note that these steps might also be required if you intend to render datasets on
-a GPU Cluster that has specific needs for python version, dedicated PIP
-backends, etc.
+These steps might also be required if you intend to render datasets on a GPU
+Cluster that has specific needs for python version, dedicated PIP backends, etc.
+
+**NOTE**: Before you start changing blender as outlined below, we urge you to
+try `amira_blender_rendering` without changing blender's python!
 
 
 ### Installing blender
