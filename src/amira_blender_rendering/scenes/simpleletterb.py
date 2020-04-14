@@ -6,7 +6,7 @@ from mathutils import Vector
 import os
 import numpy as np
 
-from amira_blender_rendering import blender_utils as blnd
+import amira_blender_rendering.utils.blender as blnd
 import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
