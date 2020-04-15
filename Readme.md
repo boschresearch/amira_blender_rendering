@@ -189,7 +189,12 @@ from which you run the above commands, i.e.
 3) $ (py3bootstrap) mkvirtualenv blender-venv
 4) Follow the steps above.
 
-If this does not solve the issue, please get in contact with us.
+If the aforementioned 4 steps do not work, try to create a python environment
+using an explicit call to the approriate virtualenv:
+
+    $ python3.7 .local/lib/python3.7/site-packages/virtualenv.py blender-env
+
+If this still does not solve the issue, please get in contact with us.
 
 If everything worked, you should end in a python console within blender.  Quite
 curiously, blender will report that it found a bundled python at
