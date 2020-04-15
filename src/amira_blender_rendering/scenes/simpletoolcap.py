@@ -11,6 +11,7 @@ import numpy as np
 from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
 from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
+from amira_blender_rendering.datastructures import flatten
 import amira_blender_rendering.utils.blender as blnd
 import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
