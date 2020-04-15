@@ -11,6 +11,7 @@ import numpy as np
 from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
 from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
+from amira_blender_rendering.datastructures import flatten
 import amira_blender_rendering.utils.blender as blnd
 import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
@@ -68,11 +69,29 @@ class SimpleToolCap(interfaces.ABRScene):
         # setup the camera that we wish to use
         self.setup_cameras()
 
+        # setup render / output settings
+        self.setup_render_output()
+
         # setup the object that we want to render
         self.setup_objects()
 
         # finally, let's setup the compositor
         self.setup_compositor()
+
+
+    def setup_render_output():
+        # setup render output dimensions. This is not set for a specific camera,
+        # but in renders render environment
+        bpy.context.scene.render.resolution_x = self.config.camera_info.width
+        bpy.context.scene.render.resolution_y = self.config.camera_info.height
+
+        # Setting the resolution can have an impact on the calibration matrix
+        # that was used for rendering. Hence, we will store the effective
+        # calibration matrix K alongside.
+        # First, get the effective K
+        effective_k = camera_utils.get_calibration_matrix(bpy.context.scene, self.cam)
+        # Second, store in configuration
+        self.config.camera_info.effective_k = flatten([list(V) for V in K])
 
 
     def setup_dirinfo(self):
@@ -102,6 +121,7 @@ class SimpleToolCap(interfaces.ABRScene):
         # add camera, update with calibration data, and make it active for the scene
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
         self.cam = bpy.context.object
+        self.cam = bpy.data.cameras[self.cam.name]
         if self.config.camera_info.k is not None:
             print(f"II: Using camera calibration data")
             if isinstance(self.config.camera_info.k, str):
@@ -110,7 +130,7 @@ class SimpleToolCap(interfaces.ABRScene):
                 K = np.asarray(self.config.camera_info.k, dtype=np.float32).reshape((3, 3))
             else:
                 raise RuntimeError("invalid value for camera_info.k")
-            self.cam = camera_utils.opencv_to_blender(K, self.cam)
+            self.cam = camera_utils.set_calibration_matrix(bpy.context.scene, self.cam, K)
 
         # re-set camera and set rendering size
         bpy.context.scene.camera = self.cam

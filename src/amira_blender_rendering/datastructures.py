@@ -20,6 +20,10 @@ import ast
 #
 #
 
+def flatten(l):
+    """Flatten a nested list lst"""
+    return [i for subl in l for i in subl]
+
 
 def strbool(s: str):
     """Specify all strings we accept as boolean, raise error if not valid"""
