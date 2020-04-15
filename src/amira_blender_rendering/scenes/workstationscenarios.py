@@ -15,7 +15,7 @@ from math import ceil, log
 
 from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
-from amira_blender_rendering.datastructures import Configuration
+from amira_blender_rendering.datastructures import Configuration, flatten
 from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
@@ -81,6 +81,9 @@ class WorkstationScenarios(interfaces.ABRScene):
         # setup all camera information according to the configuration
         self.setup_cameras()
 
+        # setup global render output configuration
+        self.setup_render_output()
+
         # populate the scene with objects
         self.setup_objects()
 
@@ -110,6 +113,32 @@ class WorkstationScenarios(interfaces.ABRScene):
         bpy.ops.wm.open_mainfile(filepath=expandpath(self.config.scene_setup.blend_file))
 
 
+    def setup_render_output(self):
+        """setup render output dimensions. This is not set for a specific camera,
+        but in renders render environment.
+
+        Note that this should be called _after_ cameras were set up, because
+        their setup might influence these values.
+        """
+
+        # first set the resolution
+        bpy.context.scene.render.resolution_x = self.config.camera_info.width
+        bpy.context.scene.render.resolution_y = self.config.camera_info.height
+
+        # Setting the resolution can have an impact on the calibration matrix
+        # that was used for rendering. Hence, we will store the effective
+        # calibration matrix K alongside. Because we use identical cameras, we
+        # can extract this from one of the cameras
+        cam_str = self.config.scene_setup.cameras[0]
+        cam_name = f"{cam_str}.{self.config.scenario_setup.scenario:03}"
+        cam = bpy.data.cameras[cam_name]
+
+        # get the effective K
+        effective_k = camera_utils.get_calibration_matrix(bpy.context.scene, cam)
+        # store in configuration
+        self.config.camera_info.effective_k = flatten([list(V) for V in effective_k])
+
+
     def setup_cameras(self):
         """Set up all cameras.
 
@@ -117,10 +146,6 @@ class WorkstationScenarios(interfaces.ABRScene):
         be selected elsewhere.
         """
 
-        # setup render output dimensions. This is not set for a specific camera,
-        # but in renders render environment
-        bpy.context.scene.render.resolution_x = self.config.camera_info.width
-        bpy.context.scene.render.resolution_y = self.config.camera_info.height
 
         # set up cameras from calibration information (if any)
         if self.config.camera_info.k is None or len(self.config.camera_info.k) <= 0:
@@ -134,6 +159,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         else:
             raise RuntimeError("invalid value for camera_info.k")
 
+        scene = bpy.context.scene
         for cam in self.config.scene_setup.cameras:
             # first get the camera name. this depends on the scene (blend file)
             # and is of the format CameraName.XXX, where XXX is a number with
@@ -143,8 +169,9 @@ class WorkstationScenarios(interfaces.ABRScene):
             # make sure that this happens here, we select it
             blnd.select_object(cam_name)
             # modify camera according to K
-            blender_camera = bpy.context.scene.objects[cam_name]
-            camera_utils.opencv_to_blender(K, blender_camera)
+            blender_camera = bpy.data.cameras[cam_name]
+            # set the calibration matrix
+            camera_utils.set_calibration_matrix(scene, blender_camera, K)
 
 
     def setup_objects(self):
