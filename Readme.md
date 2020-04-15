@@ -170,9 +170,31 @@ a virtualenv. It is assumed that blender was installed as above to
 You can exit the shell with Ctrl-D.
 
 If the last step (runnign blender with an interactive python shell) fails,
-something went wrong. Quite curiously, blender will report that it found a
-bundled python at /home/username/bin/blender.d/2.80/python and reports the
-python version that it found as 3.7.0.
+something went wrong. Most likely, you will have received an error which
+indicates that a certain package (encodings or initfsencoding) is missing our
+could not be loaded. Specifically, you might received the following messages:
+
+    Fatal Python error: initfsencoding: Unable to get the locale encoding
+    ModuleNotFoundError: No module named 'encoding
+
+If this is the case, make sure that your virtualenv was created with a python3
+virtualenv script, and **not** with a python2 virtualenv. This could happen if
+you have a virtualenv script locally installed in ~/.local/bin, which points to
+a python2 environment. One viable workaround is to create a python3 environment
+from which you run the above commands, i.e.
+
+1) Create a python3 enviroment with your virtualenv installation, e.g.
+   called 'py3bootstrap'
+2) $ (py3bootstrap) pip install virtualenv virtualenvwrapper
+3) $ (py3bootstrap) mkvirtualenv blender-venv
+4) Follow the steps above.
+
+If this does not solve the issue, please get in contact with us.
+
+If everything worked, you should end in a python console within blender.  Quite
+curiously, blender will report that it found a bundled python at
+/home/username/bin/blender.d/2.80/python and reports the python version that it
+found as 3.7.0.
 
 Now you can install python packages with pip, which are then also available from
 within blender. For instance, to install numpy, imageio, and torch, simply run
