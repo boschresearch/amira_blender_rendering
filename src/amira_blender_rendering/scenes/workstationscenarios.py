@@ -121,9 +121,10 @@ class WorkstationScenarios(interfaces.ABRScene):
         their setup might influence these values.
         """
 
-        # first set the resolution
-        bpy.context.scene.render.resolution_x = self.config.camera_info.width
-        bpy.context.scene.render.resolution_y = self.config.camera_info.height
+        # first set the resolution if it was specified in the configuration
+        if (self.config.camera_info.width > 0) and (self.config.camera_info.height > 0):
+            bpy.context.scene.render.resolution_x = self.config.camera_info.width
+            bpy.context.scene.render.resolution_y = self.config.camera_info.height
 
         # Setting the resolution can have an impact on the calibration matrix
         # that was used for rendering. Hence, we will store the effective
