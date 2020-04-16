@@ -79,7 +79,7 @@ class SimpleToolCap(interfaces.ABRScene):
         self.setup_compositor()
 
 
-    def setup_render_output():
+    def setup_render_output(self):
         # setup render output dimensions. This is not set for a specific camera,
         # but in renders render environment
         bpy.context.scene.render.resolution_x = self.config.camera_info.width
@@ -91,7 +91,7 @@ class SimpleToolCap(interfaces.ABRScene):
         # First, get the effective K
         effective_k = camera_utils.get_calibration_matrix(bpy.context.scene, self.cam)
         # Second, store in configuration
-        self.config.camera_info.effective_k = flatten([list(V) for V in K])
+        self.config.camera_info.effective_k = flatten([list(V) for V in effective_k])
 
 
     def setup_dirinfo(self):
@@ -120,8 +120,8 @@ class SimpleToolCap(interfaces.ABRScene):
 
         # add camera, update with calibration data, and make it active for the scene
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
-        self.cam = bpy.context.object
-        self.cam = bpy.data.cameras[self.cam.name]
+        self.cam_obj = bpy.context.object
+        self.cam = bpy.data.cameras[self.cam_obj.name]
         if self.config.camera_info.k is not None:
             print(f"II: Using camera calibration data")
             if isinstance(self.config.camera_info.k, str):
@@ -133,12 +133,12 @@ class SimpleToolCap(interfaces.ABRScene):
             self.cam = camera_utils.set_calibration_matrix(bpy.context.scene, self.cam, K)
 
         # re-set camera and set rendering size
-        bpy.context.scene.camera = self.cam
+        bpy.context.scene.camera = self.cam_obj
         bpy.context.scene.render.resolution_x = self.config.camera_info.width
         bpy.context.scene.render.resolution_y = self.config.camera_info.height
 
         # look at center
-        blnd.look_at(self.cam, Vector((0.0, 0.0, 0.0)))
+        blnd.look_at(self.cam_obj, Vector((0.0, 0.0, 0.0)))
 
 
     def setup_objects(self):
@@ -242,7 +242,7 @@ class SimpleToolCap(interfaces.ABRScene):
             ValueError: if pose is not valid, i.e., object outside the scene
         """
         # get desired rototranslation (this is in OpenGL coordinate system) in camera frame
-        world_pose = abr_geom.get_world_to_object_tranform(pose, self.cam)
+        world_pose = abr_geom.get_world_to_object_tranform(pose, self.cam_obj)
 
         # set pose
         self.obj.location = Vector((world_pose['t']))
@@ -262,7 +262,7 @@ class SimpleToolCap(interfaces.ABRScene):
     def _test_obj_visibility(self):
         return abr_geom.test_visibility(
                     self.obj,
-                    self.cam,
+                    self.cam_obj,
                     self.config.camera_info.width,
                     self.config.camera_info.height)
 
