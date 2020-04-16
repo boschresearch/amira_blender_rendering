@@ -186,7 +186,7 @@ def test_intersection(obj1, obj2):
         return False
 
 
-def get_world_to_object_tranform(cam2obj_pose: dict, camera: bpy.types.Object = bpy.context.scene.camera):
+def get_world_to_object_transform(cam2obj_pose: dict, camera: bpy.types.Object = bpy.context.scene.camera):
     """
     Transform a pose {'R', 't'} expressed in camera coordinates to world coordinates
 

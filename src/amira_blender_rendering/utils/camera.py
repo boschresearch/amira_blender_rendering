@@ -80,7 +80,6 @@ def get_calibration_matrix(scene, cam):
         cam (bpy.types.Camera): camera to compute calibration matrix for
     """
     if cam.type != 'PERSP':
-        print(cam.type)
         raise ValueError('Invalid camera type. Calibration matrix K can be computed only for perspective cameras.')
 
     render = scene.render
