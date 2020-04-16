@@ -242,7 +242,7 @@ class SimpleToolCap(interfaces.ABRScene):
             ValueError: if pose is not valid, i.e., object outside the scene
         """
         # get desired rototranslation (this is in OpenGL coordinate system) in camera frame
-        world_pose = abr_geom.get_world_to_object_tranform(pose, self.cam_obj)
+        world_pose = abr_geom.get_world_to_object_transform(pose, self.cam_obj)
 
         # set pose
         self.obj.location = Vector((world_pose['t']))
