@@ -254,8 +254,9 @@ To set up rendering on the GPU cluster, follow the next steps:
    This will create a virtual env in /software/USERNAME/anaconda/envs/py37
    Please note this path, as it will be relevant later on.
 
-2. download blender and extract it somewhere such that it is on your path, e.g.
-   put it into ~/bin and create a symlink to the binary
+2. download blender on your computer, copy it to the GPU cluster, e.g. using
+   `scp`, and extract it somewhere such that it is on your path, e.g.  put it
+   into ~/bin and create a symlink to the binary
 
 3. activate your new conda environment
 
@@ -269,7 +270,8 @@ To set up rendering on the GPU cluster, follow the next steps:
    This should give you an interactive python shell. Note that you can ignore
    any ALSA errors that might get printed (due to missing sound cards)
 
-5. install dependencies for amira_blender_rendering
+5. install dependencies for amira_blender_rendering via conda or pip. The
+   example below uses pip.
 
     $ cd /path/to/amira_blender_rendering
     $ pip install -r requirements.txt
