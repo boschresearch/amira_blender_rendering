@@ -7,6 +7,7 @@ worstationscenarios.blend.
 """
 
 import bpy
+import os
 from mathutils import Vector
 import time
 import numpy as np
@@ -37,7 +38,9 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
 
         # specific parts configuration. This is just a dummy entry for purposes
         # of demonstration and help message generation
-        self.add_param('parts.example_dummy', '/path/to/example_dummy.blend', 'Path to additional blender files containing invidual parts. Format must be partname = /path/to/blendfile.blend')
+        # self.add_param('parts.example_dummy', '/path/to/example_dummy.blend', 'Path to additional blender files containing invidual parts. Format must be partname = /path/to/blendfile.blend')
+        # self.add_param('parts.ply.example_dummy', '/path/to/example_dummy.ply', 'Path to PLY files containing part "example_dummy". Format must be ply.partname = /path/to/blendfile.ply')
+        # self.add_param('parts.ply_scale.example_dummy', [1.0, 1.0, 1.0], 'Scaling factor in X, Y, Z dimensions of part "example_dummy". Format must be a list of 3 floats.')
 
         # specific scenario configuration
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
@@ -60,6 +63,8 @@ class WorkstationScenarios(interfaces.ABRScene):
         self.config = kwargs.get('config', WorkstationScenariosConfiguration())
         if self.config.dataset.scene_type.lower() != 'WorkstationScenarios'.lower():
             raise RuntimeError(f"Invalid configuration of scene type {self.config.dataset.scene_type} for class WorkstationScenarios")
+        # we might have to post-process the configuration
+        self.postprocess_config()
 
         # setup directory information for each camera
         self.setup_dirinfo()
@@ -89,6 +94,18 @@ class WorkstationScenarios(interfaces.ABRScene):
 
         # finally, setup the compositor
         self.setup_compositor()
+
+
+    def postprocess_config(self):
+        # convert all scaling factors from str to list of floats
+        if 'ply_scale' not in self.config.parts:
+            return
+
+        for part in self.config.parts.ply_scale:
+            vs = self.config.parts.ply_scale[part]
+            vs = [v.strip() for v in vs.split(',')]
+            vs = [float(v) for v in vs]
+            self.config.parts.ply_scale[part] = vs
 
 
     def setup_dirinfo(self):
@@ -210,6 +227,9 @@ class WorkstationScenarios(interfaces.ABRScene):
                 # split off the prefix for all files that we load from blender
                 obj_type = obj_type[6:]
 
+            # TODO: file loading happens only very late in this loop. This might
+            #       be an issue for large object counts and could be changed to
+            #       load-once copy-often.
             for j in range(int(obj_count)):
                 # First, deselect everything
                 bpy.ops.object.select_all(action='DESELECT')
@@ -219,16 +239,26 @@ class WorkstationScenarios(interfaces.ABRScene):
                     bpy.ops.object.duplicate()
                     new_obj = bpy.context.object
                 else:
-                    # we need to load this object from file.
-                    blendfile = expandpath(self.config.parts[obj_type], check_file=True)
-                    # we can now load the object into blender
-                    blnd.append_object(blendfile, obj_type)
-                    # NOTE: bpy.context.object is **not** the object that we are
-                    # interested in here! We need to select it via original name
-                    # first, then we rename it to be able to select additional
-                    # objects later on
-                    new_obj = bpy.data.objects[obj_type]
-                    new_obj.name = f'{obj_type}.{j:03d}'
+                    # we need to load this object from file. This could be
+                    # either a blender file, or a PLY file
+                    blendfile = expandpath(self.config.parts[obj_type], check_file=False)
+                    if os.path.exists(blendfile):
+                        # this is a blender file, so we should load it
+                        # we can now load the object into blender
+                        blnd.append_object(blendfile, obj_type)
+                        # NOTE: bpy.context.object is **not** the object that we are
+                        # interested in here! We need to select it via original name
+                        # first, then we rename it to be able to select additional
+                        # objects later on
+                        new_obj = bpy.data.objects[obj_type]
+                        new_obj.name = f'{obj_type}.{j:03d}'
+                    else:
+                        # no blender file given, so we will load the PLY file
+                        ply_path = expandpath(self.config.parts.ply[obj_type], check_file=True)
+                        bpy.ops.import_mesh.ply(filepath=ply_path)
+                        # here we can use bpy.context.object!
+                        new_obj = bpy.context.object
+                        new_obj.name = f'{obj_type}.{j:03d}'
 
                 # append all information
                 self.objs.append({
