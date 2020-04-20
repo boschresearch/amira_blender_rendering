@@ -25,14 +25,6 @@ class SimpleToolCapConfiguration(abr_scenes.BaseConfiguration):
         super(SimpleToolCapConfiguration, self).__init__(name="SimpleToolCap")
 
         # scene specific configuration
-        #
-        # we wish to load a specific mesh from a ply file. so let's specify the
-        # path to this file
-        self.add_param('scene_setup.ply_path', '$AMIRA_DATASETS/CADModels/tool_cap.ply', 'Path to Tool.Cap mesh')
-        # the mesh needs to be re-scaled to fit nicely into blender units. This
-        # way, the Toolcap will be about 0.05 blender units high, which
-        # corresponds to 0.05m and, thus about 5cm
-        self.add_param('scene_setup.ply_scale', [0.010, 0.010, 0.010], 'Rescale factors in X, Y, Z direction of the ply mesh')
         # let's be able to specify environment textures
         self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images', 'Path to background images / environment textures')
 
@@ -49,6 +41,8 @@ class SimpleToolCap(interfaces.ABRScene):
 
         # get the configuration, if one was passed in
         self.config = kwargs.get('config', SimpleToolCapConfiguration())
+        # we might have to post-process the configuration
+        self.postprocess_config()
 
         # set up directory information that will be used
         self.setup_dirinfo()
@@ -77,6 +71,18 @@ class SimpleToolCap(interfaces.ABRScene):
 
         # finally, let's setup the compositor
         self.setup_compositor()
+
+
+    def postprocess_config(self):
+        # convert all scaling factors from str to list of floats
+        if 'ply_scale' not in self.config.parts:
+            return
+
+        for part in self.config.parts.ply_scale:
+            vs = self.config.parts.ply_scale[part]
+            vs = [v.strip() for v in vs.split(',')]
+            vs = [float(v) for v in vs]
+            self.config.parts.ply_scale[part] = vs
 
 
     def setup_render_output(self):
@@ -175,12 +181,12 @@ class SimpleToolCap(interfaces.ABRScene):
 
 
     def _rescale_objects(self):
-        self.obj.scale = Vector(self.config.scene_setup.ply_scale)
+        self.obj.scale = Vector(self.config.parts.ply_scale.tool_cap)
 
 
     def _import_mesh(self):
         """Import the mesh of the cap from a ply file."""
-        path = expandpath(self.config.scene_setup.ply_path)
+        path = expandpath(self.config.parts.ply.tool_cap)
         bpy.ops.import_mesh.ply(filepath=path)
         self.obj = bpy.context.object
         self.obj.name = 'Tool.Cap'
