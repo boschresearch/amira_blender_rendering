@@ -1,4 +1,4 @@
-# Project Name
+# amira_blender_rendering
 
 * [About](#about)
 * [Maintainers](#maintainers)
@@ -28,7 +28,7 @@ Tools for photorealistic rendering with Blender.
 
 ## License<a name="license"></a>
 
-**TODO**: Add proper licens
+**TODO**: Add proper license
 
 **TODO**: check license of all external / mirrored repositories / software /
 parts that ended up in amira_blender_rendering
@@ -55,7 +55,7 @@ the additional parameters passed during execution.
 
 An example for a configuration that contains documentation for all options can
 be found in [workstation_scenario01_test.cfg](config/workstation_scenario01_test.cfg).
-Note that configuration options depend on the specifid blender scene and backend
+Note that configuration options depend on the specified blender scene and backend
 implementation.
 
 Note that some scenes or configurations might require you to setup global
@@ -96,7 +96,8 @@ sensitivity margin of **0.0001m** for numerical stability.
 
 The test folder uses unittest, you can run it according to deployment method (GUI\package)
 
-## Cluster rendering, blender installation, and modification of default python<a name="blenderinstall"></a>
+
+## Blender installation and modification of default python<a name="blenderinstall"></a>
 
 Despite our best efforts, `amira_blender_rendering` might depend on external
 libraries that go beyond what blender is shipping. However, installing third
@@ -119,8 +120,8 @@ The example below uses blender-2.80. However, this should also work for later
 blender versions. Important is that the python version that should replace
 blender's shipped version has the same major and minor version number. For
 instance, you should be able to replace a python 3.7.0 with python 3.7.5. We
-were only partially successfull in replacing version when the minor version
-number differred (i.e. 3.7.0 vs 3.8.0) due to blender's internal bindings, which
+were only partially successful in replacing version when the minor version
+number is different (i.e. 3.7.0 vs 3.8.0) due to blender's internal bindings, which
 require certain variants of the package `encodings`.
 
 Download the 64bit linux version of blender from blender.org to your local
@@ -160,7 +161,7 @@ a virtualenv. It is assumed that blender was installed as above to
                                                  # Note that this also activtes the venv,
                                                  # which should be indicated by
                                                  # `(blender-env)` in front of PS1 (the dollar
-                                                 # sign that indictes your shell $).
+                                                 # sign that indicates your shell $).
     (blender-venv) $ cd bin/blender.d/2.80
     (blender-venv) $ mv python original.python   # make back up of shipped python
     (blender-venv) $ ln -s ~/venvs/blender-venv python
@@ -169,7 +170,7 @@ a virtualenv. It is assumed that blender was installed as above to
 
 You can exit the shell with Ctrl-D.
 
-If the last step (runnign blender with an interactive python shell) fails,
+If the last step (running blender with an interactive python shell) fails,
 something went wrong. Most likely, you will have received an error which
 indicates that a certain package (encodings or initfsencoding) is missing our
 could not be loaded. Specifically, you might received the following messages:
@@ -183,14 +184,14 @@ you have a virtualenv script locally installed in ~/.local/bin, which points to
 a python2 environment. One viable workaround is to create a python3 environment
 from which you run the above commands, i.e.
 
-1) Create a python3 enviroment with your virtualenv installation, e.g.
+1) Create a python3 environment with your virtualenv installation, e.g.
    called 'py3bootstrap'
 2) $ (py3bootstrap) pip install virtualenv virtualenvwrapper
 3) $ (py3bootstrap) mkvirtualenv blender-venv
 4) Follow the steps above.
 
 If the aforementioned 4 steps do not work, try to create a python environment
-using an explicit call to the approriate virtualenv:
+using an explicit call to the appropriate virtualenv:
 
     $ python3.7 .local/lib/python3.7/site-packages/virtualenv.py blender-env
 
@@ -237,35 +238,55 @@ make the script `blender_headless_render` executable
     $ chmod +x ~/bin/blender_headless_render
 
 
-### Using the GPU cluster for rendering
+## Headless Rendering on the GPU Cluster<a name="clusterrendering"></a>
 
-To render a .blend file on the GPU cluster, simpy use the
-`blender_headless_render` script instead of blender. This script will load cuda
-modules, pass the .blend file to blender, and also activat all CUDA devices.
-Note that additional arguments will be passed to blender
+If you want to render on the Renningen GPU Cluster, follow the steps outlined
+below. Also make sure to set the environment variables that were introduced
+above, and have required data (such as environment maps) at proper
+locations.
 
-Example (folder gfx contains .blend files):
+To set up rendering on the GPU cluster, follow the next steps:
 
-    $ cd gfx
-    $ blender_headless_render materialtest_metal_shaft.blender -o renders/test.png
+1. create a new conda environment for python 3.7
 
+    $ conda create --name py37 python=3.7
 
-### Using CUDA rendering in a blender script
+   This will create a virtual env in /software/USERNAME/anaconda/envs/py37
+   Please note this path, as it will be relevant later on.
 
-To use CUDA rendering on the GPU cluster and automatically select all devices
-in another blender script, simply use/copy the function `activate_cuda_devices` from
-file `scripts/gpu_cluster/_blender_cuda_render.py`.
+2. download blender on your computer, copy it to the GPU cluster, e.g. using
+   `scp`, and extract it somewhere such that it is on your path, e.g.  put it
+   into ~/bin and create a symlink to the binary
 
-The function is also available as`amira_blender_rendering.blender_utils:activate_cuda_devices`.
-It is recommended to use this function and not the script provided in
-`scripts/gpu_cluster` whenever possible.
+3. activate your new conda environment
 
-You could also provide a blend file which has this option already set.
+    $ conda activate py37
+
+4. Replace blender's python with the conda environment's python as described
+   above, and run blender to test if it works:
+
+    $ blender -b --python-console
+
+   This should give you an interactive python shell. Note that you can ignore
+   any ALSA errors that might get printed (due to missing sound cards)
+
+5. install dependencies for amira_blender_rendering via conda or pip. The
+   example below uses pip.
+
+    $ cd /path/to/amira_blender_rendering
+    $ pip install -r requirements.txt
+
+6. Copy required datasets (e.g. OpenImages) to `$AMIRA_DATASETS`
+
+7. Use amira_blender_rendering to generate your dataset
+
+    $ blender -b -P scripts/render_dataset.py -- --config config/workstation_scenario01_train.cfg --abr-path ~/amira/amira_blender_rendering/src
+
 
 
 ## Used 3rd party Licenses<a name="licenses"></a>
 
-This pacakge dependencies include Blender, using the Cycles rendering engine.
+The package dependencies include Blender, using the Cycles rendering engine.
 
 Software | License
 ------------------
