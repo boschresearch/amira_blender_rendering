@@ -303,7 +303,9 @@ class SimpleToolCap(interfaces.ABRScene):
             # try to postprocess. This might fail, in which case we should
             # attempt to re-render the scene with different randomization
             try:
-                self.renderman.postprocess(self.dirinfo, base_filename, bpy.context.scene.camera, self.objs)
+                self.renderman.postprocess(self.dirinfo, base_filename,
+                        bpy.context.scene.camera, self.objs,
+                        self.config.camera_info.zeroing)
             except ValueError:
                 print(f"ValueError during post-processing, re-generating image index {i}")
             else:
