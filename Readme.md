@@ -28,7 +28,7 @@ Tools for photorealistic rendering with Blender.
 
 ## License<a name="license"></a>
 
-**TODO**: Add proper licens
+**TODO**: Add proper license
 
 **TODO**: check license of all external / mirrored repositories / software /
 parts that ended up in amira_blender_rendering
@@ -55,7 +55,7 @@ the additional parameters passed during execution.
 
 An example for a configuration that contains documentation for all options can
 be found in [workstation_scenario01_test.cfg](config/workstation_scenario01_test.cfg).
-Note that configuration options depend on the specifid blender scene and backend
+Note that configuration options depend on the specified blender scene and backend
 implementation.
 
 Note that some scenes or configurations might require you to setup global
@@ -120,8 +120,8 @@ The example below uses blender-2.80. However, this should also work for later
 blender versions. Important is that the python version that should replace
 blender's shipped version has the same major and minor version number. For
 instance, you should be able to replace a python 3.7.0 with python 3.7.5. We
-were only partially successfull in replacing version when the minor version
-number differred (i.e. 3.7.0 vs 3.8.0) due to blender's internal bindings, which
+were only partially successful in replacing version when the minor version
+number is different (i.e. 3.7.0 vs 3.8.0) due to blender's internal bindings, which
 require certain variants of the package `encodings`.
 
 Download the 64bit linux version of blender from blender.org to your local
@@ -161,7 +161,7 @@ a virtualenv. It is assumed that blender was installed as above to
                                                  # Note that this also activtes the venv,
                                                  # which should be indicated by
                                                  # `(blender-env)` in front of PS1 (the dollar
-                                                 # sign that indictes your shell $).
+                                                 # sign that indicates your shell $).
     (blender-venv) $ cd bin/blender.d/2.80
     (blender-venv) $ mv python original.python   # make back up of shipped python
     (blender-venv) $ ln -s ~/venvs/blender-venv python
@@ -170,7 +170,7 @@ a virtualenv. It is assumed that blender was installed as above to
 
 You can exit the shell with Ctrl-D.
 
-If the last step (runnign blender with an interactive python shell) fails,
+If the last step (running blender with an interactive python shell) fails,
 something went wrong. Most likely, you will have received an error which
 indicates that a certain package (encodings or initfsencoding) is missing our
 could not be loaded. Specifically, you might received the following messages:
@@ -184,14 +184,14 @@ you have a virtualenv script locally installed in ~/.local/bin, which points to
 a python2 environment. One viable workaround is to create a python3 environment
 from which you run the above commands, i.e.
 
-1) Create a python3 enviroment with your virtualenv installation, e.g.
+1) Create a python3 environment with your virtualenv installation, e.g.
    called 'py3bootstrap'
 2) $ (py3bootstrap) pip install virtualenv virtualenvwrapper
 3) $ (py3bootstrap) mkvirtualenv blender-venv
 4) Follow the steps above.
 
 If the aforementioned 4 steps do not work, try to create a python environment
-using an explicit call to the approriate virtualenv:
+using an explicit call to the appropriate virtualenv:
 
     $ python3.7 .local/lib/python3.7/site-packages/virtualenv.py blender-env
 
@@ -241,7 +241,7 @@ make the script `blender_headless_render` executable
 ## Headless Rendering on the GPU Cluster<a name="clusterrendering"></a>
 
 If you want to render on the Renningen GPU Cluster, follow the steps outlined
-below. Also make sure to set the environment variables that were introcude
+below. Also make sure to set the environment variables that were introduced
 above, and have required data (such as environment maps) at proper
 locations.
 
@@ -261,7 +261,7 @@ To set up rendering on the GPU cluster, follow the next steps:
 
     $ conda activate py37
 
-4. Replace blender's python with the conda environment's python as desribed
+4. Replace blender's python with the conda environment's python as described
    above, and run blender to test if it works:
 
     $ blender -b --python-console
