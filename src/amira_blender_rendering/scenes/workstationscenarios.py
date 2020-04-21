@@ -7,6 +7,7 @@ worstationscenarios.blend.
 """
 
 import bpy
+import os, sys
 from mathutils import Vector
 import time
 import numpy as np
@@ -37,7 +38,9 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
 
         # specific parts configuration. This is just a dummy entry for purposes
         # of demonstration and help message generation
-        self.add_param('parts.example_dummy', '/path/to/example_dummy.blend', 'Path to additional blender files containing invidual parts. Format must be partname = /path/to/blendfile.blend')
+        # self.add_param('parts.example_dummy', '/path/to/example_dummy.blend', 'Path to additional blender files containing invidual parts. Format must be partname = /path/to/blendfile.blend')
+        # self.add_param('parts.ply.example_dummy', '/path/to/example_dummy.ply', 'Path to PLY files containing part "example_dummy". Format must be ply.partname = /path/to/blendfile.ply')
+        # self.add_param('parts.ply_scale.example_dummy', [1.0, 1.0, 1.0], 'Scaling factor in X, Y, Z dimensions of part "example_dummy". Format must be a list of 3 floats.')
 
         # specific scenario configuration
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
@@ -60,6 +63,8 @@ class WorkstationScenarios(interfaces.ABRScene):
         self.config = kwargs.get('config', WorkstationScenariosConfiguration())
         if self.config.dataset.scene_type.lower() != 'WorkstationScenarios'.lower():
             raise RuntimeError(f"Invalid configuration of scene type {self.config.dataset.scene_type} for class WorkstationScenarios")
+        # we might have to post-process the configuration
+        self.postprocess_config()
 
         # setup directory information for each camera
         self.setup_dirinfo()
@@ -89,6 +94,18 @@ class WorkstationScenarios(interfaces.ABRScene):
 
         # finally, setup the compositor
         self.setup_compositor()
+
+
+    def postprocess_config(self):
+        # convert all scaling factors from str to list of floats
+        if 'ply_scale' not in self.config.parts:
+            return
+
+        for part in self.config.parts.ply_scale:
+            vs = self.config.parts.ply_scale[part]
+            vs = [v.strip() for v in vs.split(',')]
+            vs = [float(v) for v in vs]
+            self.config.parts.ply_scale[part] = vs
 
 
     def setup_dirinfo(self):
@@ -134,10 +151,14 @@ class WorkstationScenarios(interfaces.ABRScene):
         cam_name = f"{cam_str}.{self.config.scenario_setup.scenario:03}"
         cam = bpy.data.cameras[cam_name]
 
-        # get the effective K
-        effective_k = camera_utils.get_calibration_matrix(bpy.context.scene, cam)
-        # store in configuration
-        self.config.camera_info.effective_k = flatten([list(V) for V in effective_k])
+        # get the effective intrinsics
+        effective_intrinsic = camera_utils.get_intrinsics(bpy.context.scene, cam)
+        # store in configuration (and backup original values)
+        if self.config.camera_info.intrinsic is not None:
+            self.config.camera_info.original_intrinsic = self.config.camera_info.intrinsic
+        else:
+            self.config.camera_info.original_intrinsic = ''
+        self.config.camera_info.intrinsic = list(effective_intrinsic)
 
 
     def setup_cameras(self):
@@ -149,16 +170,16 @@ class WorkstationScenarios(interfaces.ABRScene):
 
 
         # set up cameras from calibration information (if any)
-        if self.config.camera_info.k is None or len(self.config.camera_info.k) <= 0:
+        if self.config.camera_info.intrinsic is None or len(self.config.camera_info.intrinsic) <= 0:
             return
 
         # convert the configuration value of K to a numpy format
-        if isinstance(self.config.camera_info.k, str):
-            K = np.fromstring(self.config.camera_info.k, sep=',', dtype=np.float32).reshape((3, 3))
-        elif isinstance(self.config.camera_info.k, list):
-            K = np.asarray(self.config.camera_info.k, dtype=np.float32).reshape((3, 3))
+        if isinstance(self.config.camera_info.intrinsic, str):
+            intrinsics = np.fromstring(self.config.camera_info.intrinsic, sep=',', dtype=np.float32)
+        elif isinstance(self.config.camera_info.intrinsic, list):
+            intrinsics = np.asarray(self.config.camera_info.intrinsic, dtype=np.float32)
         else:
-            raise RuntimeError("invalid value for camera_info.k")
+            raise RuntimeError("invalid value for camera_info.intrinsic")
 
         scene = bpy.context.scene
         for cam in self.config.scene_setup.cameras:
@@ -169,10 +190,11 @@ class WorkstationScenarios(interfaces.ABRScene):
             # select the camera. Blender often operates on the active object, to
             # make sure that this happens here, we select it
             blnd.select_object(cam_name)
-            # modify camera according to K
+            # modify camera according to the intrinsics
             blender_camera = bpy.data.cameras[cam_name]
             # set the calibration matrix
-            camera_utils.set_calibration_matrix(scene, blender_camera, K)
+            camera_utils.set_intrinsics(scene, blender_camera,
+                    intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3])
 
 
     def setup_objects(self):
@@ -210,6 +232,9 @@ class WorkstationScenarios(interfaces.ABRScene):
                 # split off the prefix for all files that we load from blender
                 obj_type = obj_type[6:]
 
+            # TODO: file loading happens only very late in this loop. This might
+            #       be an issue for large object counts and could be changed to
+            #       load-once copy-often.
             for j in range(int(obj_count)):
                 # First, deselect everything
                 bpy.ops.object.select_all(action='DESELECT')
@@ -219,16 +244,26 @@ class WorkstationScenarios(interfaces.ABRScene):
                     bpy.ops.object.duplicate()
                     new_obj = bpy.context.object
                 else:
-                    # we need to load this object from file.
-                    blendfile = expandpath(self.config.parts[obj_type], check_file=True)
-                    # we can now load the object into blender
-                    blnd.append_object(blendfile, obj_type)
-                    # NOTE: bpy.context.object is **not** the object that we are
-                    # interested in here! We need to select it via original name
-                    # first, then we rename it to be able to select additional
-                    # objects later on
-                    new_obj = bpy.data.objects[obj_type]
-                    new_obj.name = f'{obj_type}.{j:03d}'
+                    # we need to load this object from file. This could be
+                    # either a blender file, or a PLY file
+                    blendfile = expandpath(self.config.parts[obj_type], check_file=False)
+                    if os.path.exists(blendfile):
+                        # this is a blender file, so we should load it
+                        # we can now load the object into blender
+                        blnd.append_object(blendfile, obj_type)
+                        # NOTE: bpy.context.object is **not** the object that we are
+                        # interested in here! We need to select it via original name
+                        # first, then we rename it to be able to select additional
+                        # objects later on
+                        new_obj = bpy.data.objects[obj_type]
+                        new_obj.name = f'{obj_type}.{j:03d}'
+                    else:
+                        # no blender file given, so we will load the PLY file
+                        ply_path = expandpath(self.config.parts.ply[obj_type], check_file=True)
+                        bpy.ops.import_mesh.ply(filepath=ply_path)
+                        # here we can use bpy.context.object!
+                        new_obj = bpy.context.object
+                        new_obj.name = f'{obj_type}.{j:03d}'
 
                 # append all information
                 self.objs.append({
