@@ -82,11 +82,21 @@ for instance, the WorkstationScenarios), you can specify these files and parts
 in an appropriate section in the config file. As an example, have a look at the
 aforementioned configuration file.
 
-**Important Note**. For this to work properly, make sure that your parts have
+**Important Notes**.
+
+For this to work properly, make sure that your parts have
 the correct scale, as well as rigid object properties. In particular, do not
 forget to make the object an active rigid object with appropriate weight and
-margins for sensitivity. Also, make sure that the object's center is
-approximately at its real-world physical center.
+margins for sensitivity.
+
+Also, make sure that the object's center is approximately at its real-world
+physical center. Often, PLY models don't have the object center at the physical
+or geometric center of the object. To quickly change this in blender, select the
+object and, in object mode, go to the toolbar "Object" -> "Set Origin To" and
+select an appropriate variant. Afterwards, it is best to move the object to
+location 0, 0, 0. Note that for the provided objects we moved the center to the
+geometrical center, as this is the most common usage in downward applications
+such as neural networks.
 
 We currently use a default weight of **0.01kg** for most (small) objects and a
 sensitivity margin of **0.0001m** for numerical stability.
