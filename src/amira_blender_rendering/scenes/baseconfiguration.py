@@ -17,8 +17,8 @@ class BaseConfiguration(Configuration):
         self.add_param('camera_info.model', 'pinhole', 'Camera model type')
         self.add_param('camera_info.width', 640, 'Rendered image resolution (pixel) along x (width)')
         self.add_param('camera_info.height', 480, 'Rendered image resolution (pixel) along y (height)')
-        self.add_param('camera_info.intrinsics', [], 'camera intrinsics fx, fy, cx, cy', special='maybe_list')
-        self.add_param('camera_info.effective_intrinsics', [], 'Effective camera intrinsics that were used during rendering', special='maybe_list')
+        self.add_param('camera_info.intrinsic', [], 'camera intrinsics fx, fy, cx, cy, possible altered via blender during runtime', special='maybe_list')
+        # self.add_param('camera_info.original_intrinsic', [], 'Camera intrinsics that were passed originaly as camera_info.intrinsic', special='maybe_list')
 
         # render configuration
         self.add_param('render_setup.backend', 'blender-cycles', 'Render backend. Blender only one supported')

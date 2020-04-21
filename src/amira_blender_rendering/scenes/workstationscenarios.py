@@ -152,9 +152,13 @@ class WorkstationScenarios(interfaces.ABRScene):
         cam = bpy.data.cameras[cam_name]
 
         # get the effective intrinsics
-        effective_intrinsics = camera_utils.get_intrinsics(bpy.context.scene, cam)
-        # store in configuration
-        self.config.camera_info.effective_intrinsics = list(effective_intrinsics)
+        effective_intrinsic = camera_utils.get_intrinsics(bpy.context.scene, cam)
+        # store in configuration (and backup original values)
+        if self.config.camera_info.intrinsic is not None:
+            self.config.camera_info.original_intrinsic = self.config.camera_info.intrinsic
+        else:
+            self.config.camera_info.original_intrinsic = ''
+        self.config.camera_info.intrinsic = list(effective_intrinsic)
 
 
     def setup_cameras(self):
@@ -166,16 +170,16 @@ class WorkstationScenarios(interfaces.ABRScene):
 
 
         # set up cameras from calibration information (if any)
-        if self.config.camera_info.intrinsics is None or len(self.config.camera_info.intrinsics) <= 0:
+        if self.config.camera_info.intrinsic is None or len(self.config.camera_info.intrinsic) <= 0:
             return
 
         # convert the configuration value of K to a numpy format
-        if isinstance(self.config.camera_info.intrinsics, str):
-            intrinsics = np.fromstring(self.config.camera_info.intrinsics, sep=',', dtype=np.float32)
-        elif isinstance(self.config.camera_info.intrinsics, list):
-            intrinsics = np.asarray(self.config.camera_info.intrinsics, dtype=np.float32)
+        if isinstance(self.config.camera_info.intrinsic, str):
+            intrinsics = np.fromstring(self.config.camera_info.intrinsic, sep=',', dtype=np.float32)
+        elif isinstance(self.config.camera_info.intrinsic, list):
+            intrinsics = np.asarray(self.config.camera_info.intrinsic, dtype=np.float32)
         else:
-            raise RuntimeError("invalid value for camera_info.intrinsics")
+            raise RuntimeError("invalid value for camera_info.intrinsic")
 
         scene = bpy.context.scene
         for cam in self.config.scene_setup.cameras:
