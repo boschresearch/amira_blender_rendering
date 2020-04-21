@@ -85,12 +85,10 @@ def get_relative_rotation(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.c
     Returns:
         Euler angles given in radians
     """
-
     obj1_m = obj1.rotation_euler.to_matrix()
     obj2_m = obj2.rotation_euler.to_matrix()
-    rel_rotation_m = (obj1_m.inverted() @ obj2_m)
-    rel_rotation_e = rel_rotation_m.to_euler()
-    return rel_rotation_e
+    rel_rotation = (obj2_m.inverted() @ obj1_m).to_euler()
+    return rel_rotation
 
 
 
@@ -140,9 +138,9 @@ def get_relative_rotation_to_cam_rad(obj, cam, zeroing=Vector((pi/2, 0, 0))):
     """
     obj_m = obj.rotation_euler.to_matrix()
     cam_m = cam.rotation_euler.to_matrix()
-    rel_rotation_m = obj_m.inverted() @ cam_m
+    rel_rotation = cam_m.inverted() @ obj_m
     cam_rot = Euler([zeroing[0], zeroing[1], zeroing[2]]).to_matrix()
-    return (cam_rot.inverted() @ rel_rotation_m).to_euler()
+    return (cam_rot @ rel_rotation).to_euler()
 
 
 def get_relative_translation(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.context.scene.camera) -> Vector:
