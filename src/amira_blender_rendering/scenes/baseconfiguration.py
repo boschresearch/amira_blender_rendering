@@ -17,7 +17,7 @@ class BaseConfiguration(Configuration):
         self.add_param('camera_info.model', 'pinhole', 'Camera model type')
         self.add_param('camera_info.width', 640, 'Rendered image resolution (pixel) along x (width)')
         self.add_param('camera_info.height', 480, 'Rendered image resolution (pixel) along y (height)')
-        self.add_param('camera_info.zeroing', [90.0, 0.0, 0.0], 'Default camera zeroing rotation in degrees')
+        self.add_param('camera_info.zeroing', [0.0, 0.0, 0.0], 'Default camera zeroing rotation in degrees')
         self.add_param('camera_info.intrinsic', [], 'camera intrinsics fx, fy, cx, cy, possible altered via blender during runtime', special='maybe_list')
         # self.add_param('camera_info.original_intrinsic', [], 'Camera intrinsics that were passed originaly as camera_info.intrinsic', special='maybe_list')
 
