@@ -71,6 +71,87 @@ def get_sensor_fit(sensor_fit, size_x, size_y):
 def get_calibration_matrix(scene, cam):
     """Compute the calibration matrix K for a given scene and camera.
 
+    Args:
+        scene (bpy.types.Scene): scene to operate on
+        cam (bpy.types.Camera): camera to compute calibration matrix for
+    """
+    fx, fy, cx, cy = get_intrinsics(scene, cam)
+    K = Matrix(((fx, 0, cx), (0, fy, cy), (0, 0, 1)))
+    return K
+
+
+def set_calibration_matrix(scene, cam, K):
+    """Set the calibration matrix K of a camera cam in scene scene.
+
+    Args:
+        scene (bpy.types.Scene): scene to operate in
+        cam (bpy.types.Camera): camera to modify
+        K (np.ndarray or mathutils.Matrix): 3x3 calibration matrix
+    """
+    if K is None:
+        return cam
+    if isinstance(K, np.ndarray):
+        return _set_intrinsics(scene, cam, K[0, 0], K[1, 1], K[0, 2], K[1, 2])
+    else:
+        return _set_intrinsics(scene, cam, K[0][0], K[1][1], K[0][2], K[1][2])
+
+
+def set_intrinsics(scene, cam, fx, fy, cx, cy):
+    """Set the camera intrinsics of a camera.
+
+    Note that the implementation is inspired by
+        1) https://ksimek.github.io/2013/08/13/intrinsic/ and
+        2) https://www.rojtberg.net/1601/from-blender-to-opencv-camera-and-back/ and
+        3) https://blender.stackexchange.com/questions/38009/3x4-camera-matrix-from-blender-camera
+
+    Args:
+        scene (bpy.types.Scene): scene to operate in
+        cam (bpy.types.Camera): camera to modify
+        fx (float): focal length in x direction
+        fy (float): focal length in y direction
+        cx (float): camera principal point coordinate X
+        cy (float): camera principal point coordinate Y
+    """
+    render = scene.render
+
+    # we assume a horizontal sensor with a default height of 1.0, so we only need to set one sensor size
+    sensor_size_mm = fy * cx / (fx * cy)
+    sensor_fit = 'HORIZONTAL'
+
+    # we assume that the principal point is in the center of the camera
+    resolution_x = cx * 2.0
+    resolution_y = cy * 2.0
+    pixel_aspect_ratio = fx / fy
+
+    # compute focal lengths s_u, s_v
+    s_u = resolution_x / sensor_size_mm
+    s_v = resolution_y / 1.0
+
+    # compute camera focal length in mm
+    f_in_mm = fx / s_u
+
+    # we assume that we render at 100% scale
+    scale = 1.0
+
+    # set render setup
+    render.resolution_x = resolution_x / scale
+    render.resolution_y = resolution_y / scale
+    render.resolution_percentage = scale * 100
+    render.pixel_aspect_x = 1.0
+    render.pixel_aspect_y = pixel_aspect_ratio
+
+    # set to perspective camera with computed focal length and sensor size
+    cam.type = 'PERSP'
+    cam.sensor_fit = 'HORIZONTAL'
+    cam.lens = f_in_mm
+    cam.sensor_width = sensor_size_mm
+
+    return cam
+
+
+def get_intrinsics(scene, cam):
+    """Get the camera intrinsics of a camera
+
     Note that this code is inspired by
         1) https://ksimek.github.io/2013/08/13/intrinsic/ and
         2) https://blender.stackexchange.com/questions/38009/3x4-camera-matrix-from-blender-camera
@@ -78,6 +159,10 @@ def get_calibration_matrix(scene, cam):
     Args:
         scene (bpy.types.Scene): scene to operate on
         cam (bpy.types.Camera): camera to compute calibration matrix for
+
+    Returns:
+        Tuple (fx, fy, cx, cy) of the focal lengths and the camera's principal
+        point coordinates.
     """
     if cam.type != 'PERSP':
         raise ValueError('Invalid camera type. Calibration matrix K can be computed only for perspective cameras.')
@@ -109,115 +194,5 @@ def get_calibration_matrix(scene, cam):
     v_0 = resolution_y / 2 + cam.shift_y * view_fac_in_px / pixel_aspect_ratio
 
     # finalize K
-    K = Matrix(((s_u, 0, u_0), (0, s_v, v_0), (0, 0, 1)))
-    return K
-
-
-def _set_calibration_matrix_blend(scene, cam, K):
-    """Set the calibration matrix K of a camera cam in scene scene, assuming K is of type mathutils.Matrix.
-
-    For more details, see set_calibration_matrix.
-    """
-    render = scene.render
-
-    # we assume a horizontal sensor with a default height of 1.0, so we only need to set one sensor size
-    sensor_size_mm = K[1][1] * K[0][2] / (K[0][0] * K[1][2])
-    sensor_fit = 'HORIZONTAL'
-
-    # we assume that the principal point is in the center of the camera
-    u_0 = K[0][2]
-    v_0 = K[1][2]
-    resolution_x = u_0 * 2.0
-    resolution_y = v_0 * 2.0
-    pixel_aspect_ratio = K[0][0] / K[1][1]
-
-    # compute focal lengths s_u, s_v
-    s_u = resolution_x / sensor_size_mm
-    s_v = resolution_y / 1.0
-
-    # compute camera focal length in mm
-    f_in_mm = K[0][0] / s_u
-
-    # we assume that we render at 100% scale
-    scale = 1.0
-
-    # set render setup
-    render.resolution_x = resolution_x / scale
-    render.resolution_y = resolution_y / scale
-    render.resolution_percentage = scale * 100
-    render.pixel_aspect_x = 1.0
-    render.pixel_aspect_y = pixel_aspect_ratio
-
-    # set to perspective camera with computed focal length and sensor size
-    cam.type = 'PERSP'
-    cam.sensor_fit = 'HORIZONTAL'
-    cam.lens = f_in_mm
-    cam.sensor_width = sensor_size_mm
-
-    return cam
-
-
-def _set_calibration_matrix_numpy(scene, cam, K):
-    """Set the calibration matrix K of a camera cam in scene scene, assuming K is of type np.ndarray.
-
-    For more details, see set_calibration_matrix.
-    """
-    render = scene.render
-
-    # we assume a horizontal sensor with a default height of 1.0, so we only need to set one sensor size
-    sensor_size_mm = K[1, 1] * K[0, 2] / (K[0, 0] * K[1, 2])
-    sensor_fit = 'HORIZONTAL'
-
-    # we assume that the principal point is in the center of the camera
-    u_0 = K[0, 2]
-    v_0 = K[1, 2]
-    resolution_x = u_0 * 2.0
-    resolution_y = v_0 * 2.0
-    pixel_aspect_ratio = K[0, 0] / K[1, 1]
-
-    # compute focal lengths s_u, s_v
-    s_u = resolution_x / sensor_size_mm
-    s_v = resolution_y / 1.0
-
-    # compute camera focal length in mm
-    f_in_mm = K[0, 0] / s_u
-
-    # we assume that we render at 100% scale
-    scale = 1.0
-
-    # set render setup
-    render.resolution_x = resolution_x / scale
-    render.resolution_y = resolution_y / scale
-    render.resolution_percentage = scale * 100
-    render.pixel_aspect_x = 1.0
-    render.pixel_aspect_y = pixel_aspect_ratio
-
-    # set to perspective camera with computed focal length and sensor size
-    cam.type = 'PERSP'
-    cam.sensor_fit = 'HORIZONTAL'
-    cam.lens = f_in_mm
-    cam.sensor_width = sensor_size_mm
-
-    return cam
-
-
-def set_calibration_matrix(scene, cam, K):
-    """Set the calibration matrix K of a camera cam in scene scene.
-
-    Note that the implementation is inspired by
-        1) https://ksimek.github.io/2013/08/13/intrinsic/ and
-        2) https://www.rojtberg.net/1601/from-blender-to-opencv-camera-and-back/ and
-        3) https://blender.stackexchange.com/questions/38009/3x4-camera-matrix-from-blender-camera
-
-    Args:
-        scene (bpy.types.Scene): scene to operate in
-        cam (bpy.types.Camera): camera to modify
-        K (np.ndarray or mathutils.Matrix): 3x3 calibration matrix
-    """
-    if K is None:
-        return cam
-    if isinstance(K, np.ndarray):
-        return _set_calibration_matrix_numpy(scene, cam, K)
-    else:
-        return _set_calibration_matrix_blend(scene, cam, K)
+    return s_u, s_v, u_0, v_0
 

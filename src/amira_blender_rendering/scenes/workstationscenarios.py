@@ -7,7 +7,7 @@ worstationscenarios.blend.
 """
 
 import bpy
-import os
+import os, sys
 from mathutils import Vector
 import time
 import numpy as np
@@ -151,10 +151,14 @@ class WorkstationScenarios(interfaces.ABRScene):
         cam_name = f"{cam_str}.{self.config.scenario_setup.scenario:03}"
         cam = bpy.data.cameras[cam_name]
 
-        # get the effective K
-        effective_k = camera_utils.get_calibration_matrix(bpy.context.scene, cam)
-        # store in configuration
-        self.config.camera_info.effective_k = flatten([list(V) for V in effective_k])
+        # get the effective intrinsics
+        effective_intrinsic = camera_utils.get_intrinsics(bpy.context.scene, cam)
+        # store in configuration (and backup original values)
+        if self.config.camera_info.intrinsic is not None:
+            self.config.camera_info.original_intrinsic = self.config.camera_info.intrinsic
+        else:
+            self.config.camera_info.original_intrinsic = ''
+        self.config.camera_info.intrinsic = list(effective_intrinsic)
 
 
     def setup_cameras(self):
@@ -166,16 +170,16 @@ class WorkstationScenarios(interfaces.ABRScene):
 
 
         # set up cameras from calibration information (if any)
-        if self.config.camera_info.k is None or len(self.config.camera_info.k) <= 0:
+        if self.config.camera_info.intrinsic is None or len(self.config.camera_info.intrinsic) <= 0:
             return
 
         # convert the configuration value of K to a numpy format
-        if isinstance(self.config.camera_info.k, str):
-            K = np.fromstring(self.config.camera_info.k, sep=',', dtype=np.float32).reshape((3, 3))
-        elif isinstance(self.config.camera_info.k, list):
-            K = np.asarray(self.config.camera_info.k, dtype=np.float32).reshape((3, 3))
+        if isinstance(self.config.camera_info.intrinsic, str):
+            intrinsics = np.fromstring(self.config.camera_info.intrinsic, sep=',', dtype=np.float32)
+        elif isinstance(self.config.camera_info.intrinsic, list):
+            intrinsics = np.asarray(self.config.camera_info.intrinsic, dtype=np.float32)
         else:
-            raise RuntimeError("invalid value for camera_info.k")
+            raise RuntimeError("invalid value for camera_info.intrinsic")
 
         scene = bpy.context.scene
         for cam in self.config.scene_setup.cameras:
@@ -186,10 +190,11 @@ class WorkstationScenarios(interfaces.ABRScene):
             # select the camera. Blender often operates on the active object, to
             # make sure that this happens here, we select it
             blnd.select_object(cam_name)
-            # modify camera according to K
+            # modify camera according to the intrinsics
             blender_camera = bpy.data.cameras[cam_name]
             # set the calibration matrix
-            camera_utils.set_calibration_matrix(scene, blender_camera, K)
+            camera_utils.set_intrinsics(scene, blender_camera,
+                    intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3])
 
 
     def setup_objects(self):
