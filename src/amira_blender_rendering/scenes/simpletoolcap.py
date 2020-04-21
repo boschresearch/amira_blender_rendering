@@ -97,9 +97,13 @@ class SimpleToolCap(interfaces.ABRScene):
         # used for rendering. Hence, we will store the effective intrinsics
         # alongside.
         # First, get the effective values
-        effective_intrinsics = camera_utils.get_intrinsics(bpy.context.scene, self.cam)
-        # Second, store in configuration
-        self.config.camera_info.effective_intrinsics = list(effective_intrinsics)
+        effective_intrinsic = camera_utils.get_intrinsics(bpy.context.scene, self.cam)
+        # Second, backup original intrinsics, and store effective intrinsics
+        if self.config.camera_info.intrinsic is not None:
+            self.config.camera_info.original_intrinsic = self.config.camera_info.intrinsic
+        else:
+            self.config.camera_info.original_intrinsic = ''
+        self.config.camera_info.intrinsic = list(effective_intrinsic)
 
 
     def setup_dirinfo(self):
@@ -130,9 +134,9 @@ class SimpleToolCap(interfaces.ABRScene):
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
         self.cam_obj = bpy.context.object
         self.cam = bpy.data.cameras[self.cam_obj.name]
-        if self.config.camera_info.intrinsics is not None:
+        if self.config.camera_info.intrinsic is not None:
             print(f"II: Using camera calibration data")
-            if isinstance(self.config.camera_info.intrinsics, str):
+            if isinstance(self.config.camera_info.intrinsic, str):
                 intrinsics = np.fromstring(self.config.camera_info.intrinsics, sep=',', dtype=np.float32)
             elif isinstance(self.config.camera_info.intrinsics, list):
                 intrinsics = np.asarray(self.config.camera_info.intrinsics, dtype=np.float32)
