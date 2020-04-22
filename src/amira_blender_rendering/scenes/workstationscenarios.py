@@ -381,7 +381,9 @@ class WorkstationScenarios(interfaces.ABRScene):
                 # postprocess. this will take care of creating additional
                 # information, as well as fix filenames
                 try:
-                    self.renderman.postprocess(self.dirinfos[i_cam], base_filename, bpy.context.scene.camera, self.objs)
+                    self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
+                            bpy.context.scene.camera, self.objs,
+                            self.config.camera_info.zeroing)
                 except ValueError:
                     # This issue happens every now and then. The reason might be (not
                     # yet verified) that the target-object is occluded. In turn, this

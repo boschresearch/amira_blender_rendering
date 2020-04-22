@@ -137,9 +137,9 @@ class SimpleToolCap(interfaces.ABRScene):
         if self.config.camera_info.intrinsic is not None:
             print(f"II: Using camera calibration data")
             if isinstance(self.config.camera_info.intrinsic, str):
-                intrinsics = np.fromstring(self.config.camera_info.intrinsics, sep=',', dtype=np.float32)
-            elif isinstance(self.config.camera_info.intrinsics, list):
-                intrinsics = np.asarray(self.config.camera_info.intrinsics, dtype=np.float32)
+                intrinsics = np.fromstring(self.config.camera_info.intrinsic, sep=',', dtype=np.float32)
+            elif isinstance(self.config.camera_info.intrinsic, list):
+                intrinsics = np.asarray(self.config.camera_info.intrinsic, dtype=np.float32)
             else:
                 raise RuntimeError("invalid value for camera_info.intrinsics")
             self.cam = camera_utils.set_intrinsics(bpy.context.scene, self.cam,
@@ -314,7 +314,9 @@ class SimpleToolCap(interfaces.ABRScene):
             # try to postprocess. This might fail, in which case we should
             # attempt to re-render the scene with different randomization
             try:
-                self.renderman.postprocess(self.dirinfo, base_filename, bpy.context.scene.camera, self.objs)
+                self.renderman.postprocess(self.dirinfo, base_filename,
+                        bpy.context.scene.camera, self.objs,
+                        self.config.camera_info.zeroing)
             except ValueError:
                 print(f"ValueError during post-processing, re-generating image index {i}")
             else:
