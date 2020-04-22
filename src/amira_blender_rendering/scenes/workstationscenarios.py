@@ -353,9 +353,9 @@ class WorkstationScenarios(interfaces.ABRScene):
 
     def test_visibility(self):
         for i_cam, cam in enumerate(self.config.scene_setup.cameras):
+            cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
+            cam_obj = bpy.data.objects[cam_name]
             for obj in self.objs:
-                cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
-                cam_obj = bpy.data.objects[cam_name]
                 if not abr_geom.test_visibility(
                         obj['bpy'], cam_obj,
                         bpy.context.scene.render.resolution_x,
