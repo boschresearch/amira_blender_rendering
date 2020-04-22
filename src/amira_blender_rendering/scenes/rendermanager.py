@@ -43,7 +43,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         self.unit_conversion = unit_conversion
 
 
-    def postprocess(self, dirinfo, base_filename, camera, objs):
+    def postprocess(self, dirinfo, base_filename, camera, objs, zeroing):
         """Postprocessing the scene.
 
         This step will compute all the data that is relevant for
@@ -59,7 +59,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         results_gl = ResultsCollection()
         results_cv = ResultsCollection()
         for obj in objs:
-            render_result_gl, render_result_cv = self.build_render_result(obj, camera)
+            render_result_gl, render_result_cv = self.build_render_result(obj, camera, zeroing)
             results_gl.add_result(render_result_gl)
             results_cv.add_result(render_result_cv)
         self.save_annotations(dirinfo, base_filename, results_gl, results_cv)
@@ -124,7 +124,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         return result
 
 
-    def build_render_result(self, obj: dict, camera):
+    def build_render_result(self, obj, camera, zeroing):
         """Create render result.
 
         Args:
@@ -139,7 +139,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         # currenlty not go to the state dict. this is only here to make sure
         # that we actually get the state dict defined in pose render result
         t = np.asarray(abr_geom.get_relative_translation(obj['bpy'], camera))
-        R = np.asarray(abr_geom.get_relative_rotation(obj['bpy'], camera).to_matrix())
+        R = np.asarray(abr_geom.get_relative_rotation_to_cam_deg(obj['bpy'], camera, Vector(zeroing)).to_matrix())
 
         # compute bounding boxes
         corners2d = self.compute_2dbbox(obj['fname_mask'])

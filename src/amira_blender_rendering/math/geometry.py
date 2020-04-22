@@ -7,6 +7,7 @@ rotation matrix computations, conversions between OpenGL and OpenCV, etc.
 """
 
 import bpy
+from math import pi
 from mathutils import Vector, Euler
 from mathutils.bvhtree import BVHTree
 import numpy as np
@@ -77,7 +78,6 @@ def p2d_to_pixel_coords(p: Vector, render: bpy.types.RenderSettings = bpy.contex
 
 
 def get_relative_rotation(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.context.scene.camera) -> Euler:
-
     """Get the relative rotation between two objects in terms of the second
     object's coordinate system. Note that the second object will be default
     initialized to the scene's camera.
@@ -85,12 +85,62 @@ def get_relative_rotation(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.c
     Returns:
         Euler angles given in radians
     """
-
     obj1_m = obj1.rotation_euler.to_matrix()
     obj2_m = obj2.rotation_euler.to_matrix()
-    rel_rotation_m = (obj1_m.inverted() @ obj2_m)
-    rel_rotation_e = rel_rotation_m.to_euler()
-    return rel_rotation_e
+    rel_rotation = (obj2_m.inverted() @ obj1_m).to_euler()
+    return rel_rotation
+
+
+
+def get_relative_rotation_to_cam_deg(obj, cam, zeroing=Vector((90, 0, 0))):
+    """Get the relative rotation between an object and a camera in the camera's
+    frame of reference.
+
+    For more details, see get_relative_rotation_to_cam_rad.
+
+    Args:
+        obj: object to compute relative rotation for
+        cam: camera to used
+        zeroing: camera zeroing angles (in degrees)
+
+    Returns:
+        Relative rotation between object and camera in the coordinate frame of
+        the camera.
+    """
+    return get_relative_rotation_to_cam_rad(obj, cam, zeroing * pi / 180)
+
+
+def get_relative_rotation_to_cam_rad(obj, cam, zeroing=Vector((pi/2, 0, 0))):
+    """Get the relative rotation between an object and a camera in the camera's
+    frame of reference.
+
+    This function allows to specify a certain 'zeroing' rotation.
+
+    A default camera in blender with 0 rotation applied to its transform looks
+    along the -Z direction. Blender's modelling viewport, however, assumes that
+    the surface plane is spanned by X and Y, where X indicates left/right. This
+    can be observed by putting the modelling viewport into the front viewpoint
+    (Numpad 1). Then, the viewport looks along the Y direction.
+
+    As a consequence, the relative rotation between a camera image and an object
+    is only 0 when the camera would look onto the top of the object. Note that
+    this is rather unintuitive, as most people would expect that the relative
+    rotation is 0 when the camera looks at the front of an object.
+
+    Args:
+        obj: object to compute relative rotation for
+        cam: camera to used
+        zeroing: camera zeroing angles (in radians)
+
+    Returns:
+        Relative rotation between object and camera in the coordinate frame of
+        the camera.
+    """
+    obj_m = obj.rotation_euler.to_matrix()
+    cam_m = cam.rotation_euler.to_matrix()
+    rel_rotation = cam_m.inverted() @ obj_m
+    cam_rot = Euler([zeroing[0], zeroing[1], zeroing[2]]).to_matrix()
+    return (cam_rot @ rel_rotation).to_euler()
 
 
 def get_relative_translation(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.context.scene.camera) -> Vector:
