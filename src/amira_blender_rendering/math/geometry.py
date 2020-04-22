@@ -183,14 +183,16 @@ def get_relative_transform(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.
     return t, r
 
 
-def test_visibility(obj, cam, width, height):
-    """Test if an object is visible from a camera
+def test_visibility(obj, cam, width, height, require_all=True):
+    """Test if an object is visible from a camera by projecting the bounding box
+    of the object and testing if the vertices are visible from the camera or not.
 
     Args:
         obj : Object to test visibility for
         cam : Camera object
         width : Viewport width
         height : Viewport height
+        require_all: test all (True) or at least one (False) bounding box vertex
 
     Returns:
         True, if object is visible, false if not.
@@ -205,7 +207,7 @@ def test_visibility(obj, cam, width, height):
     else:
         pxs = [p2d_to_pixel_coords(p) for p in ps]
         oks = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
-        return all(oks)
+        return all(oks) if require_all else any(oks)
 
 
 def _get_bvh(obj):
