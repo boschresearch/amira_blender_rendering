@@ -359,7 +359,8 @@ class WorkstationScenarios(interfaces.ABRScene):
                 if not abr_geom.test_visibility(
                         obj['bpy'], cam_obj,
                         bpy.context.scene.render.resolution_x,
-                        bpy.context.scene.render.resolution_y):
+                        bpy.context.scene.render.resolution_y,
+                        require_all=False):
                     return False
         return True
 
