@@ -10,8 +10,8 @@ modes  = ['Train', 'Test']
 images = [10, 1]
 # directory prefix
 dirprefix = "Workstation"
-# scenarios
-scenarios = [0, 1, 2, 3, 4, 5]
+# scenario selection from the workstations environment
+scenarios = [0, 1, 3, 4]
 
 target_objects = [
     'parts.bundmutter_m8',
@@ -44,11 +44,12 @@ intrinsic = 9.9801747708520452e+02,9.9264009290521165e+02,6.6049856967197002e+02
 """
 
 # [scene_setup]
-def get_scene_setup(fframes):
+def get_scene_setup(fframes, with_stereo=False):
+    cameras = "Camera" if not with_stereo else "Camera, StereoCamera.Left, StereoCamera.Right"
     return f"""[scene_setup]
 blend_file = $AMIRA_DATA_GFX/modeling/workstation_scenarios.blend
 environment_texture = $AMIRA_DATASETS/OpenImagesV4/Images
-cameras = Camera, StereoCamera.Left, StereoCamera.Right
+cameras = {cameras}
 forward_frames = {fframes}
 """
 
@@ -96,21 +97,4 @@ def config_AB(C, nparts, fframes):
 config_AB('A', 1, 10)
 config_AB('B', 5, 10)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-scenario="""[scenario_setup]
-scenario = 1
-target_objects = parts.bundmutter_m8:1
-"""
 
