@@ -133,7 +133,7 @@ class SimpleToolCap(interfaces.ABRScene):
         # add camera, update with calibration data, and make it active for the scene
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
         self.cam_obj = bpy.context.object
-        self.cam = bpy.data.cameras[self.cam_obj.name]
+        self.cam = self.cam_obj.data
         if self.config.camera_info.intrinsic is not None:
             print(f"II: Using camera calibration data")
             if isinstance(self.config.camera_info.intrinsic, str):
