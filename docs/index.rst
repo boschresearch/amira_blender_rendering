@@ -6,13 +6,36 @@
 Welcome to AMIRA Blender Rendering (ABR)'s documentation!
 =========================================================
 
+ABR is a pipeline for rendering large photo-realistic datasets. In turn, these
+datasets can be used to train deep networks for object recognition,
+segmentation, pose estimation, etc.
+
+
+Citing ABR
+----------
+If you use ABR or the PhIRM dataset, please make sure to cite our work.
+
+.. code-block:: latex
+
+   @article{phirm2020,
+       authors={},
+       title={},
+       year={},
+       conference={},
+       pages={}
+   }
+
+
+
 .. toctree::
    :maxdepth: 2
    :Caption: ABR User's Guide:
 
    installation.rst
    using.rst
-   faq.rst
+   formats.rst
+   datasets.rst
+   fqa.rst
    troubleshooting.rst
    license.rst
 
