@@ -351,6 +351,19 @@ class WorkstationScenarios(interfaces.ABRScene):
         bpy.context.scene.camera = bpy.context.scene.objects[cam_name]
 
 
+    def test_visibility(self):
+        for i_cam, cam in enumerate(self.config.scene_setup.cameras):
+            for obj in self.objs:
+                cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
+                cam_obj = bpy.data.objects[cam_name]
+                if not abr_geom.test_visibility(
+                        obj['bpy'], cam_obj,
+                        bpy.context.scene.render.resolution_x,
+                        bpy.context.scene.render.resolution_y):
+                    return False
+        return True
+
+
     def generate_dataset(self):
         """This will generate the dataset according to the configuration that
         was passed in the constructor.
@@ -373,31 +386,36 @@ class WorkstationScenarios(interfaces.ABRScene):
             self.randomize_object_transforms()
             self.forward_simulate()
 
-            # loop through all cameras
+            # repeat if the cameras cannot see the objects
             repeat_frame = False
-            for i_cam, cam in enumerate(self.config.scene_setup.cameras):
-                # activate camera
-                self.activate_camera(cam)
-                # update path information in compositor
-                self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
-                # finally, render
-                self.renderman.render()
+            if not self.test_visibility():
+                print(f"\033[1;33mWW: Object(s) not visible from every camera. Re-randomizing... \033[0;37m")
+                repeat_frame = True
+            else:
+                # loop through all cameras
+                for i_cam, cam in enumerate(self.config.scene_setup.cameras):
+                    # activate camera
+                    self.activate_camera(cam)
+                    # update path information in compositor
+                    self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
+                    # finally, render
+                    self.renderman.render()
 
-                # postprocess. this will take care of creating additional
-                # information, as well as fix filenames
-                try:
-                    self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
-                            bpy.context.scene.camera, self.objs,
-                            self.config.camera_info.zeroing)
-                except ValueError:
-                    # This issue happens every now and then. The reason might be (not
-                    # yet verified) that the target-object is occluded. In turn, this
-                    # leads to a zero size 2D bounding box...
-                    print(f"ValueError during post-processing, re-generating image index {i}")
-                    repeat_frame = True
+                    # postprocess. this will take care of creating additional
+                    # information, as well as fix filenames
+                    try:
+                        self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
+                                bpy.context.scene.camera, self.objs,
+                                self.config.camera_info.zeroing)
+                    except ValueError:
+                        # This issue happens every now and then. The reason might be (not
+                        # yet verified) that the target-object is occluded. In turn, this
+                        # leads to a zero size 2D bounding box...
+                        print(f"\033[1;31mEE: ValueError during post-processing, re-generating image index {i}\033[0;37m")
+                        repeat_frame = True
 
-                    # no need to continue with other cameras
-                    break
+                        # no need to continue with other cameras
+                        break
 
             # if we need to repeat this frame, then do not increment the counter
             if not repeat_frame:

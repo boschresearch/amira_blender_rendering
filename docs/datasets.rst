@@ -29,25 +29,26 @@ Objects
 
 The PhIRM dataset contains rendered images for the following objects.
 
-+------------------------+--------------+
-| Object Name            | Reference ID |
-+========================+==============+
-| bundmutter_m8          | 0            |
-+------------------------+--------------+
-| hammerschraube         | 1            |
-+------------------------+--------------+
-| karabinerhaken         | 2            |
-+------------------------+--------------+
-| sterngriff             | 3            |
-+------------------------+--------------+
-| strebenprofil_20x20    | 4            |
-+------------------------+--------------+
-| winkel_60x60           | 5            |
-+------------------------+--------------+
-| wuerfelverbinder_40x40 | 6            |
-+------------------------+--------------+
++-----------+------------------------+
+| Object ID | Object Name            |
++===========+========================+
+| 0         | bundmutter_m8          |
++-----------+------------------------+
+| 1         | hammerschraube         |
++-----------+------------------------+
+| 2         | karabinerhaken         |
++-----------+------------------------+
+| 3         |  sterngriff            |
++-----------+------------------------+
+| 4         | strebenprofil_20x20    |
++-----------+------------------------+
+| 5         | winkel_60x60           |
++-----------+------------------------+
+| 6         | wuerfelverbinder_40x40 |
++-----------+------------------------+
 
 In addition, we rendered objects 06, 13, 20, and 27 from the T-Less dataset.
+They have the identification code ``T`` in the folder name format below.
 
 
 Scenarios
@@ -87,14 +88,8 @@ The folder naming scheme for the PhIRM dataset follows from
 
 .. code-block::
 
-   WorkstationScenarios-{Configuration Code}_s{Scenario ID}_o{Object IDs}-{Camera}
+   Workstation-{Train/Test}-C{Configuration Code}-S{Scenario ID}-O{Object IDs}-{Camera}
 
-w
-
-Example:
-
-A_s0_o0
-A_s0_o1
 
 
 **Note:** The Directory Reference ID
