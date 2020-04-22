@@ -11,7 +11,7 @@ images = [10, 1]
 # directory prefix
 dirprefix = "Workstation"
 # scenario selection from the workstations environment
-scenarios = [0, 1, 3, 4]
+scenarios = [0, 1, 3]
 
 target_objects = [
     'parts.bundmutter_m8',
