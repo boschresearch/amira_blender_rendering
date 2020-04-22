@@ -3,13 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to amira_blender_rendering's documentation!
-===================================================
+Welcome to AMIRA Blender Rendering (ABR)'s documentation!
+=========================================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Configurations:
 
+   configs/overview.rst
+   configs/baseconfiguration.rst
+   configs/workstation_scenarios.rst
+   configs/simpletoolcap.rst
 
 
 Indices and tables

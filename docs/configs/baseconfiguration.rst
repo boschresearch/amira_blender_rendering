@@ -1,0 +1,107 @@
+.. highlight:: ini
+
+Base Configuration
+==================
+
+The base configuration is supported by all scenarios. It consists of several
+namespaces, which are described in detail below.
+
+dataset
+-------
+The ``dataset`` namespace contains information about a dataset such as number of
+images, as well as the output directory where data will be written to.
+
+
+.. code-block::
+
+    [dataset]
+    # Specify how many images should be rendered
+    image_count = 5
+    # Specify the base path where data will be written to. Note that this is a base
+    # path, to which additional information will be added such as Scenario-Number
+    # and Camera-Name
+    base_path = $AMIRA_DATASETS/WorkstationScenarios-Train
+    # specify the scene type
+    scene_type = WorkstationScenarios
+
+
+camera_info
+-----------
+
+Camera information is placed in the ``camera_info`` namespace. It contains
+settings for image width and height, as well as (optional) intrinsic camera
+information.
+
+.. code-block::
+
+    [camera_info]
+    # In this section you specify the camera information, which will have a direct
+    # impact on rendering results.
+
+    # The width and height have an influence on the rendering resolution. In case
+    # you wish to set a specific calibration matrix that you obtained, for
+    # instance, from OpenCV, and do not wish to temper with the rendering
+    # resolution, then set these values to 0.
+    width = 640
+    height = 480
+
+    # The camera model to use. At the moment, this value is ignored in
+    # amira_blender_rendering. However, because all rendering is in fact done with a
+    # pinhole camera model, this value serves as documentation
+    model = pinhole
+
+    # Also this value has no impact on rendering likewise the model. However, if
+    # you want to specify a certain camera name for documentation purposes, this is
+    # the place.
+    name = Pinhole Camera
+
+    # You can specify the intrinsic calibration information that was determined for
+    # a camera, for instance with OpenCV.
+    #
+    # Here, we use the format
+    #   intrinsics = fx, fy, cx, cy
+    # Where the fx, fy values represented focal lengths, and cx, cy defines the
+    # camera's principal point.
+    #
+    # You can extract fx, fy, cx, cy from a calibration matrix K:
+    #
+    #         fx  s   cx
+    #    K =   0  fy  cy
+    #          0  0   1
+    #
+    # Note, however, that the values in your calibration matrix or intrinsics
+    # specification might not end up in proper render resolutions. For instance,
+    # this is the case in the example below, which would result in a rendering
+    # resolution of about 1320.98 x 728.08.  Blender will round these values to
+    # suitable integer values.  As a consequence, even if you set width and height
+    # above to 0, the effective intrinsics that blender uses might be slightly
+    # different from your K.
+    #
+    # To accomodate this 'issue', amira_blender_rendering will write a value
+    # 'effective_intrinsics' to the configuration as soon as setting up cameras and
+    # rendering is done. Recall that all configurations will be stored alongside the
+    # created dataset, so you can easily retrieve the effective_intrinsics in
+    # downstream applications
+    intrinsics = 9.9801747708520452e+02,9.9264009290521165e+02,6.6049856967197002e+02,3.6404286361152555e+02,0
+
+
+render_setup
+------------
+
+The ``render_setup`` namespace is used to configure how blender's render backend
+behaves, or which render backend to use.
+
+.. code-block::
+
+    [render_setup]
+    # specify which renderer to use. Usually you should leave this at
+    # blender-cycles. Note that, at the moment, this is hard-coded to cycles
+    # internally anyway.
+    backend = blender-cycles
+    # integrator (either PATH or BRANCHED_PATH)
+    integrator = BRANCHED_PATH
+    # use denoising (true, false)
+    denoising = True
+    # samples the ray-tracer uses per pixel
+    samples = 64
+
