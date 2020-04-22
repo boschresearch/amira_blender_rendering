@@ -8,6 +8,23 @@ Welcome to AMIRA Blender Rendering (ABR)'s documentation!
 
 .. toctree::
    :maxdepth: 2
+   :Caption: ABR User's Guide:
+
+   installation.rst
+   using.rst
+   faq.rst
+   troubleshooting.rst
+   license.rst
+
+.. toctree::
+   :maxdepth: 2
+   :Caption: ABR Developer's Guide:
+
+   contributing.rst
+   extending.rst
+
+.. toctree::
+   :maxdepth: 2
    :caption: Configurations:
 
    configs/overview.rst
