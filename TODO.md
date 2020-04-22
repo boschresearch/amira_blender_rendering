@@ -29,3 +29,4 @@
 
 * Update LICENSE with the license we select for open sourcing
 
+* add VERSION to ini-files
