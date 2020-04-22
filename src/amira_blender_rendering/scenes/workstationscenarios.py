@@ -116,8 +116,13 @@ class WorkstationScenarios(interfaces.ABRScene):
         # compute directory information for each of the cameras
         self.dirinfos = list()
         for cam in self.config.scene_setup.cameras:
+            # DEPRECATED:
             # paths are set up as: base_path + Scenario## + CameraName
-            camera_base_path = f"{self.config.dataset.base_path}-Scenario{self.config.scenario_setup.scenario:02}-{cam}"
+            # camera_base_path = f"{self.config.dataset.base_path}-Scenario{self.config.scenario_setup.scenario:02}-{cam}"
+
+            # NEW:
+            # paths are set up as: base_path + CameraName
+            camera_base_path = f"{self.config.dataset.base_path}-{cam}"
             dirinfo = build_directory_info(camera_base_path)
             self.dirinfos.append(dirinfo)
 
@@ -149,7 +154,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         # can extract this from one of the cameras
         cam_str = self.config.scene_setup.cameras[0]
         cam_name = f"{cam_str}.{self.config.scenario_setup.scenario:03}"
-        cam = bpy.data.cameras[cam_name]
+        cam = bpy.data.objects[cam_name].data
 
         # get the effective intrinsics
         effective_intrinsic = camera_utils.get_intrinsics(bpy.context.scene, cam)
@@ -191,7 +196,7 @@ class WorkstationScenarios(interfaces.ABRScene):
             # make sure that this happens here, we select it
             blnd.select_object(cam_name)
             # modify camera according to the intrinsics
-            blender_camera = bpy.data.cameras[cam_name]
+            blender_camera = bpy.data.objects[cam_name].data
             # set the calibration matrix
             camera_utils.set_intrinsics(scene, blender_camera,
                     intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3])
