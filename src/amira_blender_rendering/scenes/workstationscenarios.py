@@ -133,6 +133,11 @@ class WorkstationScenarios(interfaces.ABRScene):
         Here, we simply load the main blender file from disk.
         """
         bpy.ops.wm.open_mainfile(filepath=expandpath(self.config.scene_setup.blend_file))
+        # we need to hide all dropboxes and dropzones in the viewport, otherwise
+        # occlusion testing will not work, because blender's ray_cast method
+        # returns hits no empties!
+        print("II: Hiding all dropzones from viewport")
+        bpy.data.collections['Dropzones'].hide_viewport = True
 
 
     def setup_render_output(self):
@@ -172,7 +177,6 @@ class WorkstationScenarios(interfaces.ABRScene):
         Note that this does not select a camera for which to render. This will
         be selected elsewhere.
         """
-
 
         # set up cameras from calibration information (if any)
         if self.config.camera_info.intrinsic is None or len(self.config.camera_info.intrinsic) <= 0:
@@ -345,6 +349,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         for i in range(self.config.scene_setup.forward_frames):
             scene.frame_set(i+1)
 
+
     def activate_camera(self, cam:str):
         # first get the camera name. this depends on the scene (blend file)
         # and is of the format CameraName.XXX, where XXX is a number with
@@ -358,12 +363,21 @@ class WorkstationScenarios(interfaces.ABRScene):
             cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
             cam_obj = bpy.data.objects[cam_name]
             for obj in self.objs:
-                if not abr_geom.test_visibility(
-                        obj['bpy'], cam_obj,
+                not_visible_or_occluded = abr_geom.test_occlusion(
+                    bpy.context.scene,
+                        bpy.context.scene.view_layers['View Layer'],
+                        cam_obj,
+                        obj['bpy'],
                         bpy.context.scene.render.resolution_x,
                         bpy.context.scene.render.resolution_y,
-                        require_all=False):
+                        require_all=False,
+                        origin_offset=0.01)
+                if not_visible_or_occluded:
+                    print(f"WW: object {obj} not visible or occluded")
+                    print(f"II: saving blender file for debugging to /tmp/workstationscenarios.blend")
+                    bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
                     return False
+
         return True
 
 
