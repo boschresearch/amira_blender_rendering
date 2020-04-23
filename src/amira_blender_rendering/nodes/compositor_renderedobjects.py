@@ -33,10 +33,6 @@ class CompositorNodesOutputRenderedObjects():
         Args:
             dirinfo (DynamicStruct): directory information for the rendered_objects
                 dataset. See amira_perception for more details
-
-        Returns:
-            5-tuple: base path, followed by relative paths for constant light, random light,
-            depth, and mask.
         """
 
         self.path_base = self.dirinfo.images.base_path
@@ -45,18 +41,13 @@ class CompositorNodesOutputRenderedObjects():
         self.path_img_const = self.dirinfo.images.const[len(prefix) + 1:]
         self.path_img_const = os.path.join(self.path_img_const, '')
 
-        self.path_img_rand = self.dirinfo.images.random[len(prefix) + 1:]
-        self.path_img_rand = os.path.join(self.path_img_rand, '')
-
         self.path_depth = self.dirinfo.images.depth[len(prefix) + 1:]
         self.path_depth = os.path.join(self.path_depth, '')
 
         self.path_mask = self.dirinfo.images.mask[len(prefix) + 1:]
         self.path_mask = os.path.join(self.path_mask, '')
 
-        # TODO: add backdrop in RenderedObjects.dirinfo
-        # self.path_backdrop = self.dirinfo.images.backdrop[len(prefix) + 1:]
-        self.path_backdrop = 'backdrop'
+        self.path_backdrop = self.dirinfo.images.backdrop[len(prefix) + 1:]
         self.path_backdrop = os.path.join(self.path_backdrop, '')
 
 
