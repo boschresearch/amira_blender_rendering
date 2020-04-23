@@ -66,9 +66,10 @@ They have the following identification codes in the folder name format below.
 Scenarios
 ~~~~~~~~~
 
-The firm dataset consists of 6 different `scenarios`, numbered from 0 to 5, each
-only slightly different from the other. For instance, while one scenario might
-be an empty table, another might have boxes in the environment as well.
+The workstation scenarios blender file consists of 6 different `scenarios`,
+numbered from 0 to 5, each only slightly different from the other. For instance,
+while one scenario might be an empty table, another might have boxes in the
+environment as well. For the PhIRM dataset, we rendered scenarios 0, 1, 3.
 
 
 Configurations
@@ -100,7 +101,11 @@ The folder naming scheme for the PhIRM dataset follows from
 
 .. code-block::
 
-   Workstation-{Train/Test}-C{Configuration Code}-S{Scenario ID}-O{Object IDs}-{Camera}
+   Workstation-{Train/Test}-C{Configuration Code}-S{Scenario ID}-O{Object IDs separated by _}-{Camera}
+
+For instance, the folder name ``Workstation-Train-CA-S0-O0-StereoCamera.Left``
+contains output of the left stereo camera setup for dataset Configuration A,
+Scenario 0, and Object 0.
 
 
 

@@ -160,6 +160,7 @@ def gen_config(C, obj_sets, ninstances, fframes, multi_view=True):
                 with open(fname, 'w') as f:
                     f.write(cfg)
 
-for C in target_configs:
-    print(f"Generating configs for Configuration {C}")
-    gen_config(C, obj_sets[C], obj_instances[C], forward_frames[C], gen_multi_view[C])
+if __name__ == "__main__":
+    for C in target_configs:
+        print(f"Generating configs for Configuration {C}")
+        gen_config(C, obj_sets[C], obj_instances[C], forward_frames[C], gen_multi_view[C])
