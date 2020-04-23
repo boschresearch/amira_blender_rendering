@@ -111,6 +111,8 @@ def get_cmd_argparser():
 
 
 def get_scene_types():
+    # TODO: this could/should be handled with some internal registration
+    #       mechanism that 'knows' all scenarios
     from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
     from amira_blender_rendering.scenes.simpletoolcap import SimpleToolCap, SimpleToolCapConfiguration
 

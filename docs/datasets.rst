@@ -48,7 +48,19 @@ The PhIRM dataset contains rendered images for the following objects.
 +-----------+------------------------+
 
 In addition, we rendered objects 06, 13, 20, and 27 from the T-Less dataset.
-They have the identification code ``T`` in the folder name format below.
+They have the following identification codes in the folder name format below.
+
++-----------+--------------+
+| Object ID | Object Name  |
++===========+==============+
+| 7         | tless obj_06 |
++-----------+--------------+
+| 8         | tless obj_13 |
++-----------+--------------+
+| 9         | tless obj_20 |
++-----------+--------------+
+| 10        | tless obj_27 |
++-----------+--------------+
 
 
 Scenarios
