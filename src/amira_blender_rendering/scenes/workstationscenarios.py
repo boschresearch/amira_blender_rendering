@@ -324,6 +324,8 @@ class WorkstationScenarios(interfaces.ABRScene):
             obj['bpy'].location.z = drop_location.z + (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
             obj['bpy'].rotation_euler = Vector((rnd_rot[i, :] * np.pi))
 
+            print(f"II: Object {obj['model_name']}: {obj['bpy'].location}, {obj['bpy'].rotation_euler}")
+
         # update the scene. unfortunately it doesn't always work to just set
         # the location of the object without recomputing the dependency
         # graph
