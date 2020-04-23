@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 
 """This module specifies a render manager that takes care of several
-intermediate steps.
-
-This class is similar to RenderedObjectsBase, but is designed for composition
-and not inheritance."""
+intermediate steps."""
 
 
 import bpy
