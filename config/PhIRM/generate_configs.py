@@ -11,7 +11,7 @@
 modes  = ['Train', 'Test']
 
 # image count per train / test
-images = [10, 1]
+images = [1, 1]
 
 # directory prefix
 dirprefix = "Workstation"
