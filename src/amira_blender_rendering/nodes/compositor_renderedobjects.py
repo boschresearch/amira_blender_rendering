@@ -226,7 +226,7 @@ class CompositorNodesOutputRenderedObjects():
             self.dirinfo.images.base_path, 'backdrop', f'{self.base_filename}.png{frame_number_str}')
         for f in (self.fname_render, self.fname_depth, self.fname_backdrop):
             if not os.path.exists(f):
-                get_logger().error(f"EE: File {f} expected, but does not exist")
+                get_logger().error(f"File {f} expected, but does not exist")
             else:
                 os.rename(f, f[:-4])
 
