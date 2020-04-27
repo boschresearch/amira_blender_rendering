@@ -25,6 +25,7 @@ import re
 import argparse
 import numpy as np
 import random
+import logging
 from math import log, ceil
 
 
@@ -208,7 +209,7 @@ def main():
     if success:
         scene.dump_config()
     else:
-        print(f"EE: Error while generating dataset")
+        logging.error("EE: Error while generating dataset")
 
     # tear down scene. should be handled by blender, but a scene might have
     # other things opened that it should close gracefully
