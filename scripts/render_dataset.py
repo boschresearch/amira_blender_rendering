@@ -49,12 +49,30 @@ def expandpath(path, check_file=False):
 
 
 def import_abr(path=None): # {{{
-    """Import amira_blender_rendering."""
-    if path is not None:
-        sys.path.append(expandpath(path))
+    """(Try to) import amira_blender_rendering."""
 
     global abr, WorkstationScenarios, WorkstationScenariosConfiguration
-    import amira_blender_rendering as abr
+
+    if path is None:
+        try:
+            import amira_blender_rendering as abr
+        except:
+            print("Error: Could not import amira_blender_rendering. Either install it as a")
+            print("       package, or specify the path to its location with the --abr-path")
+            print("       command line argument. Example:")
+            print("          $ blender -b -P scripts/render_dataset.py -- --abr-path ./src")
+            print("       For more help, see documentation, or invoke with --help")
+            sys.exit(1)
+    else:
+        abr_path = expandpath(path, check_file=True)
+        sys.path.append(expandpath(abr_path))
+        try:
+            import amira_blender_rendering as abr
+        except:
+            print("Error: amira_blender_rendering not found during import. Did you pass")
+            print("       the wrong path?")
+            sys.exit(1)
+
     import amira_blender_rendering.dataset
     import amira_blender_rendering.utils.blender as blender_utils
     import amira_blender_rendering.scenes
@@ -145,15 +163,6 @@ def main():
     # parse command arguments
     cmd_parser = get_cmd_argparser()
     cmd_args = cmd_parser.parse_args(args=get_argv())  # need to parse to get aps and abr
-
-    # TODO: this can be removed as soon as we have an installable abr
-    # check if user specified abr_path
-    if cmd_args.abr_path is None:
-        print("Please specify the path under which the amira_blender_rendering python package (abr) can be found.")
-        print("Note that abr should be found below the repository's src/ directory")
-        sys.exit(1)
-
-    abr_path = expandpath(cmd_args.abr_path, check_file=True)
     import_abr(cmd_args.abr_path)
 
     # pretty print available scenarios?
