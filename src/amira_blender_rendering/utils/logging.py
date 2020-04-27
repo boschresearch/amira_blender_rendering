@@ -2,16 +2,22 @@
 
 # logging setup
 
+import os
 import logging
 
 # local logger configuration
 __logger_name = "amira_blender_rendering"
-__logger_filename = "/tmp/amira_blender_rendering.log"
+__logger_logdir = os.path.expandvars("$HOME/.amira_blender_rendering")
+__logger_filename = os.path.join(__logger_logdir, f"{__logger_name}.log")
 __logger_loglevel = logging.INFO
 
 
 def get_logger():
     """This function returns a logger instance."""
+
+    # create directory of necessary
+    if not os.path.exists(__logger_logdir):
+        os.mkdir(__logger_logdir)
 
     # setup logger once. Note that basicConfig does nothing (as stated in the
     # documentation) if the root logger was already setup. So we can basically
