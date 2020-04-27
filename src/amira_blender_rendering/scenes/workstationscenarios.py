@@ -116,8 +116,13 @@ class WorkstationScenarios(interfaces.ABRScene):
         # compute directory information for each of the cameras
         self.dirinfos = list()
         for cam in self.config.scene_setup.cameras:
+            # DEPRECATED:
             # paths are set up as: base_path + Scenario## + CameraName
-            camera_base_path = f"{self.config.dataset.base_path}-Scenario{self.config.scenario_setup.scenario:02}-{cam}"
+            # camera_base_path = f"{self.config.dataset.base_path}-Scenario{self.config.scenario_setup.scenario:02}-{cam}"
+
+            # NEW:
+            # paths are set up as: base_path + CameraName
+            camera_base_path = f"{self.config.dataset.base_path}-{cam}"
             dirinfo = build_directory_info(camera_base_path)
             self.dirinfos.append(dirinfo)
 
@@ -128,6 +133,11 @@ class WorkstationScenarios(interfaces.ABRScene):
         Here, we simply load the main blender file from disk.
         """
         bpy.ops.wm.open_mainfile(filepath=expandpath(self.config.scene_setup.blend_file))
+        # we need to hide all dropboxes and dropzones in the viewport, otherwise
+        # occlusion testing will not work, because blender's ray_cast method
+        # returns hits no empties!
+        print("II: Hiding all dropzones from viewport")
+        bpy.data.collections['Dropzones'].hide_viewport = True
 
 
     def setup_render_output(self):
@@ -149,7 +159,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         # can extract this from one of the cameras
         cam_str = self.config.scene_setup.cameras[0]
         cam_name = f"{cam_str}.{self.config.scenario_setup.scenario:03}"
-        cam = bpy.data.cameras[cam_name]
+        cam = bpy.data.objects[cam_name].data
 
         # get the effective intrinsics
         effective_intrinsic = camera_utils.get_intrinsics(bpy.context.scene, cam)
@@ -167,7 +177,6 @@ class WorkstationScenarios(interfaces.ABRScene):
         Note that this does not select a camera for which to render. This will
         be selected elsewhere.
         """
-
 
         # set up cameras from calibration information (if any)
         if self.config.camera_info.intrinsic is None or len(self.config.camera_info.intrinsic) <= 0:
@@ -191,7 +200,7 @@ class WorkstationScenarios(interfaces.ABRScene):
             # make sure that this happens here, we select it
             blnd.select_object(cam_name)
             # modify camera according to the intrinsics
-            blender_camera = bpy.data.cameras[cam_name]
+            blender_camera = bpy.data.objects[cam_name].data
             # set the calibration matrix
             camera_utils.set_intrinsics(scene, blender_camera,
                     intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3])
@@ -319,6 +328,8 @@ class WorkstationScenarios(interfaces.ABRScene):
             obj['bpy'].location.z = drop_location.z + (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
             obj['bpy'].rotation_euler = Vector((rnd_rot[i, :] * np.pi))
 
+            print(f"II: Object {obj['model_name']}: {obj['bpy'].location}, {obj['bpy'].rotation_euler}")
+
         # update the scene. unfortunately it doesn't always work to just set
         # the location of the object without recomputing the dependency
         # graph
@@ -338,12 +349,36 @@ class WorkstationScenarios(interfaces.ABRScene):
         for i in range(self.config.scene_setup.forward_frames):
             scene.frame_set(i+1)
 
+
     def activate_camera(self, cam:str):
         # first get the camera name. this depends on the scene (blend file)
         # and is of the format CameraName.XXX, where XXX is a number with
         # leading zeros
         cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
         bpy.context.scene.camera = bpy.context.scene.objects[cam_name]
+
+
+    def test_visibility(self):
+        for i_cam, cam in enumerate(self.config.scene_setup.cameras):
+            cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
+            cam_obj = bpy.data.objects[cam_name]
+            for obj in self.objs:
+                not_visible_or_occluded = abr_geom.test_occlusion(
+                    bpy.context.scene,
+                        bpy.context.scene.view_layers['View Layer'],
+                        cam_obj,
+                        obj['bpy'],
+                        bpy.context.scene.render.resolution_x,
+                        bpy.context.scene.render.resolution_y,
+                        require_all=False,
+                        origin_offset=0.01)
+                if not_visible_or_occluded:
+                    print(f"WW: object {obj} not visible or occluded")
+                    print(f"II: saving blender file for debugging to /tmp/workstationscenarios.blend")
+                    bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
+                    return False
+
+        return True
 
 
     def generate_dataset(self):
@@ -368,31 +403,36 @@ class WorkstationScenarios(interfaces.ABRScene):
             self.randomize_object_transforms()
             self.forward_simulate()
 
-            # loop through all cameras
+            # repeat if the cameras cannot see the objects
             repeat_frame = False
-            for i_cam, cam in enumerate(self.config.scene_setup.cameras):
-                # activate camera
-                self.activate_camera(cam)
-                # update path information in compositor
-                self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
-                # finally, render
-                self.renderman.render()
+            if not self.test_visibility():
+                print(f"\033[1;33mWW: Object(s) not visible from every camera. Re-randomizing... \033[0;37m")
+                repeat_frame = True
+            else:
+                # loop through all cameras
+                for i_cam, cam in enumerate(self.config.scene_setup.cameras):
+                    # activate camera
+                    self.activate_camera(cam)
+                    # update path information in compositor
+                    self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
+                    # finally, render
+                    self.renderman.render()
 
-                # postprocess. this will take care of creating additional
-                # information, as well as fix filenames
-                try:
-                    self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
-                            bpy.context.scene.camera, self.objs,
-                            self.config.camera_info.zeroing)
-                except ValueError:
-                    # This issue happens every now and then. The reason might be (not
-                    # yet verified) that the target-object is occluded. In turn, this
-                    # leads to a zero size 2D bounding box...
-                    print(f"ValueError during post-processing, re-generating image index {i}")
-                    repeat_frame = True
+                    # postprocess. this will take care of creating additional
+                    # information, as well as fix filenames
+                    try:
+                        self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
+                                bpy.context.scene.camera, self.objs,
+                                self.config.camera_info.zeroing)
+                    except ValueError:
+                        # This issue happens every now and then. The reason might be (not
+                        # yet verified) that the target-object is occluded. In turn, this
+                        # leads to a zero size 2D bounding box...
+                        print(f"\033[1;31mEE: ValueError during post-processing, re-generating image index {i}\033[0;37m")
+                        repeat_frame = True
 
-                    # no need to continue with other cameras
-                    break
+                        # no need to continue with other cameras
+                        break
 
             # if we need to repeat this frame, then do not increment the counter
             if not repeat_frame:

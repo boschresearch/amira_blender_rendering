@@ -1,2 +1,6 @@
+# for abr
 numpy
 imageio
+
+# for docs/sphinx
+sphinx-rtd-theme

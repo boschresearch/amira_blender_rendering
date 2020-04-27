@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>amira_blender_rendering</name>
-  <version>0.0.0</version>
-  <description>Tools for animating a blender robot model</description>
+  <version>0.9.0</version>
+  <description>Tools for rendering photo-realistic datasets</description>
 
-  <maintainer email="Yoel.Shapiro@il.bosch.com">yoel_shapiro</maintainer>
+  <maintainer email="Nicolai.Waniek@de.bosch.com">nicolai_waniek</maintainer>
   <license>TODO</license>
 
   <buildtool_depend>catkin</buildtool_depend>

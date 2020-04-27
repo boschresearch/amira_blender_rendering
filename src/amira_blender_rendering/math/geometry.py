@@ -183,14 +183,18 @@ def get_relative_transform(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.
     return t, r
 
 
-def test_visibility(obj, cam, width, height):
-    """Test if an object is visible from a camera
+def test_visibility(obj, cam, width, height, require_all=True):
+    """Test if an object is visible from a camera by projecting the bounding box
+    of the object and testing if the vertices are visible from the camera or not.
+
+    Note that this does not test for occlusions!
 
     Args:
         obj : Object to test visibility for
         cam : Camera object
         width : Viewport width
         height : Viewport height
+        require_all: test all (True) or at least one (False) bounding box vertex
 
     Returns:
         True, if object is visible, false if not.
@@ -205,7 +209,77 @@ def test_visibility(obj, cam, width, height):
     else:
         pxs = [p2d_to_pixel_coords(p) for p in ps]
         oks = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
-        return all(oks)
+        return all(oks) if require_all else any(oks)
+
+
+def test_occlusion(scene, layer, cam, obj, width, height, require_all=True, origin_offset=0.01):
+    """Test if an object is visible or occluded by another object by checking its vertices.
+    Note that this also tests if an object is visible.
+
+    Args:
+        scene: the scene for which to test
+        layer: view layer to use for ray casting, e.g. scene.view_layers['View Layer']
+        cam: camera to evaluate
+        obj: object to evaluate
+        width: scene render width, e.g. scene.render.resolution_x
+        height: scene render height, e.g. scene.render.resolution_y
+        require_all: test all vertices of the object for visibility and
+            occlusion or not
+        origin_offset: for ray-casting, add this offset along the ray to the
+            origin. This helps to prevent numerical issues when a mesh is exactly at
+            cam's location.
+
+    Returns:
+        True if an object is not visible or occluded, False if the object is
+        visible and not occluded. Note that the returned value depends on
+        argument require_all. Specifically, if require_all is set to False, then
+        this function returns False if one of its vertices is visible and not
+        occluded, and True if none of the vertex is visible or all are occluded.
+    """
+    dg = bpy.context.evaluated_depsgraph_get()
+    dg.update()
+
+    # get mesh, evaluated after simulations, and camera origin from the camera's
+    # world matrix
+    mesh = obj.evaluated_get(dg).to_mesh()
+    origin = cam.matrix_world.to_translation()
+    vs = [obj.matrix_world @ v.co for v in mesh.vertices]
+    obj.to_mesh_clear()
+
+    # compute projected vertices
+    ps = [project_p3d(v, cam) for v in vs]
+    if None in ps:
+        return True
+
+    # compute pixel coordinates for each vertex
+    pxs = [p2d_to_pixel_coords(p) for p in ps]
+
+    # keep track of what is going on
+    vs_visible = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
+    vs_occluded = [False] * len(vs)
+
+    for i, v in enumerate(vs):
+        # compute direction of ray from camera to this vertex and perform cast
+        direction = v - origin
+        direction.normalize()
+        # 'repair' the origin by walking along the ray by a little offset
+        local_origin = origin + origin_offset * direction
+        hit_record = scene.ray_cast(layer, local_origin, direction)
+        hit = hit_record[0]
+        hit_location = hit_record[1]
+        hit_obj = hit_record[4]
+
+        # assume hit
+        if hit and not (hit_obj.type == 'CAMERA') and not (hit_obj == obj):
+            vs_occluded[i] = True
+
+    if require_all:
+        return not (all(vs_visible) and all([not oc for oc in vs_occluded]))
+    else:
+        for i in range(len(vs_visible)):
+            if vs_visible[i] and not vs_occluded[i]:
+                return False
+        return True
 
 
 def _get_bvh(obj):
