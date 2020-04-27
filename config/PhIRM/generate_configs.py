@@ -72,12 +72,12 @@ gen_multi_view = {
 
 # specify how many frames we want to forward simulate each Configuration
 forward_frames = {
-        'A': 10,
-        'B': 10,
-        'C': 10,
-        'D': 10,
-        'E': 10,
-        'F': 10,
+        'A': 20,
+        'B': 20,
+        'C': 20,
+        'D': 20,
+        'E': 20,
+        'F': 20,
 }
 
 # select which configurations to generate
