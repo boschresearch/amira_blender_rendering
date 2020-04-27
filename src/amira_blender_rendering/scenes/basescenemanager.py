@@ -10,8 +10,7 @@ logger = get_logger()
 class BaseSceneManager():
     """Class for arbitrary scenes that should be set up for rendering data.
 
-    This class is inspired by tests.test_panda:SceneManager, and should act as an
-    an entry point for arbitrary scenarios. Ideal
+    This class should act as an an entry point for arbitrary scenarios.
     """
 
     def __init__(self):
