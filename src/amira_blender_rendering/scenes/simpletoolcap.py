@@ -289,6 +289,8 @@ class SimpleToolCap(interfaces.ABRScene):
 
 
     def dump_config(self):
+        if not os.path.exists(self.dirinfo.base_path):
+                os.mkdir(self.dirinfo.base_path)
         dump_config(self.config, self.dirinfo.base_path)
 
 

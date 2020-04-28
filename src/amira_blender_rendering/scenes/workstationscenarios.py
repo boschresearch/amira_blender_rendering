@@ -456,6 +456,8 @@ class WorkstationScenarios(interfaces.ABRScene):
         # camera that was rendered we store the configuration
         for dirinfo in self.dirinfos:
             output_path = dirinfo.base_path
+            if not os.path.exists(output_path):
+                os.mkdir(output_path)
             dump_config(self.config, output_path)
 
 

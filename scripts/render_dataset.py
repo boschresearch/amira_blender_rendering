@@ -212,6 +212,9 @@ def main():
     #       generate the split. This is significantly easier than internally
     #       maintaining split configurations.
     scene = scene_types[scene_type_str.lower()][0](config=config)
+    # save the config early. In case something goes wrong during rendering, we
+    # at least have the config + potentially some images
+    scene.dump_config()
 
     # generate the dataset
     success = False
@@ -222,9 +225,7 @@ def main():
 
     # after finishing, dump the configuration(s) to the target locations (which
     # might depend on scene-internal state)
-    if success:
-        scene.dump_config()
-    else:
+    if not success:
         get_logger().error("Error while generating dataset")
 
     # tear down scene. should be handled by blender, but a scene might have
