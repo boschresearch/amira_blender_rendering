@@ -23,7 +23,7 @@ import amira_blender_rendering.interfaces as interfaces
 
 class SimpleToolCapConfiguration(abr_scenes.BaseConfiguration):
     def __init__(self):
-        super(SimpleToolCapConfiguration, self).__init__(name="SimpleToolCap")
+        super(SimpleToolCapConfiguration, self).__init__()
 
         # scene specific configuration
         # let's be able to specify environment textures

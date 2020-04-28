@@ -29,7 +29,7 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
     """This class specifies all configuration options for WorkstationScenarios"""
 
     def __init__(self):
-        super(WorkstationScenariosConfiguration, self).__init__("WorkstationScenarios")
+        super(WorkstationScenariosConfiguration, self).__init__()
 
         # specific scene configuration
         self.add_param('scene_setup.blend_file', '~/gfx/modeling/workstation_scenarios.blend', 'Path to .blend file with modeled scene')
