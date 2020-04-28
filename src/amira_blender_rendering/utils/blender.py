@@ -3,9 +3,7 @@
 import bpy
 import numpy as np
 from mathutils import Vector
-from amira_blender_rendering.utils import logging
-
-logger = logging.get_logger()
+from amira_blender_rendering.utils.logging import get_logger
 
 def unlink_objects():
     for scene in bpy.data.scenes:
@@ -41,12 +39,12 @@ def activate_cuda_devices():
 
     # if we don't have a GPU available, then print a warning
     if not cuda_available:
-        print("WW: No CUDA compute device available, will use CPU")
+        get_logger().warn("No CUDA compute device available, will use CPU")
     else:
         device_set = False
         for d in prefs.devices:
             if d.type == 'CUDA':
-                print(f"II: Using CUDA device '{d.name}' ({d.id})")
+                get_logger().info(f"Using CUDA device '{d.name}' ({d.id})")
                 d.use = True
             else:
                 d.use = False
@@ -86,7 +84,7 @@ def clear_orphaned_materials():
 def select_object(obj_name: str):
     """Select and activate an object given its name"""
     if obj_name not in bpy.data.objects:
-        logger.warn(f"Could not find object {obj_name}")
+        get_logger().warn(f"Could not find object {obj_name}")
         return
 
     # we first deselect all, then select and activate the target object
@@ -170,6 +168,7 @@ def delete_object(object_name):
     """
 
     # try to get the object name
+    logger = get_logger()
     if not isinstance(object_name, str):
         try:
             object_name = object_name.name
@@ -229,7 +228,7 @@ def get_mesh_bounding_box(mesh):
     try:
         xyz = mesh.data.vertices[0].co
     except AttributeError as err:
-        print('expecting a mesh object, but no data.vertices attribute in object {}'.format(mesh))
+        get_logger().error('expecting a mesh object, but no data.vertices attribute in object {}'.format(mesh))
         raise err
 
     bb = [[xyz[0], xyz[0]], [xyz[1], xyz[1]], [xyz[2], xyz[2]]]

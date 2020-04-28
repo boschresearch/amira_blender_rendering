@@ -10,6 +10,7 @@ import numpy as np
 
 from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
+from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
 from amira_blender_rendering.datastructures import flatten
 import amira_blender_rendering.utils.blender as blnd
@@ -36,6 +37,8 @@ class SimpleToolCap(interfaces.ABRScene):
     """
     def __init__(self, **kwargs):
         super(SimpleToolCap, self).__init__()
+        self.logger = get_logger()
+
         # we make use of the RenderManager
         self.renderman = abr_scenes.RenderManager()
 
@@ -135,7 +138,7 @@ class SimpleToolCap(interfaces.ABRScene):
         self.cam_obj = bpy.context.object
         self.cam = self.cam_obj.data
         if self.config.camera_info.intrinsic is not None:
-            print(f"II: Using camera calibration data")
+            self.logger.info("Using camera calibration data")
             if isinstance(self.config.camera_info.intrinsic, str):
                 intrinsics = np.fromstring(self.config.camera_info.intrinsic, sep=',', dtype=np.float32)
             elif isinstance(self.config.camera_info.intrinsic, list):
@@ -318,7 +321,7 @@ class SimpleToolCap(interfaces.ABRScene):
                         bpy.context.scene.camera, self.objs,
                         self.config.camera_info.zeroing)
             except ValueError:
-                print(f"ValueError during post-processing, re-generating image index {i}")
+                self.logger.warn("ValueError during post-processing, re-generating image index {i}")
             else:
                 i = i + 1
 
