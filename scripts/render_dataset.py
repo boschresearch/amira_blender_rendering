@@ -164,7 +164,7 @@ def determine_scene_type(config_file):
 def main():
     # parse command arguments
     cmd_parser = get_cmd_argparser()
-    cmd_args = cmd_parser.parse_args(args=get_argv())  # need to parse to get aps and abr
+    cmd_args = cmd_parser.parse_known_args(args=get_argv())[0]  # need to parse to get aps and abr
     import_abr(cmd_args.abr_path)
 
     # pretty print available scenarios?
@@ -191,14 +191,20 @@ def main():
         prog="blender -b -P " + __file__,
         parents=[cmd_parser] + config.get_argparsers(),
         add_help=False)
-    args = parser.parse_args(args=get_argv())
+    argv = get_argv()
+    args = parser.parse_args(args=argv)
+    # show help only here, because this will include the help for the dataset
+    # configuration
+    if args.help:
+        parser.print_help()
+        sys.exit(0)
 
     # check if the configuration file exists
     configfile = expandpath(args.config, check_file=True)
 
     # parse configuration from file, and then update with arguments
     config.parse_file(configfile)
-    config.parse_args()
+    config.parse_args(argv=argv)
 
     # instantiate the scene.
     # NOTE: we do not automatically create splitting configs anymore. You need
