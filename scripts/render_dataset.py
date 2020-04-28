@@ -222,9 +222,6 @@ def main():
         success = scene.generate_viewsphere_dataset()
     else:
         success = scene.generate_dataset()
-
-    # after finishing, dump the configuration(s) to the target locations (which
-    # might depend on scene-internal state)
     if not success:
         get_logger().error("Error while generating dataset")
 
