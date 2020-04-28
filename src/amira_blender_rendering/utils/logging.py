@@ -2,42 +2,43 @@
 
 # logging setup
 
+import os
 import logging
 
-logger_name = "amira_blender_rendering"
+# local logger configuration
+__logger_name = "amira_blender_rendering"
+__logger_logdir = os.path.expandvars("$HOME/.amira_blender_rendering")
+__logger_filename = os.path.join(__logger_logdir, f"{__logger_name}.log")
+__logger_loglevel = logging.INFO
 
 
-def get_logger(stream=True):
-    logger = logging.getLogger(logger_name)
-    if stream:
-        stream_log(logger)
-    return logger
+def get_logger():
+    """This function returns a logger instance."""
 
+    # create directory of necessary
+    if not os.path.exists(__logger_logdir):
+        os.mkdir(__logger_logdir)
 
-def stream_log(logger):
-    """Attaches a verbose stream handler"""
-
-    for k in logger.handlers:
-        if isinstance(k, logging.StreamHandler):
-            return
-
-    handler = logging.StreamHandler()
-
-    message_format = logging.Formatter("{} {} | {} {} line {} | {}".format(
-        "%(asctime)s",
-        "%(levelname)s",  # PID?
-        "%(filename)s",
-        "%(funcName)s",
-        "%(lineno)d",
-        "%(message)s",
-    ))
-    handler.setFormatter(message_format)
-
-    logger.addHandler(handler)
-    logger.info("created verbose stream logger")
+    # setup logger once. Note that basicConfig does nothing (as stated in the
+    # documentation) if the root logger was already setup. So we can basically
+    # re-call it here as often as we want.
+    logging.basicConfig(level=__logger_loglevel,
+            format="{} {} | {}, {}:{} | {}".format(
+                "%(asctime)s",
+                "%(levelname)s",
+                "%(filename)s",
+                "%(funcName)s",
+                "%(lineno)d",
+                "%(message)s",
+            ),
+            filename = __logger_filename)
+    return logging.getLogger(__logger_name)
 
 
 def set_level(logger, level="debug"):
+    """Set the log level of a logger from a string.
+
+    This is useful in combination with command line arguments."""
 
     if "debug" == level.lower():
         logger.setLevel(logging.DEBUG)

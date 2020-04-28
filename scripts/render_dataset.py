@@ -25,6 +25,7 @@ import re
 import argparse
 import numpy as np
 import random
+import logging
 from math import log, ceil
 
 
@@ -77,6 +78,7 @@ def import_abr(path=None): # {{{
     import amira_blender_rendering.utils.blender as blender_utils
     import amira_blender_rendering.scenes
     from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
+    from amira_blender_rendering.utils.logging import get_logger
     # }}}
 
 
@@ -217,7 +219,7 @@ def main():
     if success:
         scene.dump_config()
     else:
-        print(f"EE: Error while generating dataset")
+        get_logger().error("Error while generating dataset")
 
     # tear down scene. should be handled by blender, but a scene might have
     # other things opened that it should close gracefully

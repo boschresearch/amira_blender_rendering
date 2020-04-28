@@ -26,7 +26,7 @@ from amira_blender_rendering.math.conversions import bu_to_mm
 # import things from AMIRA Perception Subsystem that are required
 from amira_blender_rendering.interfaces import PoseRenderResult, ResultsCollection
 from amira_blender_rendering.postprocessing import boundingbox_from_mask
-
+from amira_blender_rendering.utils.logging import get_logger
 
 
 class RenderManager(abr_scenes.BaseSceneManager):
@@ -73,17 +73,17 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         # determine which path tracer is setup in the blender file
         if integrator == 'BRANCHED_PATH':
-            print(f"II: integrator set to branched path tracing")
+            self.logger.info(f"integrator set to branched path tracing")
             bpy.context.scene.cycles.progressive = integrator
             bpy.context.scene.cycles.aa_samples = samples
         else:
-            print(f"II: integrator set to path tracing")
+            self.logger.info(f"integrator set to path tracing")
             bpy.context.scene.cycles.progressive = integrator
             bpy.context.scene.cycles.samples = samples
 
         # setup denoising option
         bpy.context.scene.view_layers[0].cycles.use_denoising = enable_denoising
-        print(f"II: Denoising enabled" if enable_denoising else f"Denoising disabled")
+        self.logger.info(f"Denoising enabled" if enable_denoising else f"Denoising disabled")
 
 
     def setup_compositor(self, objs):
