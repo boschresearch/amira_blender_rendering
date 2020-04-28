@@ -12,12 +12,6 @@ Example:
 
 """
 
-# TODO
-# At the moment, this is mostly a copy-paste of render_dataset_RenderedObjects,
-# but adapted to the Workstation Scenarios and in particular the blender file,
-# which contains multiple scenarios at once.  This should be unified at some
-# point, if possible.
-
 import bpy
 import sys
 import os
@@ -29,57 +23,41 @@ import logging
 from math import log, ceil
 
 
-# NOTE: this is a copy of src/amira_blender_rendering/utils/io.py#expandpath.
-def expandpath(path, check_file=False):
-    """Expand global variables and users given a path or a list of paths.
-
-    Args:
-        path (str or list): path to expand
-
-    Returns:
-        Expanded path
-    """
-    if isinstance(path, str):
-        path = os.path.expanduser(os.path.expandvars(path))
-        if not check_file or os.path.exists(path):
-            return path
-        else:
-            raise FileNotFoundError(f'Path {path} does not exist - are all environment variables set?')
-    elif isinstance(path, list):
-        return [expandpath(p) for p in path]
+def _err_msg():
+    return \
+"""Error: Could not import amira_blender_rendering. Either install it as a package,
+or specify a valid path to its location with the --abr-path command line argument."""
 
 
-def import_abr(path=None): # {{{
-    """(Try to) import amira_blender_rendering."""
-
-    global abr, WorkstationScenarios, WorkstationScenariosConfiguration
-
+def import_abr(path=None):
+    # NOTE: this is essentially the same code as in scripts/phirm. changes here
+    # should likely be reflected there
+    global abr, WorkstationScenarios, WorkstationScenariosConfiguration, expandpath, get_logger
     if path is None:
         try:
             import amira_blender_rendering as abr
-        except:
-            print("Error: Could not import amira_blender_rendering. Either install it as a")
-            print("       package, or specify the path to its location with the --abr-path")
-            print("       command line argument. Example:")
-            print("          $ blender -b -P scripts/render_dataset.py -- --abr-path ./src")
-            print("       For more help, see documentation, or invoke with --help")
+        except ImportError:
+            print(_err_msg())
             sys.exit(1)
     else:
-        abr_path = expandpath(path, check_file=True)
-        sys.path.append(expandpath(abr_path))
+        abr_path = os.path.expanduser(os.path.expandvars(path))
+        if not os.path.exists(abr_path):
+            print(err_msg())
+            sys.exit(1)
+        sys.path.append(abr_path)
         try:
             import amira_blender_rendering as abr
-        except:
-            print("Error: amira_blender_rendering not found during import. Did you pass")
-            print("       the wrong path?")
-            sys.exit(1)
+        except ImportError:
+             print(err_msg())
+             sys.exit(1)
 
+    # import additional parts
     import amira_blender_rendering.dataset
     import amira_blender_rendering.utils.blender as blender_utils
     import amira_blender_rendering.scenes
+    from amira_blender_rendering.utils.io import expandpath
     from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
     from amira_blender_rendering.utils.logging import get_logger
-    # }}}
 
 
 def get_argv():
