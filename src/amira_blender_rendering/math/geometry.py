@@ -10,6 +10,7 @@ import bpy
 from math import pi
 from mathutils import Vector, Euler
 from mathutils.bvhtree import BVHTree
+from amira_blender_rendering.utils.logging import get_logger
 import numpy as np
 
 
@@ -418,7 +419,7 @@ def rotation_matrix(alpha, axis, homogeneous=False):
         # rotation around z
         rot = euler_z_to_matrix(alpha)
     else:
-        logger.error('Axis needs to be x/y/z!')
+        get_logger().error('Axis needs to be x/y/z!')
         raise ValueError
 
     # create homogeneous matrix

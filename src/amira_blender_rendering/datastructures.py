@@ -18,6 +18,7 @@ import ast
 #       sure to keep in sync as long as we don't have a core library that is
 #       restricted to such functionality
 #
+# NOTE: We do not use the logging classes in here
 #
 
 def flatten(l):

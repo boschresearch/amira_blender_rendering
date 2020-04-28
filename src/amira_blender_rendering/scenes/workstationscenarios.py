@@ -16,6 +16,7 @@ from math import ceil, log
 
 from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
+from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.datastructures import Configuration, flatten
 from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
 import amira_blender_rendering.scenes as abr_scenes
@@ -53,6 +54,7 @@ class WorkstationScenarios(interfaces.ABRScene):
 
     def __init__(self, **kwargs):
         super(WorkstationScenarios, self).__init__()
+        self.logger = get_logger()
 
         # we do composition here, not inheritance anymore because it is too
         # limiting in its capabilities. Using a render manager is a better way
@@ -136,7 +138,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         # we need to hide all dropboxes and dropzones in the viewport, otherwise
         # occlusion testing will not work, because blender's ray_cast method
         # returns hits no empties!
-        print("II: Hiding all dropzones from viewport")
+        self.logger.info("Hiding all dropzones from viewport")
         bpy.data.collections['Dropzones'].hide_viewport = True
 
 
@@ -328,7 +330,7 @@ class WorkstationScenarios(interfaces.ABRScene):
             obj['bpy'].location.z = drop_location.z + (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
             obj['bpy'].rotation_euler = Vector((rnd_rot[i, :] * np.pi))
 
-            print(f"II: Object {obj['model_name']}: {obj['bpy'].location}, {obj['bpy'].rotation_euler}")
+            self.logger.info(f"Object {obj['model_name']}: {obj['bpy'].location}, {obj['bpy'].rotation_euler}")
 
         # update the scene. unfortunately it doesn't always work to just set
         # the location of the object without recomputing the dependency
@@ -344,7 +346,7 @@ class WorkstationScenarios(interfaces.ABRScene):
 
 
     def forward_simulate(self):
-        print(f"II: forward simulation of {self.config.scene_setup.forward_frames} frames")
+        self.logger.info(f"forward simulation of {self.config.scene_setup.forward_frames} frames")
         scene = bpy.context.scene
         for i in range(self.config.scene_setup.forward_frames):
             scene.frame_set(i+1)
@@ -373,8 +375,8 @@ class WorkstationScenarios(interfaces.ABRScene):
                         require_all=False,
                         origin_offset=0.01)
                 if not_visible_or_occluded:
-                    print(f"WW: object {obj} not visible or occluded")
-                    print(f"II: saving blender file for debugging to /tmp/workstationscenarios.blend")
+                    self.logger.warn(f"object {obj} not visible or occluded")
+                    self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
                     bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
                     return False
 
@@ -394,6 +396,8 @@ class WorkstationScenarios(interfaces.ABRScene):
 
         i = 0
         while i < self.config.dataset.image_count:
+            self.logger.info(f"Generating image {i+1} of {self.config.dataset.image_count}")
+
             # generate render filename
             base_filename = "{:0{width}d}".format(i, width=format_width)
 
@@ -406,7 +410,7 @@ class WorkstationScenarios(interfaces.ABRScene):
             # repeat if the cameras cannot see the objects
             repeat_frame = False
             if not self.test_visibility():
-                print(f"\033[1;33mWW: Object(s) not visible from every camera. Re-randomizing... \033[0;37m")
+                self.logger.warn(f"\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
                 repeat_frame = True
             else:
                 # loop through all cameras
@@ -428,7 +432,7 @@ class WorkstationScenarios(interfaces.ABRScene):
                         # This issue happens every now and then. The reason might be (not
                         # yet verified) that the target-object is occluded. In turn, this
                         # leads to a zero size 2D bounding box...
-                        print(f"\033[1;31mEE: ValueError during post-processing, re-generating image index {i}\033[0;37m")
+                        self.logger.error(f"\033[1;31mValueError during post-processing, re-generating image index {i}\033[0;37m")
                         repeat_frame = True
 
                         # no need to continue with other cameras
