@@ -5,8 +5,6 @@ import bpy
 from amira_blender_rendering.utils import blender as blnd
 from amira_blender_rendering.utils.logging import get_logger
 
-logger = get_logger()
-
 class BaseSceneManager():
     """Class for arbitrary scenes that should be set up for rendering data.
 
@@ -16,6 +14,7 @@ class BaseSceneManager():
     def __init__(self):
         super(BaseSceneManager, self).__init__()
         self.init_default_blender_config()
+        self.logger = get_logger()
 
     def init_default_blender_config(self):
         """This function is used to setup blender into a known configuration,
@@ -35,7 +34,7 @@ class BaseSceneManager():
 
         # check if path exists or not
         if not os.path.exists(filepath):
-            logger.error(f"Path {filepath} to environment texture does not exist.")
+            self.logger.error(f"Path {filepath} to environment texture does not exist.")
             return
 
         # add new environment texture node if required

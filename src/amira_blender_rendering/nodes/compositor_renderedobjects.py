@@ -2,7 +2,7 @@
 
 import os
 import bpy
-
+from amira_blender_rendering.utils.logging import get_logger
 
 class CompositorNodesOutputRenderedObjects():
     """This class contains the setup of compositor nodes that is required for
@@ -226,7 +226,7 @@ class CompositorNodesOutputRenderedObjects():
             self.dirinfo.images.base_path, 'backdrop', f'{self.base_filename}.png{frame_number_str}')
         for f in (self.fname_render, self.fname_depth, self.fname_backdrop):
             if not os.path.exists(f):
-                print(f"EE: File {f} expected, but does not exist")
+                get_logger().error(f"File {f} expected, but does not exist")
             else:
                 os.rename(f, f[:-4])
 
