@@ -30,6 +30,18 @@ or specify a valid path to its location with the --abr-path command line argumen
 
 
 def import_abr(path=None):
+    """(Try to) import amira_blender_rendering.
+
+    This function tries to import amira_blender_rendering, either from python's
+    installed packages (if path=None), or from a path (str). The reason this
+    import happens this way is that the script this function belongs to is run
+    from within blender, which might not have access to pip-installed packages.
+    In this case, we need to specify an explicit path and add it to python's
+    search path.
+
+    Args:
+        path (str): None, or path to amira_blender_rendering.
+    """
     # NOTE: this is essentially the same code as in scripts/phirm. changes here
     # should likely be reflected there
     global abr, WorkstationScenarios, WorkstationScenariosConfiguration, expandpath, get_logger
