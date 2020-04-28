@@ -7,9 +7,14 @@
 * [How it works and how to use it](#use)
 * [How to extend with your own scene](#extending)
 * [How to build and test it](#build)
+* [Documentation](#docs)
+* [Installation](#install)
 * [Blender installation and modification of default python](#blenderinstall)
 * [Headless Rendering on the GPU Cluster](#clusterrendering)
 * [Used 3rd party Licenses](#licenses)
+
+**TODOs**: remove unnecessary links after related content has been moved
+
 
 ## About<a name="about"></a>
 
@@ -59,15 +64,14 @@ Note that configuration options depend on the specified blender scene and backen
 implementation.
 
 Note that some scenes or configurations might require you to setup global
-varianles. Here's a list of the variables that we usually use:
+varianles. Here's a list of the variables that we usually use (Name | Description):
 
-Name | Description
----
 $AMIRA_DATASETS | Path to datasets, such as the one produced here, or OpenImagesV4
 $AMIRA_BLENDER_RENDERING_ASSETS | Path to additional assets, such as textures
+$AMIRA_DATA_GFX | Path to graphics data
 
 
-## How to extend with your own scene or parts<a name="extending"><a/>
+## How to extend with your own scene or parts<a name="extending"></a>
 
 If you wish to extend `amira_blender_rendering` with your own scenes, you might
 want to have a look at the workstation scenario file describe in the previous
@@ -106,6 +110,26 @@ sensitivity margin of **0.0001m** for numerical stability.
 
 The test folder uses unittest, you can run it according to deployment method (GUI\package)
 
+
+## Documentation<a name="docs"></a>
+
+From within amira_blender_rendering/docs/ folder run
+
+```bash
+make html
+```
+
+**Notes**: according to requirements.txt, compiling the documentation requires 
+sphinx-rtd-theme to be installed in your current python3 environment
+
+
+## Installation<a name="install"></a>
+
+Please refer to the [documentation](#docs)
+
+**TODOs**:
+* move below installation documentation to proper location in docs
+* make (some) tutorial(s)?
 
 ## Blender installation and modification of default python<a name="blenderinstall"></a>
 
@@ -295,6 +319,7 @@ To set up rendering on the GPU cluster, follow the next steps:
 
 ## Troubleshooting<a name="troubleshooting"></a>
 
+Please refer to the [documentation](#docs)
 
 ## Used 3rd party Licenses<a name="licenses"></a>
 
