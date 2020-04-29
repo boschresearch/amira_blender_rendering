@@ -466,9 +466,9 @@ class Configuration():
                 # set key, type cercion happens within __setitem__
                 self[key] = self._cfgparse[section][item]
 
-    def _parse_args(self, only_section: str):
+    def _parse_args(self, only_section: str, argv=None):
         # extract all known arguments for the local configuration
-        args, args1 = self._argparse.parse_known_args()
+        args, args1 = self._argparse.parse_known_args(argv)
 
         for k in args.__dict__:
             if args.__dict__[k] is not None:
@@ -487,9 +487,9 @@ class Configuration():
         # walk all subconfigurations and let them parse arguments
         for k in self._dict:
             if isinstance(self._dict[k], Configuration):
-                self._dict[k]._parse_args(only_section)
+                self._dict[k]._parse_args(only_section, argv)
 
-    def parse_args(self, only_section: str = ''):
+    def parse_args(self, only_section: str = '', argv=None):
         """Parse command line arguments and write to the configuration.
 
         The function uses `argparse.parse_known_args` to parse arguments.
@@ -502,7 +502,7 @@ class Configuration():
         """
         # rebuild argparser to include possible sub-configurations
         # self._rebuild_argparser()
-        self._parse_args(only_section)
+        self._parse_args(only_section, argv)
 
     def get_argparsers(self):
         """Return a list of all argparsers in the configuration tree."""
