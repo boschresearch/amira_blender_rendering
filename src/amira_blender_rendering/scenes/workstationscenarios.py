@@ -8,6 +8,7 @@ worstationscenarios.blend.
 
 import bpy
 import os, sys
+import pathlib
 from mathutils import Vector
 import time
 import numpy as np
@@ -456,8 +457,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         # camera that was rendered we store the configuration
         for dirinfo in self.dirinfos:
             output_path = dirinfo.base_path
-            if not os.path.exists(output_path):
-                os.mkdir(output_path)
+            pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
             dump_config(self.config, output_path)
 
 

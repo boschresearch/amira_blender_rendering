@@ -4,6 +4,7 @@
 import bpy
 from mathutils import Vector, Matrix
 import os
+import pathlib
 from math import ceil, log
 import random
 import numpy as np
@@ -289,8 +290,7 @@ class SimpleToolCap(interfaces.ABRScene):
 
 
     def dump_config(self):
-        if not os.path.exists(self.dirinfo.base_path):
-                os.mkdir(self.dirinfo.base_path)
+        pathlib.Path(self.dirinfo.base_path).mkdir(parents=True, exist_ok=True)
         dump_config(self.config, self.dirinfo.base_path)
 
 
