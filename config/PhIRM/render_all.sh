@@ -4,6 +4,6 @@
 pushd ../..
 for f in `ls config/PhIRM/Workstation-*.cfg`; do
     echo "Rendering configuration file '$f'"
-    blender -b -P scripts/render_dataset.py -- --abr-path "`pwd`/src" --config $f
+    abrgen --config $f
 done
 popd
