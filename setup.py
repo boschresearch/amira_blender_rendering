@@ -46,7 +46,7 @@ setuptools.setup(
         'Programming Language :: Python :: 3.7',
     ],
     install_requires=requirements(),
-    scripts=['scripts/phirm'],
+    scripts=['scripts/abrgen'],
     # Last two arguments will print a warning in catkin, but are required for
     # tox and installation via pip/setup.py
     include_package_data=True,
