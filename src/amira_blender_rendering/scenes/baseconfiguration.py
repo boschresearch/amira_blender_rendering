@@ -4,8 +4,8 @@ from amira_blender_rendering.datastructures import Configuration
 class BaseConfiguration(Configuration):
     """Basic configuration for any dataset."""
 
-    def __init__(self, name):
-        super(BaseConfiguration, self).__init__(name=name)
+    def __init__(self):
+        super(BaseConfiguration, self).__init__()
 
         # general dataset configuration.
         self.add_param('dataset.image_count', 1, 'Number of images to generate')
