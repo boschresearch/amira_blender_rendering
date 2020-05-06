@@ -1,16 +1,9 @@
 #!/bin/sh
 
-
 # check env variables
-if [ -z "$AMIRA_DATASETS" ];
+if [ -z "$AMIRA_DATA" ];
 then
-    echo "ERROR: Environment variable AMIRA_DATASETS is not set."
-    exit 1
-fi
-
-if [ -z "$AMIRA_DATA_GFX" ];
-then
-    echo "ERROR: Environment variable AMIRA_DATA_GFX is not set."
+    echo "ERROR: Environment variable AMIRA_DATA is not set."
     exit 1
 fi
 
@@ -19,21 +12,17 @@ fi
 ##
 echo "Setting up rendering environment. This might take some time..."
 
-# necessary env variables
-AMIRA_DATA_STORAGE=/data/Students/AMIRA/datasets
-
-# first go to target directory
-# TODO: maybe go to SSD?
-cd $HDD
+# necessary env variables. used to grab data from
+AMIRA_STORAGE=/data/Students/AMIRA/datasets
+AMIRA_DATA_GFX_GIT=ssh://git@sourcecode.socialcoding.bosch.com:7999/amira/amira_data_gfx.git
 
 # create directory structure
-mkdir -p data/AMIRA-Datasets/
+mkdir -p $AMIRA_DATA
 
 # copy/extract datasets
-tar -C $AMIRA_DATASETS -xf $AMIRA_DATA_STORAGE/OpenImagesV4.tar
+git clone $AMIRA_DATA_GFX_GIT $AMIRA_DATA/amira_data_gfx
+tar -C $AMIRA_DATA -xf $AMIRA_STORAGE/OpenImagesV4.tar
 # fix wrong directory name
-mv $AMIRA_DATASETS/OpenImageV4 $AMIRA_DATASETS/OpenImagesV4
-
+mv $AMIRA_DATA/OpenImageV4 $AMIRA_DATA/OpenImagesV4
 
 echo "Ready to start rendering"
-

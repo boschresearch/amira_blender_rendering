@@ -7,7 +7,7 @@
 # lines. Note that slurm commands are prefixed with #SBATCH (including the #)
 
 # name of this batch job
-#SBATCH --job-name=DopeLetterB10k
+#SBATCH --job-name=BlenderRenderJob
 
 # account to which the resources get accounted to
 #SBATCH --account=r31
@@ -22,7 +22,7 @@
 #SBATCH --mem=20G
 
 # Mail notifications
-#SBATCH --mail-user=nicolai.waniek@de.bosch.com
+#SBATCH --mail-user=name.surname@de.bosch.com
 #SBATCH --mail-type=begin,end,fail,time_limit_50,time_limit_80,time_limit_90
 
 # maximum time configuration. format: "DAYS-HH:MM:SS", "DAYS-HH", or "HH:MM:SS"
@@ -35,29 +35,22 @@ set -e
 echo "System setup"
 module load slurm
 module load cudnn/9.2_v7.2
-source activate pytorch3.6
-cd /home/$USER/dev/vision/amira_perception
+source activate blender-env
+cd /home/$USER/amira_blender_rendering
 [ -d $SSD/tmp ] || mkdir $SSD/tmp
 
+AMIRA_DATA=$HDD/data/
 
 # --- Step 1 --- copy files
-AMIRA_DATASETS=$HDD/data/AMIRA-Datasets \
-    sh scripts/sh/setup_training_env_cluster.sh
-
+AMIRA_DATA=$AMIRA_DATA sh scripts/sh/setup_render_env_cluster.sh
 
 # --- Step 2 --- training
-AMIRA_DATASETS=$HDD/data/AMIRA-Datasets \
-TMPDIR=$SSD/tmp \
-    python train.py \
-        --config config/train_dope_letterb.cfg \
-        --cluster \
-        --logging.tensorboard_enabled False \
-        --logging.silent False 
-
+AMIRA_DATASETS=$AMIRA_DATA \
+AMIRA_DATA_GFX=$AMIRA_DATA/amira_data_gfx \
+    abrgen --config path/to/config 
 
 # --- Step 3 --- copy results to user directory
-cd $HDD && tar -cf /dlc/Employees/$USER/slurm_results/dope-LetterB-10k-$SLURM_JOB_ID.tar ./weights
-
+cd $HDD && tar -cf /data/Employees/$USER/slurm_results/RenderResult-$SLURM_JOB_ID.tar ./PhIRM
 
 # --- Step 4 --- finalize
 set +e
