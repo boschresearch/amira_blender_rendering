@@ -61,7 +61,7 @@ def parse_args():
     parser.add_argument('--mm', type=int, default=5, help='Number of mins of life for the batch job. Default: 5')
     parser.add_argument('--amira-data', metavar='/path/', type=str, dest='amira_data', default='$HDD/data',
                         help='path where data are moved/stored during job execution')
-    parser.add_argument('--abr-path', metavat='/path/', type=str, dest='abr_path', default='$HOME/amira_blender_rendering',
+    parser.add_argument('--abr-path', metavar='/path/', type=str, dest='abr_path', default='$HOME/amira_blender_rendering',
                         help='(Absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering')
 
     # parse
