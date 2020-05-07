@@ -83,7 +83,8 @@ information.
     # created dataset, so you can easily retrieve the effective_intrinsics in
     # downstream applications
     intrinsics = 9.9801747708520452e+02,9.9264009290521165e+02,6.6049856967197002e+02,3.6404286361152555e+02,0
-
+    
+    TOOD: add zeroing
 
 render_setup
 ------------

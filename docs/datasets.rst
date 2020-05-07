@@ -9,6 +9,7 @@ If you also rendered a dataset and made it publicly available, please drop us a
 note and a description of the dataset. We will then add it to the list of
 datasets and descriptions below.
 
+TODO: would it make sense to split this into a separate subdir in case we have other datasets?
 
 PhIRM
 -----

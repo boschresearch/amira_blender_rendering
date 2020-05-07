@@ -63,3 +63,4 @@ line by
 .. code-block:: bash
 
    $ blender -b -P scripts/render_dataset.py -- --dataset.image_count 2
+TOOD: update command?
