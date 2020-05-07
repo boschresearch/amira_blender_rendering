@@ -66,6 +66,10 @@ def parse_args():
 
     # parse
     args = parser.parse_args()
+
+    print('\nMake sure you correctly set the desired values for all necessary arguments.\n\
+Conversely default values will be used and these might affect the lifespan of the batch job\n')
+
     return args
 
 
