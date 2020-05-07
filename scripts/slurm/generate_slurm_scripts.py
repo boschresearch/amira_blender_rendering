@@ -46,6 +46,7 @@ def parse_args():
     parser.add_argument('cfg_base_path', type=str, help='(Absolute) base path to directory containing desired cfgs')
     parser.add_argument('py_env_name', type=str, default='blender-env',
                         help='Name of python environemt used for rendering')
+
     # optional arguments
     parser.add_argument('--gpu', metavar='N', type=int, default=4,
                         help='Number of required GPUs for batch job. Default: 4')
@@ -58,8 +59,11 @@ def parse_args():
     parser.add_argument('--dd', type=int, default=0, help='Number of days of life for the batch job. Default: 0')
     parser.add_argument('--hh', type=int, default=0, help='Number of hours of life for the batch job. Default: 0')
     parser.add_argument('--mm', type=int, default=5, help='Number of mins of life for the batch job. Default: 5')
-    parser.add_argument('--amira-data', metavar='/path/', dest='amira_data', default='$HDD/data',
+    parser.add_argument('--amira-data', metavar='/path/', type=str, dest='amira_data', default='$HDD/data',
                         help='path where data are moved/stored during job execution')
+    parser.add_argument('--abr-path', metavat='/path/', type=str, dest='abr_path', default='$HOME/amira_blender_rendering',
+                        help='(Absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering')
+
     # parse
     args = parser.parse_args()
     return args
@@ -128,7 +132,8 @@ def gen_script(user: str,
                days: int = 0,
                hh: int = 0,
                mm: int = 5,
-               amira_data: str = '$HDD/data/'):
+               amira_data: str = '$HDD/data/',
+               abr_path: str = '$HOME/amira_blender_rendering'):
     """Generate slurm batch script from configs
 
     Args:
@@ -144,7 +149,8 @@ def gen_script(user: str,
         hh(int): hours the job should live. Default: 0
         mm(int): minutes the job should live. Default: 5
         amira_data(str): base path where to store data. Default: $HDD/data
-        
+        abr_path(str): (absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering
+
     Returns:
         formatted string corresponding to slurm script
     """
@@ -165,10 +171,10 @@ set -e
 # --- Step 0 --- prepare the environment
 echo "System setup"
 module load slurm
-module load cudnn/9.2_v7.2
-source activate {py_env_name}
+module load cudnn/9.0_v7.3
+conda activate {py_env_name}
 # the following assumes that amira_blender_rendering is located in the $USER home
-cd /home/$USER/amira_blender_rendering
+cd {abr_path}
 [ -d $SSD/tmp ] || mkdir $SSD/tmp
 
 # setup env variables
@@ -178,7 +184,7 @@ AMIRA_DATA={amira_data}
 AMIRA_DATA=$AMIRA_DATA sh scripts/sh/setup_render_env_cluster.sh
 
 # --- Step 2 --- rendering
-AMIRA_DATASETS=$AMIRA_DATA AMIRA_DATA_GFX=$AMIRA_DATA/amira_gata_gfx abrgen --config {cfgfile}
+AMIRA_DATASETS=$AMIRA_DATA AMIRA_DATA_GFX=$AMIRA_DATA/amira_gata_gfx scripts/abrgen --abr-path {abr_path}/src --config {cfgfile}
 
 # --- Step 3 --- copy results to user directory
 cd $HDD && tar -cf /data/Employees/$USER/slurm_results/{job_name}-$SLURM_JOB_ID.tar ./PhIRM
