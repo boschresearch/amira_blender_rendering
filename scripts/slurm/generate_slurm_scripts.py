@@ -184,7 +184,7 @@ AMIRA_DATA={amira_data}
 AMIRA_DATA=$AMIRA_DATA sh scripts/sh/setup_render_env_cluster.sh
 
 # --- Step 2 --- rendering
-AMIRA_DATASETS=$AMIRA_DATA AMIRA_DATA_GFX=$AMIRA_DATA/amira_gata_gfx scripts/abrgen --abr-path {abr_path}/src --config {cfgfile}
+AMIRA_DATASETS=$AMIRA_DATA AMIRA_DATA_GFX=$AMIRA_DATA/amira_data_gfx scripts/abrgen --abr-path {abr_path}/src --config {cfgfile}
 
 # --- Step 3 --- copy results to user directory
 cd $HDD && tar -cf /data/Employees/$USER/slurm_results/{job_name}-$SLURM_JOB_ID.tar ./PhIRM
