@@ -117,7 +117,7 @@ follow good practices and isolate your work into separate virtual environments.
    any ALSA errors that might get printed, as we don't consider sound in our
    datasets, and GPU clusters often don't ship with sound cards.
 
-5. Anstall dependencies for ABR via conda or pip. The example below uses pip.
+5. Install dependencies for ABR via conda or pip. The example below uses pip.
 
 .. code-block:: bash
 
