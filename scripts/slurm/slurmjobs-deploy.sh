@@ -9,6 +9,7 @@ CLEAN=${3:-False}
 
 # optional script generation
 if [ $GENSCRIPTS = True ]; then
+
     # setup
     NAME=marco.todescato
     CFGBASENAME=$BASENAME
@@ -18,11 +19,10 @@ if [ $GENSCRIPTS = True ]; then
     CPU=4
     SSD=20
     RAM=32
-    DAYS=1
+    DAYS=2
     HH=0
     MM=0
     ABR=$HOME/amira_blender_rendering
-    # generate slurm scripts
     conda activate $PYENVNAME
     echo "Generating (generate_slurm_scrpts.py) slurm bash scripts with following configuration values:"
     echo "User name:     $NAME"
@@ -35,6 +35,16 @@ if [ $GENSCRIPTS = True ]; then
     echo "ram:           $RAM"
     echo "dd-hh:mm       $DAYS-$HH:$MM"
     echo "abr_base_path: $ABR"
+
+    # check for user
+    echo -n "Continue? [Y/N]: "
+    read OK
+    if [ $OK = N ]; then
+        echo "Aborting..."
+        exit 0
+    fi
+
+    # generate scripts
     python generate_slurm_scripts.py \
         $NAME \
         $CFGBASENAME \
@@ -54,7 +64,7 @@ fi
 # deployment
 echo ''
 for f in `ls ./slurmbatch-$BASENAME*.sh`; do
-    echo "Deploying batch job associated to '$f'"
+    echo "Deploying batch job: $f"
     sbatch  $f
 done
 
