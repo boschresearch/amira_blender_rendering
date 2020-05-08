@@ -3,9 +3,14 @@
 # Script to deploy all desired slurmbatch job
 # Use in combination with generate_slurm_scripts.py
 
+# required positional argument to select desired basename for config/slurmbatch.sh scripts
 BASENAME=${1?Error: no BASENAME for slurmbatch .sh script to deploy given}
+# optional (positional) argument to generate slurm bash scripts
 GENSCRIPTS=${2:-False}
+# optional (positional) argument to control clean-up after execution
 CLEAN=${3:-False}
+# optional (positional) argument to control deployment
+DEPLOY=${4:-True}
 
 # optional script generation
 if [ $GENSCRIPTS = True ]; then
@@ -13,7 +18,7 @@ if [ $GENSCRIPTS = True ]; then
     # setup
     NAME=marco.todescato
     CFGBASENAME=$BASENAME
-    CFGBASEPATH=$HOME/amira_blender_rendering/config/
+    CFGBASEPATH=$HOME/amira_blender_rendering/config/PhIRM
     PYENVNAME=blender
     GPU=4
     CPU=4
@@ -23,6 +28,7 @@ if [ $GENSCRIPTS = True ]; then
     HH=0
     MM=0
     ABR=$HOME/amira_blender_rendering
+    OUTPATH=/data/Employees/$USER/slurm_results
     conda activate $PYENVNAME
     echo "Generating (generate_slurm_scrpts.py) slurm bash scripts with following configuration values:"
     echo "User name:     $NAME"
@@ -35,6 +41,7 @@ if [ $GENSCRIPTS = True ]; then
     echo "ram:           $RAM"
     echo "dd-hh:mm       $DAYS-$HH:$MM"
     echo "abr_base_path: $ABR"
+    echo "out_path:      $OUTPATH"
 
     # check for user
     echo -n "Continue? [Y/N]: "
@@ -57,20 +64,23 @@ if [ $GENSCRIPTS = True ]; then
         --dd $DAYS \
         --hh $HH \
         --mm $MM \
-        --abr-path $ABR
+        --abr-path $ABR \
+        --out-path $OUTPATH
     conda deactivate
 fi
 
 # deployment
-echo ''
-for f in `ls ./slurmbatch-$BASENAME*.sh`; do
-    echo "Deploying batch job: $f"
-    sbatch  $f
-done
+if [ $DEPLOY = True ]; then
+    echo ''
+    for f in `ls ./tmp-slurmbatch-$BASENAME*.sh`; do
+        echo "Deploying batch job: $f"
+        sbatch  $f
+    done
+fi
 
 # optional clearning
-echo ''
 if [ $CLEAN = True ]; then
+    echo ''
     echo "Cleaning up..."
-    rm slurmbatch-$BASENAME*.sh
+    rm tmp-slurmbatch-$BASENAME*.sh
 fi
