@@ -34,6 +34,7 @@ Please have a look at how this works before!
 # MM = 0
 
 import argparse
+import os
 from pathlib import Path
 
 
@@ -59,10 +60,12 @@ def parse_args():
     parser.add_argument('--dd', type=int, default=0, help='Number of days of life for the batch job. Default: 0')
     parser.add_argument('--hh', type=int, default=0, help='Number of hours of life for the batch job. Default: 0')
     parser.add_argument('--mm', type=int, default=5, help='Number of mins of life for the batch job. Default: 5')
-    parser.add_argument('--amira-data', metavar='/path/', type=str, dest='amira_data', default='$HDD/data',
+    parser.add_argument('--amira-data', metavar='pa/th', type=str, dest='amira_data', default='$HDD/data',
                         help='path where data are moved/stored during job execution')
-    parser.add_argument('--abr-path', metavar='/path/', type=str, dest='abr_path', default='$HOME/amira_blender_rendering',
+    parser.add_argument('--abr-path', metavar='pa/th', type=str, dest='abr_path', default='$HOME/amira_blender_rendering',
                         help='(Absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering')
+    parser.add_argument('--out-path', metavar='pa/th', type=str, dest='out_path', default='/data/Employees/$USER/slurm_results/',
+                        help='(Absolute) path where data are moved to for storage after rendering. Default: /data/Employees/$USER/slurm_results')
 
     # parse
     args = parser.parse_args()
@@ -136,8 +139,9 @@ def gen_script(user: str,
                days: int = 0,
                hh: int = 0,
                mm: int = 5,
-               amira_data: str = '$HDD/data/',
-               abr_path: str = '$HOME/amira_blender_rendering'):
+               amira_data: str = '$HDD/data',
+               abr_path: str = '$HOME/amira_blender_rendering',
+               out_path: str = '/data/Employees/$USER/slurm_results'):
     """Generate slurm batch script from configs
 
     Args:
@@ -154,6 +158,7 @@ def gen_script(user: str,
         mm(int): minutes the job should live. Default: 5
         amira_data(str): base path where to store data. Default: $HDD/data
         abr_path(str): (absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering
+        out_path(str): (absolute) path where data are moved to for storage after rendering. Default: /data/Employees/$USER/slurm_results
 
     Returns:
         formatted string corresponding to slurm script
@@ -179,7 +184,7 @@ module load cudnn/9.0_v7.3
 conda activate {py_env_name}
 # the following assumes that amira_blender_rendering is located in the $USER home
 cd {abr_path}
-[ -d $SSD/tmp ] || mkdir $SSD/tmp
+#[ -d $SSD/tmp ] || mkdir $SSD/tmp
 
 # setup env variables
 AMIRA_DATA={amira_data}
@@ -188,10 +193,10 @@ AMIRA_DATA={amira_data}
 AMIRA_DATA=$AMIRA_DATA sh scripts/sh/setup_render_env_cluster.sh
 
 # --- Step 2 --- rendering
-AMIRA_DATASETS=$AMIRA_DATA AMIRA_DATA_GFX=$AMIRA_DATA/amira_data_gfx scripts/abrgen --abr-path {abr_path}/src --config {cfgfile}
+AMIRA_DATASETS=$AMIRA_DATA AMIRA_DATA_GFX={os.path.join(amira_data, 'amira_data_gfx')} scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile}
 
 # --- Step 3 --- copy results to user directory
-cd $HDD && tar -cf /data/Employees/$USER/slurm_results/{job_name}-$SLURM_JOB_ID.tar ./PhIRM
+cd $AMIRA_DATA && tar -cf {os.path.join(out_path, job_name)}-$SLURM_JOB_ID.tar ./PhIRM
 
 # --- Step 4 --- finalize
 set +e
@@ -219,9 +224,10 @@ if __name__ == "__main__":
                             days=args.dd,
                             hh=args.hh,
                             mm=args.mm,
-                            amira_data=args.amira_data)
+                            amira_data=args.amira_data,
+                            out_path=args.out_path)
         # write out
-        fname = f"slurmbatch-{cfg.stem}.sh"
+        fname = f"tmp-slurmbatch-{cfg.stem}.sh"
 
         with open(fname, 'w') as f:
             f.write(script)
