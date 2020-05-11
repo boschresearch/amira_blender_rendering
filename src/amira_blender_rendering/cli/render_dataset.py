@@ -54,14 +54,14 @@ def import_abr(path=None):
     else:
         abr_path = os.path.expanduser(os.path.expandvars(path))
         if not os.path.exists(abr_path):
-            print(err_msg())
+            print(_err_msg())
             sys.exit(1)
         sys.path.append(abr_path)
         try:
             import amira_blender_rendering as abr
         except ImportError:
-             print(err_msg())
-             sys.exit(1)
+            print(_err_msg())
+            sys.exit(1)
 
     # import additional parts
     import amira_blender_rendering.dataset
