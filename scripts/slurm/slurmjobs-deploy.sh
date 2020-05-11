@@ -13,12 +13,12 @@ CLEAN=${3:-False}
 DEPLOY=${4:-True}
 
 # optional script generation
-if [ $GENSCRIPTS = True ]; then
+if [[ $GENSCRIPTS == "True" ]]; then
 
     # setup
     NAME=marco.todescato
     CFGBASENAME=$BASENAME
-    CFGBASEPATH=$HOME/amira_blender_rendering/config/PhIRM
+    CFGBASEPATH=$HOME/amira_blender_rendering/config
     PYENVNAME=blender
     GPU=4
     CPU=4
@@ -46,7 +46,7 @@ if [ $GENSCRIPTS = True ]; then
     # check for user
     echo -n "Continue? [Y/N]: "
     read OK
-    if [ $OK = N ]; then
+    if [[ $OK == "N" ]]; then
         echo "Aborting..."
         exit 0
     fi
@@ -70,7 +70,7 @@ if [ $GENSCRIPTS = True ]; then
 fi
 
 # deployment
-if [ $DEPLOY = True ]; then
+if [[ $DEPLOY == "True" ]]; then
     echo ''
     for f in `ls ./tmp-slurmbatch-$BASENAME*.sh`; do
         echo "Deploying batch job: $f"
@@ -79,7 +79,7 @@ if [ $DEPLOY = True ]; then
 fi
 
 # optional clearning
-if [ $CLEAN = True ]; then
+if [[ $CLEAN == "True" ]]; then
     echo ''
     echo "Cleaning up..."
     rm tmp-slurmbatch-$BASENAME*.sh
