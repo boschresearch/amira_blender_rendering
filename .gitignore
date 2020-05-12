@@ -8,5 +8,6 @@
 docs/_build
 docs/_static
 docs/_templates
+build/
 *.egg-info
 src/amira_blender_rendering/version.py
