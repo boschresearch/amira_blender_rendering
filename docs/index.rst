@@ -95,3 +95,12 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+
+Contacts
+========
+
+| `Nicolai Waniek <mailto:Nicolai.Waniek@de.bosch.com>`_
+| `Markus Spies <mailto:Markus.Spies2@de.bosch.com>`_
+| `Marco Todescato <mailto:Marco.Todescato@de.bosch.com>`_
+

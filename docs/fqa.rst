@@ -20,4 +20,6 @@ Frequently Questioned Answers
    Well, that's a bummer. Let us know what exactly you did not like, so that we
    can improve on it.
 
+4. **If I need help, how can I get in contact with ABR's developers?**
 
+  You can reach out by shooting us an email. See our :ref:`Contacts`
