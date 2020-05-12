@@ -83,6 +83,12 @@ If you use ABR or the PhIRM dataset, please make sure to cite our work.
    configs/workstation_scenarios.rst
    configs/simpletoolcap.rst
 
+.. toctree::
+  :maxdepth: 3
+  :caption: Datasets:
+
+  datasets/phirm.rst
+
 
 Indices and tables
 ==================
