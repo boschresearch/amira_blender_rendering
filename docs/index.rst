@@ -72,7 +72,6 @@ If you use ABR or the PhIRM dataset, please make sure to cite our work.
    :Caption: ABR Developer's Guide:
 
    contributing.rst
-   extending.rst
 
 .. toctree::
    :maxdepth: 3
