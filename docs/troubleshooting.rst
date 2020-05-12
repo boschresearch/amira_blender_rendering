@@ -36,5 +36,3 @@ Troubleshooting
 
     Conclusively, either wait until it's done, or use a low-poly model of your
     target object.
-
-TOOD: any additional?
