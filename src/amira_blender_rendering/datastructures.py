@@ -314,6 +314,7 @@ class Configuration():
 
         # config and argument parsers
         self._cfgparse = configparser.ConfigParser()
+        self._cfgparse.optionxform = str
         self._rebuild_argparser()
 
     def add_param(self, name: str, default, help: str, special: str = None):
