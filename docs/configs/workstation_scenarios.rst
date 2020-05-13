@@ -69,6 +69,9 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     # downstream applications
     intrinsics = 9.9801747708520452e+02,9.9264009290521165e+02,6.6049856967197002e+02,3.6404286361152555e+02,0
 
+    # zeroing angles rx, ry, rz in deg to account for camera non-zero default rotation
+    zeroing = 0, 0, 0
+    
     [render_setup]
     # specify which renderer to use. Usually you should leave this at
     # blender-cycles. Note that, at the moment, this is hard-coded to cycles
