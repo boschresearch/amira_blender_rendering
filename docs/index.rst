@@ -57,7 +57,7 @@ If you use ABR or the PhIRM dataset, please make sure to cite our work.
 
 .. toctree::
    :maxdepth: 3
-   :Caption: ABR User's Guide:
+   :caption: ABR User's Guide:
 
    installation.rst
    using.rst
@@ -69,7 +69,7 @@ If you use ABR or the PhIRM dataset, please make sure to cite our work.
 
 .. toctree::
    :maxdepth: 3
-   :Caption: ABR Developer's Guide:
+   :caption: ABR Developer's Guide:
 
    contributing.rst
 
@@ -87,6 +87,12 @@ If you use ABR or the PhIRM dataset, please make sure to cite our work.
   :caption: Datasets:
 
   datasets/phirm.rst
+
+.. toctree::
+  :maxdepth: 3
+  :caption: Tutorials:
+
+  tutorials/simplecustomscenario.rst
 
 
 Indices and tables
