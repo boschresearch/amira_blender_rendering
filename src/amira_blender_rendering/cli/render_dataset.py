@@ -45,6 +45,8 @@ def import_abr(path=None):
     # NOTE: this is essentially the same code as in scripts/phirm. changes here
     # should likely be reflected there
     global abr, WorkstationScenarios, WorkstationScenariosConfiguration, expandpath, get_logger
+    global PandaTable, PandaTableConfiguration
+
     if path is None:
         try:
             import amira_blender_rendering as abr
@@ -69,6 +71,7 @@ def import_abr(path=None):
     import amira_blender_rendering.scenes
     from amira_blender_rendering.utils.io import expandpath
     from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
+    from amira_blender_rendering.scenes.pandatable import PandaTable, PandaTableConfiguration
     from amira_blender_rendering.utils.logging import get_logger
 
 
@@ -125,6 +128,7 @@ def get_scene_types():
     #       mechanism that 'knows' all scenarios
     from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
     from amira_blender_rendering.scenes.simpletoolcap import SimpleToolCap, SimpleToolCapConfiguration
+    from amira_blender_rendering.scenes.pandatable import PandaTable, PandaTableConfiguration
 
     # each scenario consists of a name, and a tuple containing the scenario as
     # well as its configuration
@@ -132,7 +136,9 @@ def get_scene_types():
         'SimpleToolCap':
             [SimpleToolCap, SimpleToolCapConfiguration],
         'WorkstationScenarios':
-            [WorkstationScenarios, WorkstationScenariosConfiguration]
+            [WorkstationScenarios, WorkstationScenariosConfiguration],
+        'PandaTable':
+            [PandaTable, PandaTableConfiguration],
         }
 
 
