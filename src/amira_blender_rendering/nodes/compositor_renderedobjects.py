@@ -84,9 +84,6 @@ class CompositorNodesOutputRenderedObjects():
             update_compositor_nodes_rendered_objects in case of dynamic filename changes.
         """
 
-        print(objs)
-
-
         # prevent blender from adding file extensions
         if self.scene is None:
             self.scene = bpy.context.scene
