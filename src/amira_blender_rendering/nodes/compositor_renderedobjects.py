@@ -84,6 +84,9 @@ class CompositorNodesOutputRenderedObjects():
             update_compositor_nodes_rendered_objects in case of dynamic filename changes.
         """
 
+        print(objs)
+
+
         # prevent blender from adding file extensions
         if self.scene is None:
             self.scene = bpy.context.scene
@@ -138,7 +141,7 @@ class CompositorNodesOutputRenderedObjects():
         # add nodes and sockets for all masks
         for i, obj in enumerate(objs):
             # setup object (this will change the pass index). The pass_index must be > 0 for the mask to work.
-            obj['bpy'].pass_index = i + 1
+            obj['bpy'].pass_index = i + 1337
 
             # mask
             n_id_mask = nodes.new('CompositorNodeIDMask')
