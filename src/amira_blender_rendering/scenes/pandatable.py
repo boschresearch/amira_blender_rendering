@@ -212,6 +212,12 @@ class PandaTable(interfaces.ABRScene):
         # let's start with an empty list
         self.objs = []
 
+        # first reset the render pass index for all panda model objects (links,
+        # hand, etc)
+        links = [f'Link-{i}' for i in range(8)] + ['Finger-Left', 'Finger-Right', 'Hand']
+        for link in links:
+            bpy.data.objects[link].pass_index = 0
+
         # extract all objects from the configuration. An object has a certain
         # type, as well as an own id. this information is storeed in the objs
         # list, which contains a dict. The dict contains the following keys:
