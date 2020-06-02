@@ -125,8 +125,8 @@ class ABRDataset:
             obj = dict()
    
             # set model and object name and id. Support single and multi object annotations
-            obj['model_name'] = a['model_name']
-            obj['model_id'] = a['model_id']
+            obj['object_class_name'] = a['model_name']
+            obj['object_class_id'] = a['model_id']
             obj['object_name'] = a['object_name']
             obj['object_id'] = a['object_id']
             
