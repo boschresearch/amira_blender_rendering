@@ -172,11 +172,11 @@ class SimpleToolCap(interfaces.ABRScene):
         # to do its job, as well as the annotation generation
         self.objs = list()
         self.objs.append({
-            'id_mask': '_0_0',        # the format of the masks is usually _modelid_objectid
-            'model_name': 'Tool.Cap', # model name is hardcoded here
-            'model_id': 0,            # we only have one model type, so id = 0
-            'object_id': 0,           # we only have this single instance, so id = 0
-            'bpy': self.obj})         # also add reference to the blender object
+            'id_mask': '_0_0',                  # the format of the masks is usually _modelid_objectid
+            'object_class_name': 'Tool.Cap',    # model name is hardcoded here
+            'object_class_id': 0,               # we only have one model type, so id = 0
+            'object_id': 0,                     # we only have this single instance, so id = 0
+            'bpy': self.obj})                   # also add reference to the blender object
 
 
     def setup_compositor(self):
