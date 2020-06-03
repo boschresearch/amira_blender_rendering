@@ -225,14 +225,14 @@ class WorkstationScenarios(interfaces.ABRScene):
         # extract all objects from the configuration. An object has a certain
         # type, as well as an own id. this information is storeed in the objs
         # list, which contains a dict. The dict contains the following keys:
-        #       id_mask     used for mask computation, computed below
-        #       model_name  type-name of the object
-        #       model_id    model type ID (simply incremental numbers)
-        #       object_id   instance ID of the object
-        #       bpy         blender object reference
-        n_types = 0      # count how many types we have
-        n_instances = [] # count how many instances per type we have
-        for model_id, obj_spec in enumerate(self.config.scenario_setup.target_objects):
+        #       id_mask             used for mask computation, computed below
+        #       object_class_name   type-name of the object
+        #       object_class_id     model type ID (simply incremental numbers)
+        #       object_id           instance ID of the object
+        #       bpy                 blender object reference
+        n_types = 0       # count how many types we have
+        n_instances = []  # count how many instances per type we have
+        for obj_type_id, obj_spec in enumerate(self.config.scenario_setup.target_objects):
             obj_type, obj_count = obj_spec.split(':')
             n_types += 1
             n_instances.append(int(obj_count))
@@ -280,8 +280,8 @@ class WorkstationScenarios(interfaces.ABRScene):
                 # append all information
                 self.objs.append({
                         'id_mask': '',
-                        'model_name': obj_type,
-                        'model_id': model_id,
+                        'object_class_name': obj_type,
+                        'object_class_id': obj_type_id,
                         'object_id': j,
                         'bpy': new_obj
                     })
@@ -290,8 +290,8 @@ class WorkstationScenarios(interfaces.ABRScene):
         # id, and M is the object id
         m_w = ceil(log(n_types))  # format width for number of model types
         for i, obj in enumerate(self.objs):
-            o_w = ceil(log(n_instances[obj['model_id']]))   # format width for number of objects of same model
-            id_mask = f"_{obj['model_id']:0{m_w}}_{obj['object_id']:0{o_w}}"
+            o_w = ceil(log(n_instances[obj['object_class_id']]))   # format width for number of objects of same model
+            id_mask = f"_{obj['object_class_id']:0{m_w}}_{obj['object_id']:0{o_w}}"
             obj['id_mask'] = id_mask
 
 
@@ -331,7 +331,7 @@ class WorkstationScenarios(interfaces.ABRScene):
             obj['bpy'].location.z = drop_location.z + (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
             obj['bpy'].rotation_euler = Vector((rnd_rot[i, :] * np.pi))
 
-            self.logger.info(f"Object {obj['model_name']}: {obj['bpy'].location}, {obj['bpy'].rotation_euler}")
+            self.logger.info(f"Object {obj['object_class_name']}: {obj['bpy'].location}, {obj['bpy'].rotation_euler}")
 
         # update the scene. unfortunately it doesn't always work to just set
         # the location of the object without recomputing the dependency
