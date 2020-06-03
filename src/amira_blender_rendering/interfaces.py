@@ -215,7 +215,7 @@ class ResultsCollection:
 
 class PoseRenderResult:
 
-    def __init__(self, model_name, model_id, object_name, object_id,
+    def __init__(self, object_class_name, object_class_id, object_name, object_id,
                  rgb_const, rgb_random, depth, mask,
                  T_int, T_ext, rotation, translation,
                  corners2d, corners3d, aabb, oobb,
@@ -224,8 +224,8 @@ class PoseRenderResult:
         """Initialize struct to store the result of rendering synthetic data
 
         Args:
-            model_name(str): name of rendered model (type of object)
-            model_id(int): id for model name (if any). To distinguish among different models
+            object_class_name(str): name of rendered class (type of object)
+            object_class_id(int): id for class (if any). To distinguish among different model classes
             object_name(str): object specific name (instance name)
             object_id(int): object specific id (if any). To distinguish among different instances
             rgb_const: image with constant light position across generated samples
@@ -244,8 +244,8 @@ class PoseRenderResult:
             *dense_features: optional dense feature representation of the surface
             *mask_name(str): optional mask name to indetify correct mask in multi object scenarios. Default: ''
         """
-        self.model_name = model_name
-        self.model_id = model_id
+        self.object_class_name = object_class_name
+        self.object_class_id = object_class_id
         self.object_name = object_name
         self.object_id = object_id
         self.rgb_const = rgb_const
@@ -276,8 +276,8 @@ class PoseRenderResult:
 
     def state_dict(self, retain_keys: list = None):
         data = {
-            "model_name": self.model_name,
-            "model_id": self.model_id,
+            "object_class_name": self.object_class_name,
+            "object_class_id": self.object_class_id,
             "object_name": self.object_name,
             "object_id": self.object_id,
             "mask_name": self.mask_name,
