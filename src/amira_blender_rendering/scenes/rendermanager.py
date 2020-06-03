@@ -147,8 +147,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
         aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
 
         render_result_gl = PoseRenderResult(
-            model_name=obj['model_name'],
-            model_id=obj['model_id'],
+            object_class_name=obj['object_class_name'],
+            object_class_id=obj['object_class_id'],
             object_name=obj['bpy'].name,
             object_id=obj['object_id'],
             rgb_const=None,
@@ -168,10 +168,9 @@ class RenderManager(abr_scenes.BaseSceneManager):
         # build results in OpenCV format
         R_cv, t_cv = abr_geom.gl2cv(R, t)
 
-
         render_result_cv = PoseRenderResult(
-            model_name=obj['model_name'],
-            model_id=obj['model_id'],
+            object_class_name=obj['object_class_name'],
+            object_class_id=obj['object_class_id'],
             object_name=obj['bpy'].name,
             object_id=obj['object_id'],
             rgb_const=None,
