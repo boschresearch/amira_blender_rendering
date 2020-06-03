@@ -72,20 +72,40 @@ source activate blender-env
 cd /home/$USER/amira_blender_rendering
 
 # alias for read/write locations
-AMIRA_DATA=/fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA
-SSD=/home/$USER/lsf_results
-HDD=/fs/scratch/rng_cr_bcai_dl/$USER/lsf_results
+AMIRA_STORAGE=/fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA # stored data for reading
+SSD=/home/$USER/lsf_results  # heavy duty (used for read/write during rendering)
+HDD=/fs/scratch/rng_cr_bcai_dl/$USER/lsf_results  # out location
 
+# Make sure the directories exists
+if [[ ! -d "$SSD" || ! -d "$HDD" ]]; then
+    echo "ERROR: Make sure all necessary repositories exists:"
+    echo "SSD : $SSD"
+    echo "HDD : $HDD"
+    exit 1
+fi
+
+# --- Step 1 --- setup
 # differently from RNG cluster where data are copied into locally created locations
-# SI and ABT cluster read/write directly from/to /fs/scratch locations
+# SI and ABT cluster read/write directly from/to /fs/scratch locations.
+# However, because of our use of env variables in config file, we copy some files to
+# local user
+tar -C $SSD -xf $AMIRA_STORAGE/OpenImagesV4.tar
+# fix wrong directory name
+mv $SSD/OpenImageV4 $AMIRA_DATA/OpenImagesV4
+# copying data gfx
+cp $AMIRA_STORAGE/amira_data_gfx $SSD
 
-# --- Step 1 --- render
-AMIRA_DATASETS=$AMIRA_DATA \
-AMIRA_DATA_GFX=$AMIRA_DATA/amira_data_gfx \
+
+# --- Step 2 --- render
+AMIRA_DATASETS=$SSD \
+AMIRA_DATA_GFX=$SSD/amira_data_gfx \
     abrgen --config path/to/config
 
 # --- Step 3 --- copy results to user directory
 cd $SSD && tar -cf $HDD/RenderResult-$LSF_JOBID.tar ./PhIRM
 
-# --- Step 4 --- finalize
+# --- Step 4 --- clean and finalize
+rm -rf $SSD/OpenImagesV4
+rm -rf $SSD/amira_data_gfx
+rm -rf $SSD/PhIRM
 set +e
