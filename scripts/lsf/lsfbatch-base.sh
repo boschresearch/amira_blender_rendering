@@ -17,9 +17,9 @@
 # Specify the number of GPUs to be used per host.
 #BSUB -gpu "num=2"
 #
-# Specify the type of GPU to use. Those are GeForce for rb_regular and Voltas
+# Specify the type of GPU to use. Those are GeForce for rb_basic and Voltas
 # for rb_highend.
-#BSUB -q rb_regular
+#BSUB -q rb_basic
 # #BSUB -q rb_highend       # use VOLTAS if uncommented
 #
 # Specify the number of job slots to be used. By default (but not for this

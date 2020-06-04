@@ -22,7 +22,7 @@ if [[ $GENSCRIPTS == "True" ]]; then
     CUDNN_VERSION=10.1_v7.6
     CONDA_VERSION=4.4.8-readonly
     GPU=2
-    GPU_TYPE=rb_regular
+    GPU_TYPE=rb_basic
     JOB_SLOTS=1
     CPU=4
     RAM=4
@@ -84,7 +84,7 @@ if [[ $DEPLOY == "True" ]]; then
     echo ''
     for f in `ls ./tmp-lsfbatch-$BASENAME*.sh`; do
         echo "Deploying batch job: $f"
-        sbatch  $f
+        bsub < $f
     done
 fi
 
