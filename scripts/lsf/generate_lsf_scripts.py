@@ -74,7 +74,7 @@ def parse_args():
                               Default: $HOME/amira_blender_rendering')
     parser.add_argument('--heavy-duty-dir', metavar='pa/th', type=str, dest='heavy_duty_dir',
                         default='$HOME/lsf_results',
-                        help='(Absolute) path to dir used during heavy duty computations (must exists). \
+                        help='(Absolute) path to base dir used during heavy duty computations (must exists). \
                               Default: $HOME/lsf_results')
     parser.add_argument('--out-dir', metavar='pa/th', type=str, dest='out_dir',
                         default='/fs/scratch/rng_cr_bcai_dl/$USER/lsf_results',
@@ -183,7 +183,7 @@ def gen_script(cfgfile: str,
         mm(int): minutes the job should live. Default: 5
         amira_storage(str): base path where data are read from. Default: /fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA
         abr_path(str): (absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering
-        heavy_duty_dir(str): (absolute) path to dir used during heavy duty computations (it must exists). Default: $HOME/lsf_results
+        heavy_duty_dir(str): (absolute) path to base dir used during heavy duty computations (it must exists). Default: $HOME/lsf_results
         out_dir(str): (absolute) path where data are moved to for storage after rendering (it must exists). Default: /fs/scratch/rng_cr_bcai_dl/$USER/lsf_results
 
     Returns:
@@ -226,22 +226,21 @@ if [[ ! -d "$SSD" || ! -d "$HDD" ]]; then
 fi
 
 # --- Step 1 --- setup
-tar -C $SSD -xf $AMIRA_STORAGE/OpenImagesV4.tar
+SSD_TMP=`mktemp -d -p $SSD`
+tar -C $SSD_TMP -xf $AMIRA_STORAGE/OpenImagesV4.tar
 # fix wrong directory name
-mv $SSD/OpenImageV4 $AMIRA_DATA/OpenImagesV4
+mv $SSD_TMP/OpenImageV4 $AMIRA_DATA/OpenImagesV4
 # copying data gfx
-cp $AMIRA_STORAGE/amira_data_gfx $SSD
+cp -r $AMIRA_STORAGE/amira_data_gfx $SSD_TMP
 
 # --- Step 2 --- render
-AMIRA_DATASETS=$SSD AMIRA_DATA_GFX=$SSD/amira_data_gfx scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile}
+AMIRA_DATASETS=$SSD_TMP AMIRA_DATA_GFX=$SSD_TMP/amira_data_gfx scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile}
 
 # --- Step 3 --- copy results to user directory
-cd $SSD && tar -cf $HDD/{job_name}-$LSF_JOBID.tar ./PhIRM
+cd $SSD_TMP && tar -cf $HDD/{job_name}-$LSF_JOBID.tar ./PhIRM
 
 # --- Step 4 --- clean and finalize
-rm -rf $SSD/OpenImagesV4
-rm -rf $SSD/amira_data_gfx
-rm -rf $SSD/PhIRM
+cd $HOME && rm -rf $SSD_TMP
 set +e
 """
 
