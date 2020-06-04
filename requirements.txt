@@ -1,3 +1,7 @@
+# fancy logging
+verboselogs
+coloredlogs
+
 # for abr
 numpy
 imageio
