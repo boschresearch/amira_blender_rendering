@@ -73,7 +73,7 @@ cd /home/$USER/amira_blender_rendering
 
 # alias for read/write locations
 AMIRA_STORAGE=/fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA # stored data for reading
-SSD=/home/$USER/lsf_results  # heavy duty (used for read/write during rendering)
+SSD=/home/$USER/lsf_results  # heavy duty base directory used for read/write during rendering
 HDD=/fs/scratch/rng_cr_bcai_dl/$USER/lsf_results  # out location
 
 # Make sure the directories exists
@@ -89,23 +89,22 @@ fi
 # SI and ABT cluster read/write directly from/to /fs/scratch locations.
 # However, because of our use of env variables in config file, we copy some files to
 # local user
-tar -C $SSD -xf $AMIRA_STORAGE/OpenImagesV4.tar
+SSD_TMP=`mktemp -d -p $SSD`
+tar -C $SSD_TMP -xf $AMIRA_STORAGE/OpenImagesV4.tar
 # fix wrong directory name
-mv $SSD/OpenImageV4 $AMIRA_DATA/OpenImagesV4
+mv $SSD_TMP/OpenImageV4 $AMIRA_DATA/OpenImagesV4
 # copying data gfx
-cp $AMIRA_STORAGE/amira_data_gfx $SSD
+cp -r $AMIRA_STORAGE/amira_data_gfx $SSD_TMP
 
 
 # --- Step 2 --- render
-AMIRA_DATASETS=$SSD \
-AMIRA_DATA_GFX=$SSD/amira_data_gfx \
+AMIRA_DATASETS=$SSD_TMP \
+AMIRA_DATA_GFX=$SSD_TMP/amira_data_gfx \
     abrgen --config path/to/config
 
 # --- Step 3 --- copy results to user directory
-cd $SSD && tar -cf $HDD/RenderResult-$LSF_JOBID.tar ./PhIRM
+cd $SSD_TMP && tar -cf $HDD/RenderResult-$LSF_JOBID.tar ./PhIRM
 
 # --- Step 4 --- clean and finalize
-rm -rf $SSD/OpenImagesV4
-rm -rf $SSD/amira_data_gfx
-rm -rf $SSD/PhIRM
+cd $HOME && rm -rf $SSD_TMP
 set +e
