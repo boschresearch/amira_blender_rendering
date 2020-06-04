@@ -55,7 +55,7 @@ def parse_args():
     parser.add_argument('--gpu', metavar='N', type=int, default=2,
                         help='Number of required GPUs for batch job. Default: 2')
     parser.add_argument('--gpu-type', metavar='type', type=str, dest='gpu_type', default='rb_basic',
-                        help='Type of GPU to load [rb_regular, rb_highend]. Default: rb_basic')
+                        help='Type of GPU to load [rb_basic, rb_highend]. Default: rb_basic')
     parser.add_argument('--job-slots', metavar='N', type=int, dest='job_slots', default=1,
                         help='Number of job slots to instantiate. Default: 1')
     parser.add_argument('--cpu', metavar='N', type=int, default=4,
@@ -126,7 +126,7 @@ def get_scheduler_directives(job_name: str = 'BlenderRender',
 # GPU, CPU, MEM configuration
 #BSUB -gpu "num={gpu}"
 #
-# specify type of GPU. rb_regular are GeForce. rb_highend are VOLTAS
+# specify type of GPU. rb_basic are GeForce. rb_highend are VOLTAS
 #BSUB -q {gpu_type}
 #
 # number of job slots.
@@ -156,7 +156,7 @@ def gen_script(cfgfile: str,
                cudnn_version: str = '10.1_v7.6',
                conda_version: str = '4.4.8-readonly',
                gpu: int = 2,
-               gpu_type: str = 'rb_regular',
+               gpu_type: str = 'rb_basic',
                job_slots: int = 1,
                cpu: int = 4,
                ram: int = 4,
@@ -175,7 +175,7 @@ def gen_script(cfgfile: str,
         cudnn_version(str): version of cudnn module to load. Default: 10_v7.3
         conda_version(str): conda module version to load. Default: 4.4.8-readonly
         gpu(int): number of required GPUs. Default: 2
-        gpu_type(str): type of GPUs, [rb_regular: GeForce, rb_highend: VOLTAS]. Default: rb_regular
+        gpu_type(str): type of GPUs, [rb_basic: GeForce, rb_highend: VOLTAS]. Default: rb_basic
         job_slots(int): number of job slots. Default: 1
         cpu(int): number of required CPUs. Detault: 4
         ram(int): RAM (in GB) to allocate. Default: 4 GB
