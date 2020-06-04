@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
 import os
 import os.path as osp
+import shutil
 import random
 import numpy as np
 
@@ -7,9 +9,9 @@ import bpy
 
 # import utils.logging.get_logger as get_logger
 # from utils.logging import get_logger
-from amira_blender_rendering.utils.logging import get_logger
+import amira_blender_rendering.utils.logging as log_utils
 
-logger = get_logger()
+logger = log_utils.get_logger()
 
 
 def _get_current_items(bpy_collection):
@@ -28,6 +30,14 @@ def _find_new_items(bpy_collection, old_names):
     return diff
 
 
+def _set_viewport_shader(shader="MATERIAL"):
+    for area in bpy.context.screen.areas:
+        if area.type == 'VIEW_3D':
+            for space in area.spaces:
+                if space.type == 'VIEW_3D':
+                    space.shading.type = shader
+
+
 class MetallicMaterialGenerator(object):
     """Generate randomized metallic materials"""
     def __init__(self):
@@ -35,7 +45,7 @@ class MetallicMaterialGenerator(object):
         self._shift_to_white = 2.0
         self._max_roughness = 0.4
         self._max_texture_scale = 0.7
-        self._max_texture_detail = 10.0
+        self._max_texture_detail = 3.0
         self._max_texture_distortion = 0.5
         self._materials = list()
 
@@ -141,34 +151,35 @@ class ABCImporter(object):
 
     def _get_object_types_map(self):
         object_types_map = dict(
-            bearings="Bearings",
-            sprocket="Sprockets",
-            spring="Springs",
-            flange="Unthreaded_Flanges",
-            bracket="Brackets",
-            collet="Collets",
-            pipe="Pipes",
-            pipe_fitting="Pipe_Fittings",
-            pipe_joint="Pipe_Joints",
-            bushing="Bushing",
-            roller="Rollers",
-            busing_liner="Bushing_Damping_Liners",
-            shaft="Shafts",
-            bolt="Bolts",
-            headless_screw="HeadlessScrews",
-            flat_screw="Slotted_Flat_Head_Screws",
-            hex_screw="Hex_Head_Screws",
-            socket_screw="Socket_Head_Screws",
-            nut="Nuts",
-            push_ring="Push_Rings",
-            retaining_ring="Retaining_Rings",
-            washer="Washers",
+            bearings=dict(folder="Bearings", lower_limit=0.01, upper_limit=0.1),
+            sprocket=dict(folder="Sprockets", lower_limit=0.01, upper_limit=0.15),
+            spring=dict(folder="Springs", lower_limit=0.01, upper_limit=0.2),
+            flange=dict(folder="Unthreaded_Flanges", lower_limit=0.01, upper_limit=0.3),
+            bracket=dict(folder="Brackets", lower_limit=0.01, upper_limit=0.3),
+            collet=dict(folder="Collets", lower_limit=0.01, upper_limit=0.1),
+            pipe=dict(folder="Pipes", lower_limit=0.01, upper_limit=0.4),
+            pipe_fitting=dict(folder="Pipe_Fittings", lower_limit=0.01, upper_limit=0.15),
+            pipe_joint=dict(folder="Pipe_Joints", lower_limit=0.01, upper_limit=0.2),
+            bushing=dict(folder="Bushing", lower_limit=0.01, upper_limit=0.15),
+            roller=dict(folder="Rollers", lower_limit=0.01, upper_limit=0.1),
+            busing_liner=dict(folder="Bushing_Damping_Liners", lower_limit=0.01, upper_limit=0.15),
+            shaft=dict(folder="Shafts", lower_limit=0.01, upper_limit=0.3),
+            bolt=dict(folder="Bolts", lower_limit=0.01, upper_limit=0.1),
+            headless_screw=dict(folder="HeadlessScrews", lower_limit=0.01, upper_limit=0.05),
+            flat_screw=dict(folder="Slotted_Flat_Head_Screws", lower_limit=0.01, upper_limit=0.05),
+            hex_screw=dict(folder="Hex_Head_Screws", lower_limit=0.01, upper_limit=0.05),
+            socket_screw=dict(folder="Socket_Head_Screws", lower_limit=0.01, upper_limit=0.05),
+            nut=dict(folder="Nuts", lower_limit=0.01, upper_limit=0.05),
+            push_ring=dict(folder="Push_Rings", lower_limit=0.01, upper_limit=0.05),
+            retaining_ring=dict(folder="Retaining_Rings", lower_limit=0.01, upper_limit=0.05),
+            washer=dict(folder="Washers", lower_limit=0.01, upper_limit=0.05),
         )
 
         missing = 0
         verified_types = dict()
         for obj in object_types_map:
-            if osp.isdir(osp.join(self._parent, object_types_map[obj])):
+            subfolder = object_types_map[obj]["folder"]
+            if osp.isdir(osp.join(self._parent, subfolder)):
                 verified_types[obj] = object_types_map[obj]
             else:
                 missing += 1
@@ -194,6 +205,32 @@ class ABCImporter(object):
         else:
             raise FileNotFoundError("data_dir must be a fullpath to data parent directory")
 
+    def _rescale(self, obj, lower_limit, upper_limit):
+        """Rescale objects to reasonable sizes (heuristic)
+
+        The STL files do NOT retain their length units, and ABC does not provide it otherwise
+        """
+        succes = True
+        for scene in bpy.data.scenes:
+            scene.unit_settings.length_unit = "METERS"
+
+        min_scale = lower_limit / np.min(obj.dimensions)
+        max_scale = upper_limit / np.max(obj.dimensions)
+        if min_scale > max_scale:
+            logger.error("Cannot resolve object scaling")
+            logger.warning(",".join((
+                f"name = {obj.name}",
+                f"dimensions = {obj.dimensions}",
+                f"lower_limit = {lower_limit}",
+                f"upper_limit = {upper_limit}",
+            )))
+            return False
+        delta = max_scale - min_scale
+        scale = min_scale + delta * np.random.rand(1)[0]
+        logger.debug(f"randomized scale = {scale}")
+        obj.scale *= scale
+        return succes
+
     def import_object(self, object_type=None, filename=None, name=None):
         """Import an ABC STL and assign a material
 
@@ -205,7 +242,7 @@ class ABCImporter(object):
         if object_type is None:
             object_type = random.sample(self.object_types, 1)[0]
         logger.debug(f"object_type={object_type}")
-        dir_path = osp.join(self._parent, self._object_types_map[object_type], "STL")
+        dir_path = osp.join(self._parent, self._object_types_map[object_type]["folder"], "STL")
         if filename is None:
             filename = random.sample(os.listdir(dir_path), 1)[0]
         logger.debug(f"filename={filename}")
@@ -223,6 +260,18 @@ class ABCImporter(object):
             name = "{}_{}".format(object_type, len(bpy.data.objects))
         obj_handle.name = name
 
+        succes = self._rescale(
+            obj_handle,
+            self._object_types_map[object_type]["lower_limit"],
+            self._object_types_map[object_type]["upper_limit"]
+        )
+        if not succes:
+            bpy.ops.object.select_all(action="DESELECT")
+            # bpy.context.scene.objects.active = None
+            obj_handle.select_set(True)
+            bpy.ops.object.delete()
+            return None
+
         mat = self._material_generator.get_random_material()
         obj_handle.active_material = mat
 
@@ -231,41 +280,60 @@ class ABCImporter(object):
 
 if __name__ == "__main__":
 
-    import logging
-    logger.setLevel(logging.DEBUG)
-    stream_handler = logging.StreamHandler()
-    stream_handler.setLevel(logging.DEBUG)
-    stream_handler.setFormatter(
-        logging.Formatter("[{}] {}:{} | {}".format(
-            "%(levelname)s",
-            "%(filename)s",
-            "%(lineno)d",
-            "%(message)s",
-        ),))
-    logger.addHandler(stream_handler)
-
     logger.info("starting __main__")
+
+    step = 0.3
+    out_dir = osp.join(os.environ["HOME"], "Desktop", "stl_import_demo")
+    try:
+        shutil.rmtree(out_dir)
+    except FileNotFoundError:
+        pass
+    os.makedirs(out_dir, exist_ok=True)
+
+    abc_importer = ABCImporter()
+    logger.info("instantiated an ABCImporter for STL files")
+
+    object_types = abc_importer.object_types
 
     bpy.ops.wm.read_homefile(use_empty=True)
     logger.info("opened a blend file")
 
-    for area in bpy.context.screen.areas:
-        if area.type == 'VIEW_3D':
-            for space in area.spaces:
-                if space.type == 'VIEW_3D':
-                    space.shading.type = "MATERIAL"
+    _set_viewport_shader()
     logger.info("set shading to MATERIAL")
 
     abc_importer = ABCImporter(n_materials=10)
     logger.info("instantiated an ABCImporter for STL files")
 
-    step = 10
-    for x in range(6):
-        for y in range(6):
+    for x in range(7):
+        for y in range(7):
             obj = abc_importer.import_object()
+            if obj is None:
+                continue
             obj.location.x = x * step
             obj.location.y = y * step
-
-    out = osp.join(os.environ["HOME"], "Desktop", "stl_import_demo.blend")
+    out = osp.join(out_dir, "mix.blend")
     bpy.ops.wm.save_as_mainfile(filepath=out)
     logger.info("finished, saved file to {}".format(out))
+
+    for obj_t in object_types:
+
+        bpy.ops.wm.read_homefile(use_empty=True)
+        logger.info("opened a blend file")
+
+        _set_viewport_shader()
+        logger.info("set shading to MATERIAL")
+
+        abc_importer = ABCImporter(n_materials=10)
+        logger.info("instantiated an ABCImporter for STL files")
+
+        for x in range(4):
+            for y in range(4):
+                obj = abc_importer.import_object(object_type=obj_t)
+                if obj is None:
+                    continue
+                obj.location.x = x * step
+                obj.location.y = y * step
+
+        out = osp.join(out_dir, "{}.blend".format(obj_t))
+        bpy.ops.wm.save_as_mainfile(filepath=out)
+        logger.info("finished, saved file to {}".format(out))
