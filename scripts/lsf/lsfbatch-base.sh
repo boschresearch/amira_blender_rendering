@@ -92,7 +92,7 @@ fi
 SSD_TMP=`mktemp -d -p $SSD`
 tar -C $SSD_TMP -xf $AMIRA_STORAGE/OpenImagesV4.tar
 # fix wrong directory name
-mv $SSD_TMP/OpenImageV4 $AMIRA_DATA/OpenImagesV4
+mv $SSD_TMP/OpenImageV4 $SSD_TMP/OpenImagesV4
 # copying data gfx
 cp -r $AMIRA_STORAGE/amira_data_gfx $SSD_TMP
 
