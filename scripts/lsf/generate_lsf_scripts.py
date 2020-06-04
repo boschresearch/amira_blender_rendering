@@ -143,7 +143,7 @@ def get_scheduler_directives(job_name: str = 'BlenderRender',
 #BSUB -N
 #
 # Time configuration "hours:minutes"
-#BSUB -W "{hh}:{mm}"
+#BSUB -W "{hh:02d}:{mm:02d}"
 #
 # Make sure all jobs slots run on same host
 #BSUB -R "span[hosts=1]"
