@@ -54,8 +54,8 @@ def parse_args():
                         help='Conda module version to load (Check avail. with "module avail"). Default: 4.4.8-readonly')
     parser.add_argument('--gpu', metavar='N', type=int, default=2,
                         help='Number of required GPUs for batch job. Default: 2')
-    parser.add_argument('--gpu-type', metavar='type', type=str, dest='gpu_type', default='rb_regular',
-                        help='Type of GPU to load [rb_regular, rb_highend]. Default: rb_regular')
+    parser.add_argument('--gpu-type', metavar='type', type=str, dest='gpu_type', default='rb_basic',
+                        help='Type of GPU to load [rb_regular, rb_highend]. Default: rb_basic')
     parser.add_argument('--job-slots', metavar='N', type=int, dest='job_slots', default=1,
                         help='Number of job slots to instantiate. Default: 1')
     parser.add_argument('--cpu', metavar='N', type=int, default=4,
@@ -93,7 +93,7 @@ Conversely default values will be used and these might affect the lifespan of th
 # Configuration file parts
 def get_scheduler_directives(job_name: str = 'BlenderRender',
                              gpu: int = 2,
-                             gpu_type: str = 'rb_regular',
+                             gpu_type: str = 'rb_basic',
                              job_slots: int = 1,
                              cpu: int = 4,
                              ram: int = 4,
@@ -105,7 +105,7 @@ def get_scheduler_directives(job_name: str = 'BlenderRender',
     Args:
         job_name(str): job name
         gpu(int): number of required GPUs. Default: 2
-        gpu_type(str): type of GPUs, [rb_regular: GeForce, rb_highend: VOLTAS]. Default: rb_regular
+        gpu_type(str): type of GPUs, [rb_basic: GeForce, rb_highend: VOLTAS]. Default: rb_basic
         job_slots(int): number of job slots. Default: 1
         cpu(int): number of required CPUs per job slot. Detault: 4
         ram(int): RAM (in GB) to allocate per job slot. Default: 4 GB
