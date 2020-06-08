@@ -21,6 +21,7 @@ unless rather than contributing you aim at developing your own cool project base
 For additional information about how to contribute and the legal requirements,  
 please refer to the CONTRIBUTING.md notice file located at the root directory of the project repo.
 
+**NOTE** : According to AMIRA Blender Rendering license clause, your contribution must be licensed as Apache-2.0.
 
 Submitting Issues
 -----------------
@@ -39,7 +40,3 @@ In this case we recommend to:
 1. Contact us;
 2. Open an Issue (as described above)
 3. Open a PR from you feature/branch against the branch you want to contribute (e.g., master or develop)
-
-**NOTE** 
-
-According to AMIRA Blender Rendering license clause, your contribution must be licensed as Apache-2.0.
