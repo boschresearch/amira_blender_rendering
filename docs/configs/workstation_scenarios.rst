@@ -5,7 +5,7 @@ Workstation Scenarios
 
 The workstation scenarios have the following options that you can set in a
 corresponding configuration file. For an example of configuration files that
-were used, have a look at `config/workstation_scenarios*.cfg`.
+were used, have a look at `config/examples/workstation_scenarios*.cfg`.
 
 .. code-block::
 

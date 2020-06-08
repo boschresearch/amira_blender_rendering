@@ -12,7 +12,7 @@ refer to :ref:`Set Up a Simple Custom Scenario`
 Most of the following configurations are common to other scenarios.
 Hence, please refer to :ref:`Base Configuration` for an overview.
 
-For the SimpleToolCap scenario refer to the config file config/toolcap_train.cfg
+For the SimpleToolCap scenario refer to the config file config/examples/toolcap_train.cfg
 
 .. code-block::
 
