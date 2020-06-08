@@ -1,10 +1,12 @@
-# AMIRA Blender Rendering (ABR)
+AMIRA Blender Rendering (ABR)
+============================
 
 ABR is a rendering tool to create large scale photorealistic phisics-based images.
 For an in-depth description refer to the corresponding README and the software documentations
 
 
-# ABR Datasets API
+ABR Datasets API
+==================
 
 A lean python package to handle datasets generated using ABR.
 
