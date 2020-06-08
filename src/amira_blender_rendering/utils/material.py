@@ -6,12 +6,18 @@ import numpy as np
 import bpy
 
 from amira_blender_rendering.utils.logging import get_logger
-from amira_blender_rendering.utils.blender import get_current_items, find_new_items
+from amira_blender_rendering.utils.blender import get_collection_item_names, find_new_items
 
 logger = get_logger()
 
 
 def set_viewport_shader(shader="MATERIAL"):
+    """Set the viewport shader, for user convenience when using GUI
+
+    Args:
+        shader (str, optional): type of shader to use from WIREFRAME, SOLID, MATERIAL, RENDERED.
+        Defaults to "MATERIAL".
+    """
     for area in bpy.context.screen.areas:
         if area.type == 'VIEW_3D':
             for space in area.spaces:
@@ -33,8 +39,8 @@ class MetallicMaterialGenerator(object):
     def make_random_material(self, n=1):
         """Make a new randomized metallic material
 
-        Keyword Arguments:
-            n {int} -- how many new materials to make (default: {1})
+        Args:
+            n (int, optional): how many new materials to make. Defaults to 1.
         """
         for i in range(n):
             desired_name = "random_metal_{}".format(len(self._materials) + 1)
@@ -42,7 +48,15 @@ class MetallicMaterialGenerator(object):
             self._materials.append(material_name)
 
     def _make_random_material(self, desired_name):
-        """Generate a randomized node-tree for a metallic material"""
+        """Generate a randomized node-tree for a metallic material
+
+        Args:
+            desired_name (string) : the desired name for the new material
+
+        Returns
+            actual_name (string) : the actual exact material name
+            Might differ from desired-name, due to blenders automatic conflict resolution (appending ".001" etc.)
+        """
 
         roughness, texture_scale, texture_detail, texture_distortion = np.random.rand(4)
         roughness *= self._max_roughness
@@ -57,12 +71,12 @@ class MetallicMaterialGenerator(object):
             color[i] = limit + (1.0 - limit) * (1.0 - color[i] ** self._shift_to_white)
         logger.debug("color: {}".format(color))
 
-        old_names = get_current_items(bpy.data.materials)
+        old_names = get_collection_item_names(bpy.data.materials)
         mat = bpy.data.materials.new(desired_name)
         new_names = find_new_items(bpy.data.materials, old_names)
         if len(new_names) > 1:
             raise AssertionError("multiple new material names, cannot identify new material")
-        actual_name = new_names[0]
+        actual_name = new_names.pop()
 
         mat.use_nodes = True
         self._clear_node_tree(mat)
@@ -103,7 +117,11 @@ class MetallicMaterialGenerator(object):
         return actual_name
 
     def get_random_material(self):
-        """return handle to randomized metallic material"""
+        """Return handle to randomized metallic material
+
+        Returns:
+            bpy.types.Material: object handle to a randomized metallic material
+        """
         material_name = random.sample(self._materials, 1)[0]
         return bpy.data.materials[material_name]
 

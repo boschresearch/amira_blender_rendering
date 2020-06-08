@@ -8,9 +8,7 @@ import logging
 try:
     from verboselogs import VerboseLogger as getLogger
 except ImportError:
-    print(
-        "FAIL to import verboselogs, consider installing with pip for additional log levels"
-    )
+    # print("FAIL to import verboselogs, consider installing with pip for additional log levels")
     from logging import getLogger
 
 try:
@@ -19,7 +17,7 @@ try:
     coloredlogs.DEFAULT_LEVEL_STYLES["critical"]["color"] = "white"
     coloredlogs.DEFAULT_LEVEL_STYLES["critical"]["background"] = "red"
 except ImportError:
-    print("FAIL to import coloredlogs, consider installing with pip")
+    # print("FAIL to import coloredlogs, consider installing with pip")
     coloredlogs = None
 
 
@@ -49,8 +47,18 @@ __terminal_format = "[{}] {}:{} | {}".format(
 
 
 def get_logger(level="INFO", fmt=None):
-    """This function returns a logger instance."""
+    """This function returns a logger instance.
 
+    If coloredlogs is installed the messages in terminal will have different colors acording to logging level.
+    If verboselogs is installed ist supports additional logging levels and color variations.
+
+    Args:
+        level (str, optional): logging level. Defaults to "INFO".
+        fmt (str, optional): message format template: fields, order, etc. Defaults to None, which uses a "basic_format".
+
+    Returns:
+        logging.Logger: a logger instance.
+    """
     # create directory of necessary
     if not os.path.exists(__logger_logdir):
         os.mkdir(__logger_logdir)
@@ -89,6 +97,7 @@ def _get_level_enum(level):
 
 
 def add_stream_handler(logger, level="DEBUG"):
+    """Explicitly force logging to the terminal (in addition to other logging, e..g to file)"""
     # logger level can block stream-handler
     stream_logging_level = _get_level_enum(level)
     if logger.level > stream_logging_level:

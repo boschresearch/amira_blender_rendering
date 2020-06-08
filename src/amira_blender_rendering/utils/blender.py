@@ -6,7 +6,15 @@ from mathutils import Vector
 from amira_blender_rendering.utils.logging import get_logger
 
 
-def get_current_items(bpy_collection):
+def get_collection_item_names(bpy_collection):
+    """Get names of current items in a blender collection, e.g. object names in bpy.data.objects
+
+    Args:
+        bpy_collection : a blender iterable, where items are a tuple, and the 1st item element is a name string
+
+    Returns:
+        list of strings : names of items currenlty in collection
+    """
     names = list()
     for item in bpy_collection.items():
         names.append(item[0])
@@ -14,12 +22,20 @@ def get_current_items(bpy_collection):
 
 
 def find_new_items(bpy_collection, old_names):
-    new_names = get_current_items(bpy_collection)
-    diff = list()
-    for n_item in new_names:
-        if n_item not in old_names:
-            diff.append(n_item)
-    return diff
+    """Ascertian new item names, given a list of old item names
+
+    Args:
+        bpy_collection : a blender iterable, where items are a tuple, and the 1st item element is a name string
+
+    Returns:
+        set of strings : names of items currenlty in collection
+
+    Usage:
+        Intended usage is to verify the assigned name to a new item (object, material, etc.)
+        This is needed due to blender's automatic name conflict resolution, i.e. apending ".001" etc.
+    """
+    new_names = get_collection_item_names(bpy_collection)
+    return set(new_names).difference(old_names)
 
 
 def unlink_objects():
