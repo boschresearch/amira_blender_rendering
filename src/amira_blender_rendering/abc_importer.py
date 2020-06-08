@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+
 import os
 import os.path as osp
 import shutil
@@ -7,131 +8,14 @@ import numpy as np
 
 import bpy
 
-# import utils.logging.get_logger as get_logger
-# from utils.logging import get_logger
 import amira_blender_rendering.utils.logging as log_utils
+from amira_blender_rendering.utils.blender import get_current_items, find_new_items
+from amira_blender_rendering.utils.material import MetallicMaterialGenerator, set_viewport_shader
 
 logger = log_utils.get_logger()
 
 
-def _get_current_items(bpy_collection):
-    names = list()
-    for item in bpy_collection.items():
-        names.append(item[0])
-    return names
-
-
-def _find_new_items(bpy_collection, old_names):
-    new_names = _get_current_items(bpy_collection)
-    diff = list()
-    for n_item in new_names:
-        if n_item not in old_names:
-            diff.append(n_item)
-    return diff
-
-
-def _set_viewport_shader(shader="MATERIAL"):
-    for area in bpy.context.screen.areas:
-        if area.type == 'VIEW_3D':
-            for space in area.spaces:
-                if space.type == 'VIEW_3D':
-                    space.shading.type = shader
-
-
-class MetallicMaterialGenerator(object):
-    """Generate randomized metallic materials"""
-    def __init__(self):
-        self._rgb_lower_limits = (0.9, 0.7, 0.6)
-        self._shift_to_white = 2.0
-        self._max_roughness = 0.4
-        self._max_texture_scale = 0.7
-        self._max_texture_detail = 3.0
-        self._max_texture_distortion = 0.5
-        self._materials = list()
-
-    def make_random_material(self, n=1):
-        """Make a new randomized metallic material
-
-        Keyword Arguments:
-            n {int} -- how many new materials to make (default: {1})
-        """
-        for i in range(n):
-            desired_name = "random_metal_{}".format(len(self._materials) + 1)
-            material_name = self._make_random_material(desired_name)
-            self._materials.append(material_name)
-
-    def _make_random_material(self, desired_name):
-        """Generate a randomized node-tree for a metallic material"""
-
-        roughness, texture_scale, texture_detail, texture_distortion = np.random.rand(4)
-        roughness *= self._max_roughness
-        texture_scale *= self._max_texture_scale
-        texture_detail *= self._max_texture_detail
-        texture_distortion *= self._max_texture_distortion
-
-        color = np.random.rand(4)
-        color[3] = 1.0   # alpha, 1 = opaque
-        for i in range(3):
-            limit = self._rgb_lower_limits[i]
-            color[i] = limit + (1.0 - limit) * (1.0 - color[i] ** self._shift_to_white)
-        logger.debug("color: {}".format(color))
-
-        old_names = _get_current_items(bpy.data.materials)
-        mat = bpy.data.materials.new(desired_name)
-        new_names = _find_new_items(bpy.data.materials, old_names)
-        if len(new_names) > 1:
-            raise AssertionError("multiple new material names, cannot identify new material")
-        actual_name = new_names[0]
-
-        mat.use_nodes = True
-        self._clear_node_tree(mat)
-
-        out_node = mat.node_tree.nodes.new("ShaderNodeOutputMaterial")
-        out_node.location = (0, 0)
-
-        glossy_node = mat.node_tree.nodes.new("ShaderNodeBsdfGlossy")
-        glossy_node.location = (-200, 100)
-        glossy_node.inputs["Color"].default_value = color
-        glossy_node.inputs["Roughness"].default_value = roughness
-
-        mat.node_tree.links.new(
-            mat.node_tree.nodes["Material Output"].inputs["Surface"],
-            mat.node_tree.nodes["Glossy BSDF"].outputs["BSDF"],
-        )
-
-        bump_node = mat.node_tree.nodes.new("ShaderNodeBump")
-        bump_node.location = (-200, -100)
-
-        mat.node_tree.links.new(
-            mat.node_tree.nodes["Material Output"].inputs["Displacement"],
-            mat.node_tree.nodes["Bump"].outputs["Normal"],
-        )
-
-        noise_node = mat.node_tree.nodes.new("ShaderNodeTexNoise")
-        noise_node.location = (-400, -100)
-        noise_node.noise_dimensions = "3D"
-        noise_node.inputs["Scale"].default_value = texture_scale
-        noise_node.inputs["Detail"].default_value = texture_detail
-        noise_node.inputs["Distortion"].default_value = texture_distortion
-
-        mat.node_tree.links.new(
-            mat.node_tree.nodes["Bump"].inputs["Normal"],
-            mat.node_tree.nodes["Noise Texture"].outputs["Fac"],
-        )
-
-        return actual_name
-
-    def get_random_material(self):
-        """return handle to randomized metallic material"""
-        material_name = random.sample(self._materials, 1)[0]
-        return bpy.data.materials[material_name]
-
-    def _clear_node_tree(self, material):
-        nodes = material.node_tree.nodes
-        for node in nodes:
-            nodes.remove(node)
-
-
+# TODO: separate into an STL-importer, and a ABC data-loader
 class ABCImporter(object):
     """Import ABC STL into blender session and assign a material"""
     def __init__(self, data_dir=None, n_materials=3):
@@ -154,12 +38,12 @@ class ABCImporter(object):
             bearings=dict(folder="Bearings", lower_limit=0.01, upper_limit=0.1),
             sprocket=dict(folder="Sprockets", lower_limit=0.01, upper_limit=0.15),
             spring=dict(folder="Springs", lower_limit=0.01, upper_limit=0.2),
-            flange=dict(folder="Unthreaded_Flanges", lower_limit=0.01, upper_limit=0.3),
+            flange=dict(folder="Unthreaded_Flanges", lower_limit=0.01, upper_limit=0.2),
             bracket=dict(folder="Brackets", lower_limit=0.01, upper_limit=0.3),
             collet=dict(folder="Collets", lower_limit=0.01, upper_limit=0.1),
             pipe=dict(folder="Pipes", lower_limit=0.01, upper_limit=0.4),
             pipe_fitting=dict(folder="Pipe_Fittings", lower_limit=0.01, upper_limit=0.15),
-            pipe_joint=dict(folder="Pipe_Joints", lower_limit=0.01, upper_limit=0.2),
+            pipe_joint=dict(folder="Pipe_Joints", lower_limit=0.01, upper_limit=0.1),
             bushing=dict(folder="Bushing", lower_limit=0.01, upper_limit=0.15),
             roller=dict(folder="Rollers", lower_limit=0.01, upper_limit=0.1),
             busing_liner=dict(folder="Bushing_Damping_Liners", lower_limit=0.01, upper_limit=0.15),
@@ -248,9 +132,9 @@ class ABCImporter(object):
         logger.debug(f"filename={filename}")
         file_path = osp.join(dir_path, filename)
 
-        old_names = _get_current_items(bpy.data.objects)
+        old_names = get_current_items(bpy.data.objects)
         bpy.ops.import_mesh.stl(filepath=file_path)
-        new_names = _find_new_items(bpy.data.objects, old_names)
+        new_names = find_new_items(bpy.data.objects, old_names)
         if len(new_names) > 1:
             raise AssertionError("multiple new object names, cannot identify new object")
         temp_name = new_names[0]
@@ -298,7 +182,7 @@ if __name__ == "__main__":
     bpy.ops.wm.read_homefile(use_empty=True)
     logger.info("opened a blend file")
 
-    _set_viewport_shader()
+    set_viewport_shader()
     logger.info("set shading to MATERIAL")
 
     abc_importer = ABCImporter(n_materials=10)
@@ -320,7 +204,7 @@ if __name__ == "__main__":
         bpy.ops.wm.read_homefile(use_empty=True)
         logger.info("opened a blend file")
 
-        _set_viewport_shader()
+        set_viewport_shader()
         logger.info("set shading to MATERIAL")
 
         abc_importer = ABCImporter(n_materials=10)
