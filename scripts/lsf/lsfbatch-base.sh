@@ -27,8 +27,8 @@
 #BSUB -n 1
 #
 # Specify the number of CPU cores per job slot. A job slot is always guaranteed
-# to be on one host. Here, specify 3. The default is 1 CPU per job slot.
-#BSUB -R "affinity[core(4)]"
+# to be on one host. Here, specify 4. The default is 1 CPU per job slot.
+# #BSUB -R "affinity[core(4)]"
 #
 # Receive email notifications.  Specify when to receive emails.
 #BSUB -B			    # receive email when job starts
@@ -103,7 +103,7 @@ AMIRA_DATA_GFX=$SSD_TMP/amira_data_gfx \
     abrgen --config path/to/config
 
 # --- Step 3 --- copy results to user directory
-cd $SSD_TMP && tar -cf $HDD/RenderResult-$LSF_JOBID.tar ./PhIRM
+cd $SSD_TMP && tar -cf $HDD/RenderResult-$LSB_JOBID.tar ./PhIRM
 
 # --- Step 4 --- clean and finalize
 cd $HOME && rm -rf $SSD_TMP

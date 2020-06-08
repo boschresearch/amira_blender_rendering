@@ -56,12 +56,8 @@ def parse_args():
                         help='Number of required GPUs for batch job. Default: 2')
     parser.add_argument('--gpu-type', metavar='type', type=str, dest='gpu_type', default='rb_basic',
                         help='Type of GPU to load [rb_basic, rb_highend]. Default: rb_basic')
-    parser.add_argument('--job-slots', metavar='N', type=int, dest='job_slots', default=1,
-                        help='Number of job slots to instantiate. Default: 1')
-    parser.add_argument('--cpu', metavar='N', type=int, default=4,
-                        help='Number of required CPUs for batch job. Default: 4')
-    parser.add_argument('--ram', metavar='N', type=int, default=4,
-                        help='RAM to allocate (in GB) per job slots. Default: 4')
+    parser.add_argument('--cpu', metavar='N', type=int, default=4, help='Number of required CPUs. Default: 4')
+    parser.add_argument('--ram', metavar='N', type=int, default=8, help='RAM to allocate (in GB). Default: 8')
     parser.add_argument('--hh', type=int, default=0, help='Number of hours of life for the batch job. Default: 0')
     parser.add_argument('--mm', type=int, default=5, help='Number of mins of life for the batch job. Default: 5')
     parser.add_argument('--amira-storage', metavar='pa/th', type=str, dest='amira_storage',
@@ -94,9 +90,8 @@ Conversely default values will be used and these might affect the lifespan of th
 def get_scheduler_directives(job_name: str = 'BlenderRender',
                              gpu: int = 2,
                              gpu_type: str = 'rb_basic',
-                             job_slots: int = 1,
                              cpu: int = 4,
-                             ram: int = 4,
+                             ram: int = 8,
                              hh: int = 0,
                              mm: int = 5):
     """
@@ -106,9 +101,8 @@ def get_scheduler_directives(job_name: str = 'BlenderRender',
         job_name(str): job name
         gpu(int): number of required GPUs. Default: 2
         gpu_type(str): type of GPUs, [rb_basic: GeForce, rb_highend: VOLTAS]. Default: rb_basic
-        job_slots(int): number of job slots. Default: 1
         cpu(int): number of required CPUs per job slot. Detault: 4
-        ram(int): RAM (in GB) to allocate per job slot. Default: 4 GB
+        ram(int): RAM (in GB) to allocate per job slot. Default: 8 GB
         hh(int): hours the job should live. Default: 0
         mm(int): minutes the job should live. Default: 5
 
@@ -123,20 +117,11 @@ def get_scheduler_directives(job_name: str = 'BlenderRender',
 #BSUB -o /home/%u/lsf_out/%x.%j.out
 #BSUB -e /home/%u/lsf_out/%x.%j.err
 #
-# GPU, CPU, MEM configuration
+# CPU, MEM, GPU, GPU type configuration
+#BSUB -n {cpu}
+#BSUB -M {ram*1024}
 #BSUB -gpu "num={gpu}"
-#
-# specify type of GPU. rb_basic are GeForce. rb_highend are VOLTAS
 #BSUB -q {gpu_type}
-#
-# number of job slots.
-#BSUB -n {job_slots}
-#
-# number of CPU cores per job slot.
-#BSUB -R "affinity[core({cpu})]"
-#
-# RAM per core in MB
-#BUSB --M {ram}000
 #
 # Mail notifications (begin and end)
 #BSUB -B
@@ -157,9 +142,8 @@ def gen_script(cfgfile: str,
                conda_version: str = '4.4.8-readonly',
                gpu: int = 2,
                gpu_type: str = 'rb_basic',
-               job_slots: int = 1,
                cpu: int = 4,
-               ram: int = 4,
+               ram: int = 8,
                hh: int = 0,
                mm: int = 5,
                amira_storage: str = '/fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA',
@@ -176,9 +160,8 @@ def gen_script(cfgfile: str,
         conda_version(str): conda module version to load. Default: 4.4.8-readonly
         gpu(int): number of required GPUs. Default: 2
         gpu_type(str): type of GPUs, [rb_basic: GeForce, rb_highend: VOLTAS]. Default: rb_basic
-        job_slots(int): number of job slots. Default: 1
         cpu(int): number of required CPUs. Detault: 4
-        ram(int): RAM (in GB) to allocate. Default: 4 GB
+        ram(int): RAM (in GB) to allocate. Default: 8 GB
         hh(int): hours the job should live. Default: 0
         mm(int): minutes the job should live. Default: 5
         amira_storage(str): base path where data are read from. Default: /fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA
@@ -195,7 +178,7 @@ def gen_script(cfgfile: str,
 # For more information about the content of this file, see the files
 # in the directory $SLURMTEMPLATE on the RNG GPU cluster
 #
-{get_scheduler_directives(job_name, gpu, gpu_type, job_slots, cpu, ram, hh, mm)}
+{get_scheduler_directives(job_name, gpu, gpu_type, cpu, ram, hh, mm)}
 
 . /fs/applications/lsf/latest/conf/profile.lsf  # THIS LINE IS MANDATORY
 . /fs/applications/modules/current/init/bash    # THIS LINE IS MANDATORY
@@ -227,17 +210,17 @@ fi
 
 # --- Step 1 --- setup
 SSD_TMP=`mktemp -d -p $SSD`
-tar -C $SSD_TMP -xf $AMIRA_STORAGE/OpenImagesV4.tar
+# tar -C $SSD_TMP -xf $AMIRA_STORAGE/OpenImagesV4.tar
 # fix wrong directory name
-mv $SSD_TMP/OpenImageV4 $SSD_TMP/OpenImagesV4
+# mv $SSD_TMP/OpenImageV4 $SSD_TMP/OpenImagesV4
 # copying data gfx
-cp -r $AMIRA_STORAGE/amira_data_gfx $SSD_TMP
+# cp -r $AMIRA_STORAGE/amira_data_gfx $SSD_TMP
 
 # --- Step 2 --- render
-AMIRA_DATASETS=$SSD_TMP AMIRA_DATA_GFX=$SSD_TMP/amira_data_gfx scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile}
+AMIRA_DATASETS=$SSD_TMP AMIRA_DATA_GFX=$AMIRA_STORAGE/amira_data_gfx AMIRA_DATA_STORAGE=$AMIRA_STORAGE scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile}
 
 # --- Step 3 --- copy results to user directory
-cd $SSD_TMP && tar -cf $HDD/{job_name}-$LSF_JOBID.tar ./PhIRM
+cd $SSD_TMP && tar cf $HDD/{job_name}-$LSB_JOBID.tar ./PhIRM
 
 # --- Step 4 --- clean and finalize
 cd $HOME && rm -rf $SSD_TMP
@@ -262,7 +245,6 @@ if __name__ == "__main__":
                             conda_version=args.conda,
                             gpu=args.gpu,
                             gpu_type=args.gpu_type,
-                            job_slots=args.job_slots,
                             cpu=args.cpu,
                             ram=args.ram,
                             hh=args.hh,

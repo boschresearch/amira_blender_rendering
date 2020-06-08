@@ -5,28 +5,29 @@
 
 # required positional argument to select desired basename for config/slurmbatch.sh scripts
 BASENAME=${1?Error: no BASENAME for lsfbatch .sh script to deploy given}
+# optional (positional) argument to define path to config
+BASEPATH=${2:-$HOME/amira_blender_rendering/config}
 # optional (positional) argument to generate slurm bash scripts
-GENSCRIPTS=${2:-False}
+GENSCRIPTS=${3:-False}
 # optional (positional) argument to control clean-up after execution
-CLEAN=${3:-False}
+CLEAN=${4:-False}
 # optional (positional) argument to control deployment
-DEPLOY=${4:-True}
+DEPLOY=${5:-True}
 
 # optional script generation
 if [[ $GENSCRIPTS == "True" ]]; then
 
     # setup
     CFGBASENAME=$BASENAME
-    CFGBASEPATH=$HOME/amira_blender_rendering/config
+    CFGBASEPATH=$BASEPATH
     PYENVNAME=blender
     CUDNN_VERSION=10.1_v7.6
     CONDA_VERSION=4.4.8-readonly
     GPU=2
     GPU_TYPE=rb_basic
-    JOB_SLOTS=1
     CPU=4
-    RAM=4
-    HH=24
+    RAM=8
+    HH=36
     MM=0
     AMIRA_STORAGE=/fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA
     ABR=$HOME/amira_blender_rendering
@@ -41,7 +42,6 @@ if [[ $GENSCRIPTS == "True" ]]; then
     echo "conda_version:  $CONDA_VERSION"
     echo "gpus:           $GPU"
     echo "gpu_type:       $GPU_TYPE"
-    echo "job_slots:      $JOB_SLOTS"
     echo "cpus:           $CPU"
     echo "ram:            $RAM"
     echo "hh:mm           $HH:$MM"
@@ -63,11 +63,10 @@ if [[ $GENSCRIPTS == "True" ]]; then
         $CFGBASENAME \
         $CFGBASEPATH \
         $PYENVNAME \
-	    --cudnn $CUDNN_VERSION \
+        --cudnn $CUDNN_VERSION \
         --conda $CONDA_VERSION \
         --gpu $GPU \
         --gpu-type $GPU_TYPE \
-        --job-slots $JOB_SLOTS \
         --cpu $CPU \
         --ram $RAM \
         --hh $HH \
