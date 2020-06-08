@@ -31,6 +31,11 @@ without having to manually re-install ABR afterwards.
 There's also the possibility to use ABR without any installation procedure. More
 about this can be found in :doc:`using`.
 
+NOTE: both the above installation commands will install ABR in your currently 
+referenced Python distribution. To play around with ABR without messing up
+your standard/default distribution, we recommed to create and use a dedicated 
+environment, e.g., using Conda or virtualenv.
+
 
 (Optional) Setting up blender with a custom python installation
 ---------------------------------------------------------------
@@ -166,3 +171,15 @@ numpy, torch, etc.
     >>> import numpy, torch, imageio
 
 without getting an ImportError.
+If this worked out, you can finally install ABR in your local virtualenv by running
+from ABR root dir (where setup.py is located)
+
+.. code-block:: bash
+
+    (blender-venv) $ pip install .
+
+or, for the `editable` version
+
+.. code-block:: bash
+
+    (blender-venv) $ pip install -e .
