@@ -5,12 +5,14 @@
 
 # required positional argument to select desired basename for config/slurmbatch.sh scripts
 BASENAME=${1?Error: no BASENAME for slurmbatch .sh script to deploy given}
+# optional (positional) argument to generate set base path to config
+BASEPATH=${2:-$HOME/amira_blender_rendering/config}
 # optional (positional) argument to generate slurm bash scripts
-GENSCRIPTS=${2:-False}
+GENSCRIPTS=${3:-False}
 # optional (positional) argument to control clean-up after execution
-CLEAN=${3:-False}
+CLEAN=${4:-False}
 # optional (positional) argument to control deployment
-DEPLOY=${4:-True}
+DEPLOY=${5:-True}
 
 # optional script generation
 if [[ $GENSCRIPTS == "True" ]]; then
@@ -18,7 +20,7 @@ if [[ $GENSCRIPTS == "True" ]]; then
     # setup
     NAME=marco.todescato
     CFGBASENAME=$BASENAME
-    CFGBASEPATH=$HOME/amira_blender_rendering/config
+    CFGBASEPATH=$BASEPATH
     PYENVNAME=blender
     CUDNN_VERSION=10.0_v7.3.1
     GPU=4
