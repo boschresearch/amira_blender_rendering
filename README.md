@@ -1,42 +1,35 @@
 # amira_blender_rendering
 
 * [About](#about)
-* [Maintainers](#maintainers)
+* [Maintainers](#authors)
 * [Contributors](#contributors)
-* [License](#license)
 * [How it works and how to use it](#use)
 * [How to extend with your own scene](#extending)
 * [How to build and test it](#build)
 * [Documentation](#docs)
 * [Installation](#install)
-* [Blender installation and modification of default python](#blenderinstall)
-* [Headless Rendering on the GPU Cluster](#clusterrendering)
+* [License](#license)
 * [Used 3rd party Licenses](#licenses)
-
-**TODOs**: remove unnecessary links after related content has been moved
-
 
 ## About<a name="about"></a>
 
-Tools for photorealistic rendering with Blender.
+AMIRA Blender Rendering: a tool for photorealistic rendering with Blender.
 
-## Maintainers<a name="maintainers"></a>
+The project is intended to provide a lean programmatic framework for
+physics-based photorealistic rendering and make it available to both expert
+and beginner user.
+
+The project builds upon [Blender](www.blender.org) rendering cababilities and its Python API (bpy).
+
+
+## Original Authors<a name="authors"></a>
 
 * [Nicolai Waniek](mailto:Nicolai.Waniek@de.bosch.com)
 
 ## Contributors<a name="contributors"></a>
 
-* [Nicolai Waniek](mailto:Nicolai.Waniek@de.bosch.com)
-* [Marco Todescato](mailto:Marco.Todescato@de.bosch.com)
-* [Markus Spies](mailto:Markus.Spies2@de.bosch.com)
-* [Yoel Shapiro](mailto:Yoel.Shapiro@il.bosch.com)
-
-## License<a name="license"></a>
-
-**TODO**: Add proper license
-
-**TODO**: check license of all external / mirrored repositories / software /
-parts that ended up in amira_blender_rendering
+See [NOTICE](./NOTICE) file for an update list of the current holders
+and contributors to AMIRA Blender Rendering.
 
 ## How it works and how to use it<a name="use"></a>
 
@@ -127,22 +120,19 @@ sphinx-rtd-theme to be installed in your current python3 environment
 
 Please refer to the [documentation](#docs)
 
-**TODOs**:
-* make (some) tutorial(s)?
-
 
 ## Troubleshooting<a name="troubleshooting"></a>
 
 Please refer to the [documentation](#docs)
 
+
+## License<a name="license"></a>
+
+AMIRA Blender Rendering is opened-source under the Apache-2.0 license. 
+as per the [LICENSE](./LICENSE) notice
+
+
 ## Used 3rd party Licenses<a name="licenses"></a>
-
+ 
 The package dependencies include Blender, using the Cycles rendering engine.
-
-Software | License
-------------------
-[Blender](https://www.blender.org/about/license/) | [GPL](http://www.gnu.org/licenses/gpl-3.0.html)
-[Cycles Rendering Engine](https://www.blender.org/about/license/) | [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0.txt)
-
-
-
+See [3rd party licenses](./3rd-party-licenses.md) for a comprehesinve list.
