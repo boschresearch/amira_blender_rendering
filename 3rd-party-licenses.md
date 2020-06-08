@@ -4,6 +4,9 @@ Third Party Licenses
 AMIRA Blender Rendering builds upon and make use of Python3 STL and 
 Blender Python API (bpy) in the form of python libraries.
 
+**NOTE** 
+ABR does neither extend nor contribute to the mentioned (or other) softwares.  
+
 
 Software
 --------
