@@ -1,14 +1,32 @@
 #!/usr/bin/env python
 
 import bpy
-import numpy as np
 from mathutils import Vector
+
 from amira_blender_rendering.utils.logging import get_logger
+
+
+def get_current_items(bpy_collection):
+    names = list()
+    for item in bpy_collection.items():
+        names.append(item[0])
+    return names
+
+
+def find_new_items(bpy_collection, old_names):
+    new_names = get_current_items(bpy_collection)
+    diff = list()
+    for n_item in new_names:
+        if n_item not in old_names:
+            diff.append(n_item)
+    return diff
+
 
 def unlink_objects():
     for scene in bpy.data.scenes:
         for c in scene.collection.children:
             scene.collection.children.unlink(c)
+
 
 def remove_nodes(scene):
     nodes = scene.node_tree.nodes
@@ -41,7 +59,7 @@ def activate_cuda_devices():
     if not cuda_available:
         get_logger().warn("No CUDA compute device available, will use CPU")
     else:
-        device_set = False
+        device_set = False  # FIXME: unused variable
         for d in prefs.devices:
             if d.type == 'CUDA':
                 get_logger().info(f"Using CUDA device '{d.name}' ({d.id})")
