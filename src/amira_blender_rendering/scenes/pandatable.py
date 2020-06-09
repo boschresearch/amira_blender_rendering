@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+##!/usr/bin/env python
 
 # Copyright (c) 2020 - for information on the respective copyright owner
 # see the NOTICE file and/or the repository
@@ -17,9 +17,9 @@
 # limitations under the License.
 
 """
-This file implements generation of datasets for workstation scenarios. The file
-depends on a suitable workstation scenarion blender file such as
-worstationscenarios.blend.
+This file implements generation of datasets for the Panda Table scenario. The
+file depends on a suitable panda table blender file such as
+robottable_empty.blend in $AMIRA_DATA_GFX.
 """
 
 import bpy
@@ -42,35 +42,26 @@ import amira_blender_rendering.utils.blender as blnd
 import amira_blender_rendering.interfaces as interfaces
 
 
-class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
-    """This class specifies all configuration options for WorkstationScenarios"""
+class PandaTableConfiguration(abr_scenes.BaseConfiguration):
+    """This class specifies all configuration options for the Panda Table scenario."""
 
     def __init__(self):
-        super(WorkstationScenariosConfiguration, self).__init__()
+        super(PandaTableConfiguration, self).__init__()
 
         # specific scene configuration
-        self.add_param('scene_setup.blend_file', '~/gfx/modeling/workstation_scenarios.blend', 'Path to .blend file with modeled scene')
+        self.add_param('scene_setup.blend_file', '~/gfx/modeling/robottable_empty.blend', 'Path to .blend file with modeled scene')
         self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images', 'Path to background images / environment textures')
-        self.add_param('scene_setup.cameras', ['CameraLeft', 'Camera', 'CameraRight'], 'Cameras to render')
-        self.add_param('scene_setup.forward_frames', 15, 'Number of frames in physics forward-simulation')
+        self.add_param('scene_setup.cameras', ['Camera,' 'StereoCamera.Left', 'StereoCamera.Right', 'Camera.FrontoParallel.Left', 'Camera.FrontoParallel.Right'], 'Cameras to render')
+        self.add_param('scene_setup.forward_frames', 25, 'Number of frames in physics forward-simulation')
 
-        # specific parts configuration. This is just a dummy entry for purposes
-        # of demonstration and help message generation
-        # self.add_param('parts.example_dummy', '/path/to/example_dummy.blend', 'Path to additional blender files containing invidual parts. Format must be partname = /path/to/blendfile.blend')
-        # self.add_param('parts.ply.example_dummy', '/path/to/example_dummy.ply', 'Path to PLY files containing part "example_dummy". Format must be ply.partname = /path/to/blendfile.ply')
-        # self.add_param('parts.ply_scale.example_dummy', [1.0, 1.0, 1.0], 'Scaling factor in X, Y, Z dimensions of part "example_dummy". Format must be a list of 3 floats.')
-
-        # specific scenario configuration
-        self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
+        # scenario: target objects
         self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
 
 
-
-class WorkstationScenarios(interfaces.ABRScene):
-    """base class for all workstation scenarios"""
+class PandaTable(interfaces.ABRScene):
 
     def __init__(self, **kwargs):
-        super(WorkstationScenarios, self).__init__()
+        super(PandaTable, self).__init__()
         self.logger = get_logger()
 
         # we do composition here, not inheritance anymore because it is too
@@ -79,9 +70,10 @@ class WorkstationScenarios(interfaces.ABRScene):
         self.renderman = abr_scenes.RenderManager()
 
         # extract configuration, then build and activate a split config
-        self.config = kwargs.get('config', WorkstationScenariosConfiguration())
-        if self.config.dataset.scene_type.lower() != 'WorkstationScenarios'.lower():
-            raise RuntimeError(f"Invalid configuration of scene type {self.config.dataset.scene_type} for class WorkstationScenarios")
+        self.config = kwargs.get('config', PandaTableConfiguration())
+        if self.config.dataset.scene_type.lower() != 'PandaTable'.lower():
+            raise RuntimeError(f"Invalid configuration of scene type {self.config.dataset.scene_type} for class PandaTable")
+
         # we might have to post-process the configuration
         self.postprocess_config()
 
@@ -145,7 +137,6 @@ class WorkstationScenarios(interfaces.ABRScene):
             dirinfo = build_directory_info(camera_base_path)
             self.dirinfos.append(dirinfo)
 
-
     def setup_scene(self):
         """Set up the entire scene.
 
@@ -177,8 +168,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         # calibration matrix K alongside. Because we use identical cameras, we
         # can extract this from one of the cameras
         cam_str = self.config.scene_setup.cameras[0]
-        cam_name = f"{cam_str}.{self.config.scenario_setup.scenario:03}"
-        cam = bpy.data.objects[cam_name].data
+        cam = bpy.data.objects[f'{cam_str}'].data
 
         # get the effective intrinsics
         effective_intrinsic = camera_utils.get_intrinsics(bpy.context.scene, cam)
@@ -214,7 +204,7 @@ class WorkstationScenarios(interfaces.ABRScene):
             # first get the camera name. this depends on the scene (blend file)
             # and is of the format CameraName.XXX, where XXX is a number with
             # leading zeros
-            cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
+            cam_name = f"{cam}"
             # select the camera. Blender often operates on the active object, to
             # make sure that this happens here, we select it
             blnd.select_object(cam_name)
@@ -238,16 +228,22 @@ class WorkstationScenarios(interfaces.ABRScene):
         # let's start with an empty list
         self.objs = []
 
+        # first reset the render pass index for all panda model objects (links,
+        # hand, etc)
+        links = [f'Link-{i}' for i in range(8)] + ['Finger-Left', 'Finger-Right', 'Hand']
+        for link in links:
+            bpy.data.objects[link].pass_index = 0
+
         # extract all objects from the configuration. An object has a certain
         # type, as well as an own id. this information is storeed in the objs
         # list, which contains a dict. The dict contains the following keys:
         #       id_mask             used for mask computation, computed below
         #       object_class_name   type-name of the object
         #       object_class_id     model type ID (simply incremental numbers)
-        #       object_id           instance ID of the object
-        #       bpy                 blender object reference
-        n_types = 0       # count how many types we have
-        n_instances = []  # count how many instances per type we have
+        #       object_id   instance ID of the object
+        #       bpy         blender object reference
+        n_types = 0      # count how many types we have
+        n_instances = [] # count how many instances per type we have
         for obj_type_id, obj_spec in enumerate(self.config.scenario_setup.target_objects):
             obj_type, obj_count = obj_spec.split(':')
             n_types += 1
@@ -293,6 +289,11 @@ class WorkstationScenarios(interfaces.ABRScene):
                         new_obj = bpy.context.object
                         new_obj.name = f'{obj_type}.{j:03d}'
 
+                # move object to collection
+                collection = bpy.data.collections['TargetObjects']
+                if new_obj.name not in collection.objects:
+                    collection.objects.link(new_obj)
+
                 # append all information
                 self.objs.append({
                         'id_mask': '',
@@ -334,7 +335,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         # long as this was not modified within blender). The scale is the scale
         # along the axis in one direction, i.e. the full extend along this
         # direction is 2 * scale.
-        dropbox = f"Dropbox.{self.config.scenario_setup.scenario:03}"
+        dropbox = f"Dropbox.000"
         drop_location = bpy.data.objects[dropbox].location
         drop_scale = bpy.data.objects[dropbox].scale
 
@@ -373,13 +374,13 @@ class WorkstationScenarios(interfaces.ABRScene):
         # first get the camera name. this depends on the scene (blend file)
         # and is of the format CameraName.XXX, where XXX is a number with
         # leading zeros
-        cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
+        cam_name = f"{cam}"
         bpy.context.scene.camera = bpy.context.scene.objects[cam_name]
 
 
     def test_visibility(self):
         for i_cam, cam in enumerate(self.config.scene_setup.cameras):
-            cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
+            cam_name = f"{cam}"
             cam_obj = bpy.data.objects[cam_name]
             for obj in self.objs:
                 not_visible_or_occluded = abr_geom.test_occlusion(
@@ -393,11 +394,32 @@ class WorkstationScenarios(interfaces.ABRScene):
                         origin_offset=0.01)
                 if not_visible_or_occluded:
                     self.logger.warn(f"object {obj} not visible or occluded")
-                    self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
-                    bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
+                    self.logger.info(f"saving blender file for debugging to /tmp/robottable.blend")
+                    bpy.ops.wm.save_as_mainfile(filepath="/tmp/robottable.blend")
                     return False
 
         return True
+
+
+    def generate_viewsphere_dataset(self):
+        # TODO: This dataset does not yet suppor viewsphere data generation
+        raise NotImplementedError()
+
+
+    def dump_config(self):
+        """Dump configuration to a file in the output folder(s)."""
+        # dump config to each of the dir-info base locations, i.e. for each
+        # camera that was rendered we store the configuration
+        for dirinfo in self.dirinfos:
+            output_path = dirinfo.base_path
+            pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
+            dump_config(self.config, output_path)
+
+
+    def teardown(self):
+        """Tear down the scene"""
+        # nothing to do
+        pass
 
 
     def generate_dataset(self):
@@ -460,24 +482,3 @@ class WorkstationScenarios(interfaces.ABRScene):
                 i = i + 1
 
         return True
-
-
-    def generate_viewsphere_dataset(self):
-        # TODO: This dataset does not yet suppor viewsphere data generation
-        raise NotImplementedError()
-
-
-    def dump_config(self):
-        """Dump configuration to a file in the output folder(s)."""
-        # dump config to each of the dir-info base locations, i.e. for each
-        # camera that was rendered we store the configuration
-        for dirinfo in self.dirinfos:
-            output_path = dirinfo.base_path
-            pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
-            dump_config(self.config, output_path)
-
-
-    def teardown(self):
-        """Tear down the scene"""
-        # nothing to do
-        pass

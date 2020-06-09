@@ -1,5 +1,21 @@
 #!/usr/bin/env python
 
+# Copyright (c) 2020 - for information on the respective copyright owner
+# see the NOTICE file and/or the repository
+# <https://github.com/boschresearch/amira-blender-rendering>.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import bpy
 from amira_blender_rendering.utils.logging import get_logger
@@ -138,7 +154,7 @@ class CompositorNodesOutputRenderedObjects():
         # add nodes and sockets for all masks
         for i, obj in enumerate(objs):
             # setup object (this will change the pass index). The pass_index must be > 0 for the mask to work.
-            obj['bpy'].pass_index = i + 1
+            obj['bpy'].pass_index = i + 1337
 
             # mask
             n_id_mask = nodes.new('CompositorNodeIDMask')
