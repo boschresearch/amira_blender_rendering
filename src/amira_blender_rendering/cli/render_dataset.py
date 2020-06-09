@@ -1,5 +1,21 @@
 #!/usr/bin/env python
 
+# Copyright (c) 2020 - for information on the respective copyright owner
+# see the NOTICE file and/or the repository
+# <https://github.com/boschresearch/amira-blender-rendering>.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """This script can be used to generate the workstation scenario datasets.
 
 The script must be run in blender, for instance from the command line using:
@@ -45,6 +61,8 @@ def import_abr(path=None):
     # NOTE: this is essentially the same code as in scripts/phirm. changes here
     # should likely be reflected there
     global abr, WorkstationScenarios, WorkstationScenariosConfiguration, expandpath, get_logger
+    global PandaTable, PandaTableConfiguration
+
     if path is None:
         try:
             import amira_blender_rendering as abr
@@ -69,6 +87,7 @@ def import_abr(path=None):
     import amira_blender_rendering.scenes
     from amira_blender_rendering.utils.io import expandpath
     from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
+    from amira_blender_rendering.scenes.pandatable import PandaTable, PandaTableConfiguration
     from amira_blender_rendering.utils.logging import get_logger
 
 
@@ -125,6 +144,7 @@ def get_scene_types():
     #       mechanism that 'knows' all scenarios
     from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
     from amira_blender_rendering.scenes.simpletoolcap import SimpleToolCap, SimpleToolCapConfiguration
+    from amira_blender_rendering.scenes.pandatable import PandaTable, PandaTableConfiguration
 
     # each scenario consists of a name, and a tuple containing the scenario as
     # well as its configuration
@@ -132,7 +152,9 @@ def get_scene_types():
         'SimpleToolCap':
             [SimpleToolCap, SimpleToolCapConfiguration],
         'WorkstationScenarios':
-            [WorkstationScenarios, WorkstationScenariosConfiguration]
+            [WorkstationScenarios, WorkstationScenariosConfiguration],
+        'PandaTable':
+            [PandaTable, PandaTableConfiguration],
         }
 
 

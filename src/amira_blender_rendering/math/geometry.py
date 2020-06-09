@@ -1,5 +1,21 @@
 #!/usr/bin/env python
 
+# Copyright (c) 2020 - for information on the respective copyright owner
+# see the NOTICE file and/or the repository
+# <https://github.com/boschresearch/amira-blender-rendering>.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """This module contains functions for (projective) geometry.
 
 The file also contains functions that are commonly used in this domain, such as
@@ -86,8 +102,8 @@ def get_relative_rotation(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.c
     Returns:
         Euler angles given in radians
     """
-    obj1_m = obj1.rotation_euler.to_matrix()
-    obj2_m = obj2.rotation_euler.to_matrix()
+    obj1_m = obj1.matrix_world.to_3x3().normalized()
+    obj2_m = obj2.matrix_world.to_3x3().normalized()
     rel_rotation = (obj2_m.inverted() @ obj1_m).to_euler()
     return rel_rotation
 
@@ -137,8 +153,8 @@ def get_relative_rotation_to_cam_rad(obj, cam, zeroing=Vector((pi/2, 0, 0))):
         Relative rotation between object and camera in the coordinate frame of
         the camera.
     """
-    obj_m = obj.rotation_euler.to_matrix()
-    cam_m = cam.rotation_euler.to_matrix()
+    obj_m = obj.matrix_world.to_3x3().normalized()
+    cam_m = cam.matrix_world.to_3x3().normalized()
     rel_rotation = cam_m.inverted() @ obj_m
     cam_rot = Euler([zeroing[0], zeroing[1], zeroing[2]]).to_matrix()
     return (cam_rot @ rel_rotation).to_euler()
@@ -159,8 +175,8 @@ def get_relative_translation(obj1: bpy.types.Object, obj2: bpy.types.Object = bp
     """
 
     # get vector in world coordinats and rotate into object cordinates
-    v = obj1.location - obj2.location
-    rot = obj2.rotation_euler.to_matrix()
+    v = obj1.matrix_world.to_translation() - obj2.matrix_world.to_translation()
+    rot = obj2.matrix_world.to_3x3().normalized()
     return rot.inverted() @ v
 
 
@@ -336,8 +352,8 @@ def get_world_to_object_transform(cam2obj_pose: dict, camera: bpy.types.Object =
 
     # world to camera transformation
     M_w2c = np.eye(4)
-    M_w2c[:3, :3] = camera.rotation_euler.to_matrix()
-    M_w2c[:3, 3] = camera.location
+    M_w2c[:3, :3] = camera.matrix_world.to_3x3().normalized()
+    M_w2c[:3, 3] = camera.matrix_world.to_translation()
 
     # world to object
     M_w2o = M_w2c.dot(M_c2o)
