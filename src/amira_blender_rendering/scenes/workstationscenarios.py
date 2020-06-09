@@ -33,7 +33,7 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         super(WorkstationScenariosConfiguration, self).__init__()
 
         # specific scene configuration
-        self.add_param('scene_setup.blend_file', '~/gfx/modeling/workstation_scenarios.blend', 'Path to .blend file with modeled scene')
+        self.add_param('scene_setup.blend_file', '/home/pll1tv/PycharmProjects/amira_data_gfx/modeling/workstation_scenarios.blend', 'Path to .blend file with modeled scene')
         self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images', 'Path to background images / environment textures')
         self.add_param('scene_setup.cameras', ['CameraLeft', 'Camera', 'CameraRight'], 'Cameras to render')
         self.add_param('scene_setup.forward_frames', 15, 'Number of frames in physics forward-simulation')
@@ -106,9 +106,11 @@ class WorkstationScenarios(interfaces.ABRScene):
 
         for part in self.config.parts.ply_scale:
             vs = self.config.parts.ply_scale[part]
+            # print(f"part: {part}  vs: {vs}  is list: {isinstance(vs, list)}")
             vs = [v.strip() for v in vs.split(',')]
             vs = [float(v) for v in vs]
             self.config.parts.ply_scale[part] = vs
+        # print('End of postprocess_config \n \n')
 
 
     def setup_dirinfo(self):
@@ -135,6 +137,7 @@ class WorkstationScenarios(interfaces.ABRScene):
 
         Here, we simply load the main blender file from disk.
         """
+        print(self.config.scene_setup.blend_file)
         bpy.ops.wm.open_mainfile(filepath=expandpath(self.config.scene_setup.blend_file))
         # we need to hide all dropboxes and dropzones in the viewport, otherwise
         # occlusion testing will not work, because blender's ray_cast method
@@ -202,6 +205,8 @@ class WorkstationScenarios(interfaces.ABRScene):
             # select the camera. Blender often operates on the active object, to
             # make sure that this happens here, we select it
             blnd.select_object(cam_name)
+            # set camera location
+            bpy.data.objects[cam_name].location = (0, 0, 3)
             # modify camera according to the intrinsics
             blender_camera = bpy.data.objects[cam_name].data
             # set the calibration matrix
@@ -448,8 +453,84 @@ class WorkstationScenarios(interfaces.ABRScene):
 
     def generate_viewsphere_dataset(self):
         # TODO: This dataset does not yet suppor viewsphere data generation
-        raise NotImplementedError()
+        """This will generate the dataset according to the configuration that
+               was passed in the constructor.
+               """
+        # filename setup
+        image_count = self.config.dataset.image_count
+        if image_count <= 0:
+            return False
+        format_width = int(ceil(log(image_count, 10)))
 
+        i = 0
+        while i < self.config.dataset.image_count:
+            self.logger.info(f"Generating image {i + 1} of {self.config.dataset.image_count}")
+
+            # randomize scene: move objects at random locations, and forward
+            # simulate physics
+            self.randomize_environment_texture()
+            self.randomize_object_transforms()
+            self.forward_simulate()
+
+            # set camera locations
+            self.config.scene_setup.num_camera_locations = int(self.config.scene_setup.num_camera_locations)
+            if self.config.scene_setup.num_camera_locations > 1:
+                locations_list = camera_utils.generate_locations_list(num_locations=self.config.scene_setup.num_camera_locations)
+
+            # repeat if the cameras cannot see the objects
+            repeat_frame = False
+            if not self.test_visibility():
+                self.logger.warn(f"\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
+                repeat_frame = True
+            else:
+                # loop through all cameras
+                for i_cam, cam in enumerate(self.config.scene_setup.cameras):
+                    # activate camera
+                    self.activate_camera(cam)
+                    for i_loc, loc in enumerate(locations_list):
+                        # generate render filename
+                        base_filename = f"camera_{i_cam:04}_location_{i_loc:04}"
+                        # update camera location
+                        self.set_camera_location(location=loc)
+                        # update path information in compositor
+                        self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
+                        # finally, render
+                        self.renderman.render()
+
+                        # postprocess. this will take care of creating additional
+                        # information, as well as fix filenames
+                        try:
+                            self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
+                                                   bpy.context.scene.camera, self.objs,
+                                                   self.config.camera_info.zeroing)
+                        except ValueError:
+                            # This issue happens every now and then. The reason might be (not
+                            # yet verified) that the target-object is occluded. In turn, this
+                            # leads to a zero size 2D bounding box...
+                            self.logger.error(
+                                f"\033[1;31mValueError during post-processing, re-generating image index {i}\033[0;37m")
+                            repeat_frame = True
+
+                            # no need to continue with other cameras
+                            break
+
+            # if we need to repeat this frame, then do not increment the counter
+            if not repeat_frame:
+                i = i + 1
+        return True
+
+    def set_camera_location(self, location=(0, 0, 2)):
+        scene = bpy.context.scene
+        for cam in self.config.scene_setup.cameras:
+            # first get the camera name. this depends on the scene (blend file)
+            # and is of the format CameraName.XXX, where XXX is a number with
+            # leading zeros
+            cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
+            # select the camera. Blender often operates on the active object, to
+            # make sure that this happens here, we select it
+            blnd.select_object(cam_name)
+            # set camera location
+            bpy.data.objects[cam_name].location = location
 
     def dump_config(self):
         """Dump configuration to a file in the output folder(s)."""

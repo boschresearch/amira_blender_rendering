@@ -159,7 +159,7 @@ def determine_scene_type(config_file):
 
 def main():
     # parse command arguments
-    cmd_parser = get_cmd_argparser()
+    cmd_parser = get_cmd_argparser('--abr-path', '~/work')
     cmd_args = cmd_parser.parse_known_args(args=get_argv())[0]  # need to parse to get aps and abr
     import_abr(cmd_args.abr_path)
 
@@ -181,6 +181,7 @@ def main():
 
     # instantiate configuration
     config = scene_types[scene_type_str.lower()][1]()
+    print(f"\n\n scene_setup.blend_file: {config.scene_setup.blend_file} \n\n")
 
     # combine parsers and parse command line arguments
     parser = argparse.ArgumentParser(
