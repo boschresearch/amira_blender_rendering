@@ -16,7 +16,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import amira_blender_rendering.version
-__version__ = amira_blender_rendering.version.__version__
-__pkgdir__ = os.path.dirname(__file__)
+import setuptools
+
+
+def requirements():
+    with open('requirements.txt') as f:
+        return f.read().splitlines()
+
+
+def readme():
+    with open('README.md') as f:
+        return f.read()
+
+
+setuptools.setup(
+    name='abr_dataset_tools',
+    packages=['abr_dataset_tools'],
+    package_dir={'abr_dataset_tools': 'abr_dataset_tools'},
+    version='1.0',
+    description='API to handle datasets genereted with AMIRA Blender Rendering',
+    long_description=readme(),
+    author='AMIRA',
+    python_requires='>=3.7.*, <4',
+    classifiers=[
+        'Intended Audience :: Developers',
+        'Intended Audience :: End Users',
+        'Programming Language :: Python :: 3.7',
+    ],
+    install_requires=requirements(),
+)

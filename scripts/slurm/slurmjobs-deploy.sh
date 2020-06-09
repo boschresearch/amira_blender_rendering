@@ -20,6 +20,7 @@ if [[ $GENSCRIPTS == "True" ]]; then
     CFGBASENAME=$BASENAME
     CFGBASEPATH=$HOME/amira_blender_rendering/config
     PYENVNAME=blender
+    CUDNN_VERSION=10.0_v7.3.1
     GPU=4
     CPU=4
     SSD=20
@@ -35,6 +36,7 @@ if [[ $GENSCRIPTS == "True" ]]; then
     echo "cfg_base_name: $CFGBASENAME"
     echo "cfg_base_path: $CFGBASEPATH"
     echo "python env:    $PYENVNAME"
+    echo "cudnn_version: $CUDNN_VERSION"
     echo "gpus:          $GPU"
     echo "cpus:          $CPU"
     echo "ssd:           $SSD"
@@ -57,6 +59,7 @@ if [[ $GENSCRIPTS == "True" ]]; then
         $CFGBASENAME \
         $CFGBASEPATH \
         $PYENVNAME \
+	--cudnn $CUDNN_VERSION \
         --gpu $GPU \
         --cpu $CPU \
         --ssd $SSD \
