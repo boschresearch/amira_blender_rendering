@@ -159,7 +159,7 @@ def determine_scene_type(config_file):
 
 def main():
     # parse command arguments
-    cmd_parser = get_cmd_argparser('--abr-path', '~/work')
+    cmd_parser = get_cmd_argparser()
     cmd_args = cmd_parser.parse_known_args(args=get_argv())[0]  # need to parse to get aps and abr
     import_abr(cmd_args.abr_path)
 
@@ -216,8 +216,10 @@ def main():
     # generate the dataset
     success = False
     if cmd_args.viewsphere:
+        print('\n\n\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Viewsphere \n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n\n')
         success = scene.generate_viewsphere_dataset()
     else:
+        print('\n\n\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n Single Camera \n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n\n')
         success = scene.generate_dataset()
     if not success:
         get_logger().error("Error while generating dataset")
