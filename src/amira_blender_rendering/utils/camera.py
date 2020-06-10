@@ -107,7 +107,7 @@ def set_camera_info(scene, cam, camera_info):
             else:
                 _setup_render_size_from_intrinsics(scene, intrinsics)
         logger.info("Setting camera information from hFOV")
-        _setup_camera_by_hfov(scene, cam, hfov)
+        _setup_camera_by_hfov(scene, cam, radians(hfov))
 
     # if the user did not specify (sensor width & focal length) || (fov), then
     # we will use the intrinsics to compute the field of view
@@ -184,7 +184,7 @@ def _setup_camera_by_hfov(scene, cam, hfov):
     cam.type = 'PERSP'
     cam.sensor_fit = 'HORIZONTAL'
     cam.lens_unit = 'FOV'
-    cam.lens = radians(hfov)
+    cam.lens = hfov
 
 
 def _setup_camera_intrinsics_to_mm(scene, cam, intrinsics):
