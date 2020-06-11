@@ -33,8 +33,7 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         super(WorkstationScenariosConfiguration, self).__init__()
 
         # specific scene configuration
-        self.add_param('scene_setup.blend_file',
-                       '/home/pll1tv/PycharmProjects/amira_data_gfx/modeling/workstation_scenarios.blend',
+        self.add_param('scene_setup.blend_file', '$AMIRA_DATA_GFX/modeling/workstation_scenarios.blend',
                        'Path to .blend file with modeled scene')
         self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images',
                        'Path to background images / environment textures')
