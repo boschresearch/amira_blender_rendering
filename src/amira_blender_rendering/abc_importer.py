@@ -1,5 +1,21 @@
 #!/usr/bin/env python
 
+# Copyright (c) 2016 - for information on the respective copyright owner
+# see the NOTICE file and/or the repository
+# <https://github.com/boschresearch/amira-blender-rendering>.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
 import os.path as osp
 import shutil
@@ -15,28 +31,18 @@ from amira_blender_rendering.utils.material import MetallicMaterialGenerator, se
 logger = log_utils.get_logger()
 
 
-# TODO: separate into an STL-importer, and a ABC data-loader
-class ABCImporter(object):
-    """Import ABC STL into blender session and assign a material"""
-    def __init__(self, data_dir=None, n_materials=3, mass=0.01, collision_margin=0.0001):
-        """Dataloader for ABC dataset
+class ABCDataLoader(object):
+    """Dataloader for STL files from the ABC dataset
 
-        Imports an STL file into Blender, adding material and physical properties
+    Returns fullpath to stl file, and a size limits in [m]
+    """
+    def __init__(self, data_dir=None):
+        """Dataloader for ABC dataset
 
         Args:
             data_dir (str, optional): fullpath to ABC dataset parent directory. Defaults to None.
-            n_materials (int, optional): Number of random colors to generate, and apply to imported objects.
-            Defaults to 3.
-            mass (float, optional): mass in kg, used for object placement during scene init.
-            Defaults to 0.01.
-            collision_margin (float, optional): collision margin in [m], used for object placement during scene init.
-            Defaults to 0.0001.
         """
-        self._mass = mass
-        self._collision_margin = collision_margin
         self._parent = self._get_abc_parent_dir(data_dir)
-        self._material_generator = MetallicMaterialGenerator()
-        self._material_generator.make_random_material(n_materials)
         self._object_types_map = self._get_object_types_map()
 
     @property
@@ -147,6 +153,41 @@ class ABCImporter(object):
         else:
             raise FileNotFoundError("data_dir must be a fullpath to ABC-STL data parent directory")
 
+    def get_object(self, object_type=None, filename=None):
+        """Get a fullpath to a random object STL file"
+
+        Args:
+            object_type (string, optional): see object_types for options. Defaults to None (= random).
+            filename (string, optional): filename in object-type directory (= object-id). Defaults to None (= random).
+
+        Returns:
+            tuple: fullpath to file, object_type, size lower limit [m], size upper limit [m]
+                size limits needed for scaling
+        """
+        if object_type is None:
+            object_type = random.sample(self.object_types, 1)[0]
+        logger.debug(f"object_type={object_type}")
+        dir_path = osp.join(self._parent, self._object_types_map[object_type]["folder"], "STL")
+        if filename is None:
+            filename = random.sample(os.listdir(dir_path), 1)[0]
+        logger.debug(f"filename={filename}")
+        file_path = osp.join(dir_path, filename)
+
+        lower_limit = self._object_types_map[object_type]["lower_limit"]
+        upper_limit = self._object_types_map[object_type]["upper_limit"]
+        return file_path, object_type, lower_limit, upper_limit
+
+
+class STLImporter(object):
+    """Imports an STL file and adds material and physical properties"""
+
+    def __init__(self, material_generator, units="METERS", enable_physics=True, mass=0.01, collision_margin=0.0001):
+        self._mat_gen = material_generator
+        self._units = units
+        self._physhics = enable_physics
+        self._mass = mass
+        self._collision_margin = collision_margin
+
     def _set_physical_properties(self, obj, scene=None, mass=None, collision_margin=None):
         """Set required phyisical properties
 
@@ -158,6 +199,10 @@ class ABCImporter(object):
             mass (float, optional): mass in [kg]. Defaults to None.
             collision_margin (float, optional): collision margin in [m]. Defaults to None.
         """
+        if not self._physhics:
+            logger.debug("Skipping _set_physical_properties")
+            return
+
         if scene is None:
             scene_names = get_collection_item_names(bpy.data.scenes)
             scene = scene_names[0]
@@ -186,14 +231,37 @@ class ABCImporter(object):
         obj.rigid_body.mass = mass
         obj.rigid_body.collision_margin = collision_margin
 
-    def _rescale(self, obj, lower_limit, upper_limit):
-        """Rescale objects to reasonable sizes (heuristic)
+    def _set_scene_units(self, scene=None):
+        if scene is None:
+            for scene in bpy.data.scenes:
+                scene.unit_settings.length_unit = self._units
+        else:
+            if isinstance(scene, str):
+                try:
+                    bpy.data.scenes[scene].unit_settings.length_unit = self._units
+                except KeyError as err:
+                    logger.critical(f"{scene} is not a valid scene name")
+                    raise err
+            else:
+                try:
+                    scene.unit_settings.length_unit = self._units
+                except Exception as err:
+                    raise err
 
-        The STL files do NOT retain their length units, and ABC does not provide it otherwise
+    @staticmethod
+    def _random_rescale(obj, lower_limit, upper_limit):
+        """Rescale object to a reasonable size
+
+        (ABC) STL files do NOT retain length units
+
+        Args:
+            obj: blender object handle
+            lower_limit (float): lower size limit [m]
+            upper_limit (float): upper size limit [m]
+
+        Returns:
+            bool: success
         """
-        for scene in bpy.data.scenes:
-            scene.unit_settings.length_unit = "METERS"
-
         min_scale = lower_limit / np.min(obj.dimensions)
         max_scale = upper_limit / np.max(obj.dimensions)
         if min_scale > max_scale:
@@ -211,6 +279,68 @@ class ABCImporter(object):
         obj.scale *= scale
         return True
 
+    def import_object(self, stl_fullpath, name, scale=None, size_limits=None, mass=None, collision_margin=None):
+        """Import an STL file and assign material and physical properties
+
+        Args:
+            stl_fullpath (string): fullpath to STL file.
+            name (string): name for the new object.
+            scale (float): scale to resize object. Overrides size_limits. Defaults to None.
+            size_limits (tuple of floats): lower and upper size limits, for random rescaling. Defaults to None.
+            mass (float, optional): mass [kg]. Defaults to None; uses class instance config
+            collision_margin (float, optional): collision margin [m]. Defaults to None; uses class instance config
+
+        Returns:
+            bpy_types.Object: a handle to the generated object
+        """
+        old_names = get_collection_item_names(bpy.data.objects)
+        bpy.ops.import_mesh.stl(filepath=stl_fullpath)
+        # rename
+        new_names = find_new_items(bpy.data.objects, old_names)
+        temp_name = new_names.pop()
+        obj = bpy.data.objects.get(temp_name)
+        obj.name = name
+
+        rescale_success = True
+        if isinstance(scale, (int, float)):
+            obj.scale *= scale
+        elif scale is None:
+            if size_limits is None:
+                logger.warning("both scale and size_limits are None, object scale left unchanged")
+
+        if size_limits is not None:
+            lower_limit, upper_limit = size_limits
+            rescale_success = self._random_rescale(obj, lower_limit, upper_limit)
+
+        obj.active_material = self._mat_gen.get_material()
+
+        self._set_physical_properties(obj)
+
+        return obj, rescale_success
+
+
+class ABCImporter(object):
+    """Import ABC STL into blender session and assign material and physical properties"""
+    def __init__(self, data_dir=None, n_materials=3, mass=0.01, collision_margin=0.0001):
+        """Configuration
+
+        Args:
+            data_dir (str, optional): fullpath to ABC dataset parent directory. Defaults to None.
+            n_materials (int, optional): Number of random materials to generate. Defaults to 3.
+            mass (float, optional): mass in [kg]. Defaults to 0.01.
+            collision_margin (float, optional): collision_margin in [m]. Defaults to 0.0001.
+            Physics simulation params are necessary for randomized object placement.
+        """
+        self._dataloader = ABCDataLoader(data_dir=data_dir)
+        material_generator = MetallicMaterialGenerator()
+        material_generator.make_random_material(n=n_materials)
+        self._stl_importer = STLImporter(
+            material_generator, units="METERS", enable_physics=True, mass=mass, collision_margin=collision_margin)
+
+    @property
+    def object_types(self):
+        return self._dataloader.object_types
+
     def import_object(self, object_type=None, filename=None, name=None, mass=None, collision_margin=None):
         """Import an ABC STL and assign a material
 
@@ -221,49 +351,24 @@ class ABCImporter(object):
             mass (float, optional): mass [kg]. Defaults to None; uses class instance config
             collision_margin (float, optional): collision margin [m]. Defaults to None; uses class instance config
 
-        Raises:
-            AssertionError: [description]
-
         Returns:
             bpy_types.Object: a handle to the generated object
         """
-        if object_type is None:
-            object_type = random.sample(self.object_types, 1)[0]
-        logger.debug(f"object_type={object_type}")
-        dir_path = osp.join(self._parent, self._object_types_map[object_type]["folder"], "STL")
-        if filename is None:
-            filename = random.sample(os.listdir(dir_path), 1)[0]
-        logger.debug(f"filename={filename}")
-        file_path = osp.join(dir_path, filename)
+        stl_fullpath, object_type, lower_limit, upper_limit = self._dataloader.get_object(
+            object_type=object_type, filename=filename)
 
-        old_names = get_collection_item_names(bpy.data.objects)
-        bpy.ops.import_mesh.stl(filepath=file_path)
-        new_names = find_new_items(bpy.data.objects, old_names)
-        if len(new_names) > 1:
-            raise AssertionError("multiple new object names, cannot identify new object")
-        temp_name = new_names.pop()
-
-        obj_handle = bpy.data.objects.get(temp_name)
         if name is None:
             name = "{}_{}".format(object_type, len(bpy.data.objects))
-        obj_handle.name = name
 
-        success = self._rescale(
-            obj_handle,
-            self._object_types_map[object_type]["lower_limit"],
-            self._object_types_map[object_type]["upper_limit"]
-        )
-        if not success:
+        obj_handle, rescale_success = self._stl_importer.import_object(
+            stl_fullpath, name, size_limits=(lower_limit, upper_limit), mass=mass, collision_margin=collision_margin)
+
+        if not rescale_success:
             bpy.ops.object.select_all(action="DESELECT")
             # bpy.context.scene.objects.active = None
             obj_handle.select_set(True)
             bpy.ops.object.delete()
             return None
-
-        mat = self._material_generator.get_random_material()
-        obj_handle.active_material = mat
-
-        self._set_physical_properties(obj_handle)
 
         return obj_handle
 

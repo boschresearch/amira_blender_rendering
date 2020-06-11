@@ -16,6 +16,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from abc import ABC, abstractmethod
 import random
 
 import numpy as np
@@ -25,6 +26,51 @@ from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.utils.blender import get_collection_item_names, find_new_items
 
 logger = get_logger()
+
+
+def check_default_material(material: bpy.types.Material):
+    """This function checks if, given a material, the default nodes are present.
+    If not, they will be set up.
+
+    Args:
+        material(bpy.types.Material): material to check
+
+    Returns
+        tuple containing the output node, and the bsdf node
+    """
+
+    logger = get_logger()
+    tree = material.node_tree
+    nodes = tree.nodes
+
+    # check if default principles bsdf + metarial output exist
+    if len(nodes) != 2:
+        logger.warn("More shader nodes in material than expected!")
+
+    # find if the material output node is available. If not, create it
+    if 'Material Output' not in nodes:
+        logger.warn("Node 'Material Output' not found in material node-tree")
+        n_output = nodes.new('ShaderNodeOutputMaterial')
+    else:
+        n_output = nodes['Material Output']
+
+    # find if the principled bsdf node is available. If not, create it
+    if 'Principled BSDF' not in nodes:
+        logger.warn("Node 'Principled BSDF' not found in material node-tree")
+        n_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
+    else:
+        n_bsdf = nodes['Principled BSDF']
+
+    # check if link from BSDF to output is available
+    link_exists = False
+    for lnk in tree.links:
+        if (lnk.from_node == n_bsdf) and (lnk.to_node == n_output):
+            link_exists = True
+            break
+    if not link_exists:
+        tree.links.new(n_bsdf.outputs['BSDF'], n_output.inputs['Surface'])
+
+    return n_output, n_bsdf
 
 
 def set_viewport_shader(shader="MATERIAL"):
@@ -41,7 +87,14 @@ def set_viewport_shader(shader="MATERIAL"):
                     space.shading.type = shader
 
 
-class MetallicMaterialGenerator(object):
+class BaseMaterialGenerator(ABC):
+    """Interface for material generators"""
+    @abstractmethod
+    def get_material(self):
+        return NotImplemented
+
+
+class MetallicMaterialGenerator(BaseMaterialGenerator):
     """Generate randomized metallic materials"""
     def __init__(self):
         self._rgb_lower_limits = (0.9, 0.7, 0.6)
@@ -51,6 +104,11 @@ class MetallicMaterialGenerator(object):
         self._max_texture_detail = 3.0
         self._max_texture_distortion = 0.5
         self._materials = list()
+
+    def _clear_node_tree(self, material):
+        nodes = material.node_tree.nodes
+        for node in nodes:
+            nodes.remove(node)
 
     def make_random_material(self, n=1):
         """Make a new randomized metallic material
@@ -73,7 +131,6 @@ class MetallicMaterialGenerator(object):
             actual_name (string) : the actual exact material name
             Might differ from desired-name, due to blenders automatic conflict resolution (appending ".001" etc.)
         """
-
         roughness, texture_scale, texture_detail, texture_distortion = np.random.rand(4)
         roughness *= self._max_roughness
         texture_scale *= self._max_texture_scale
@@ -132,7 +189,7 @@ class MetallicMaterialGenerator(object):
 
         return actual_name
 
-    def get_random_material(self):
+    def get_material(self):
         """Return handle to randomized metallic material
 
         Returns:
@@ -140,53 +197,3 @@ class MetallicMaterialGenerator(object):
         """
         material_name = random.sample(self._materials, 1)[0]
         return bpy.data.materials[material_name]
-
-    def _clear_node_tree(self, material):
-        nodes = material.node_tree.nodes
-        for node in nodes:
-            nodes.remove(node)
-
-
-def check_default_material(material: bpy.types.Material):
-    """This function checks if, given a material, the default nodes are present.
-    If not, they will be set up.
-
-    Args:
-        material(bpy.types.Material): material to check
-
-    Returns
-        tuple containing the output node, and the bsdf node
-    """
-
-    logger = get_logger()
-    tree = material.node_tree
-    nodes = tree.nodes
-
-    # check if default principles bsdf + metarial output exist
-    if len(nodes) != 2:
-        logger.warn("More shader nodes in material than expected!")
-
-    # find if the material output node is available. If not, create it
-    if 'Material Output' not in nodes:
-        logger.warn("Node 'Material Output' not found in material node-tree")
-        n_output = nodes.new('ShaderNodeOutputMaterial')
-    else:
-        n_output = nodes['Material Output']
-
-    # find if the principled bsdf node is available. If not, create it
-    if 'Principled BSDF' not in nodes:
-        logger.warn("Node 'Principled BSDF' not found in material node-tree")
-        n_bsdf = nodes.new('ShaderNodeBsdfPrincipled')
-    else:
-        n_bsdf = nodes['Principled BSDF']
-
-    # check if link from BSDF to output is available
-    link_exists = False
-    for lnk in tree.links:
-        if (lnk.from_node == n_bsdf) and (lnk.to_node == n_output):
-            link_exists = True
-            break
-    if not link_exists:
-        tree.links.new(n_bsdf.outputs['BSDF'], n_output.inputs['Surface'])
-
-    return n_output, n_bsdf
