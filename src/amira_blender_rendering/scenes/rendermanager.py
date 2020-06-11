@@ -163,7 +163,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
             corners3d=corners3d,
             aabb=aabb,
             oobb=oobb,
-            mask_name=obj['id_mask'])
+            mask_name=obj['id_mask'],
+            dimensions=obj['dimensions'])
 
         # build results in OpenCV format
         R_cv, t_cv = abr_geom.gl2cv(R, t)
@@ -185,7 +186,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
             corners3d=corners3d,
             aabb=aabb,
             oobb=oobb,
-            mask_name=obj['id_mask'])
+            mask_name=obj['id_mask'],
+            dimensions=obj['dimensions'])
 
         # convert to desired units
         render_result_gl = self.convert_units(render_result_gl)
