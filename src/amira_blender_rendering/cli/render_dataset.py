@@ -25,8 +25,8 @@ from math import log, ceil
 
 def _err_msg():
     return \
-"""Error: Could not import amira_blender_rendering. Either install it as a package,
-or specify a valid path to its location with the --abr-path command line argument."""
+        """Error: Could not import amira_blender_rendering. Either install it as a package,
+        or specify a valid path to its location with the --abr-path command line argument."""
 
 
 def import_abr(path=None):
@@ -70,7 +70,8 @@ def import_abr(path=None):
     import amira_blender_rendering.utils.blender as blender_utils
     import amira_blender_rendering.scenes
     from amira_blender_rendering.utils.io import expandpath
-    from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
+    from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, \
+        WorkstationScenariosConfiguration
     from amira_blender_rendering.scenes.pandatable import PandaTable, PandaTableConfiguration
     from amira_blender_rendering.utils.logging import get_logger
 
@@ -90,35 +91,35 @@ def get_cmd_argparser():
         add_help=False)
 
     parser.add_argument(
-            '--config',
-            default='config/workstation_scenario01_train.cfg',
-            help='Path to configuration file')
+        '--config',
+        default='config/workstation_scenario01_train.cfg',
+        help='Path to configuration file')
 
     parser.add_argument(
-            '--abr-path',
-            default='~/amira/amira_blender_rendering/src',
-            help='Path where amira_blender_rendering (abr) can be found')
+        '--abr-path',
+        default='~/amira/amira_blender_rendering/src',
+        help='Path where amira_blender_rendering (abr) can be found')
 
     parser.add_argument(
-            '--viewsphere',
-            action='store_true',
-            help='Generate Viewsphere instead of RenderedObjects dataset')
+        '--viewsphere',
+        action='store_true',
+        help='Generate Viewsphere instead of RenderedObjects dataset')
 
     parser.add_argument(
-            '--list-scenes',
-            action='store_true',
-            help='Print list of scenes and exit')
+        '--list-scenes',
+        action='store_true',
+        help='Print list of scenes and exit')
 
     parser.add_argument(
-            '--print-config',
-            action="store_true",
-            help='Print configuration and exit')
+        '--print-config',
+        action="store_true",
+        help='Print configuration and exit')
 
     parser.add_argument(
-            '-h',
-            '--help',
-            action='store_true',
-            help='Print this help message and exit')
+        '-h',
+        '--help',
+        action='store_true',
+        help='Print this help message and exit')
 
     return parser
 
@@ -126,7 +127,8 @@ def get_cmd_argparser():
 def get_scene_types():
     # TODO: this could/should be handled with some internal registration
     #       mechanism that 'knows' all scenarios
-    from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, WorkstationScenariosConfiguration
+    from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, \
+        WorkstationScenariosConfiguration
     from amira_blender_rendering.scenes.simpletoolcap import SimpleToolCap, SimpleToolCapConfiguration
     from amira_blender_rendering.scenes.pandatable import PandaTable, PandaTableConfiguration
 
@@ -139,7 +141,7 @@ def get_scene_types():
             [WorkstationScenarios, WorkstationScenariosConfiguration],
         'PandaTable':
             [PandaTable, PandaTableConfiguration],
-        }
+    }
 
 
 def determine_scene_type(config_file):
@@ -181,7 +183,6 @@ def main():
 
     # instantiate configuration
     config = scene_types[scene_type_str.lower()][1]()
-    print(f"\n\n scene_setup.blend_file: {config.scene_setup.blend_file} \n\n")
 
     # combine parsers and parse command line arguments
     parser = argparse.ArgumentParser(
@@ -225,6 +226,7 @@ def main():
     # tear down scene. should be handled by blender, but a scene might have
     # other things opened that it should close gracefully
     scene.teardown()
+
 
 if __name__ == "__main__":
     main()
