@@ -18,7 +18,22 @@ logger = log_utils.get_logger()
 # TODO: separate into an STL-importer, and a ABC data-loader
 class ABCImporter(object):
     """Import ABC STL into blender session and assign a material"""
-    def __init__(self, data_dir=None, n_materials=3):
+    def __init__(self, data_dir=None, n_materials=3, mass=0.01, collision_margin=0.0001):
+        """Dataloader for ABC dataset
+
+        Imports an STL file into Blender, adding material and physical properties
+
+        Args:
+            data_dir (str, optional): fullpath to ABC dataset parent directory. Defaults to None.
+            n_materials (int, optional): Number of random colors to generate, and apply to imported objects.
+            Defaults to 3.
+            mass (float, optional): mass in kg, used for object placement during scene init.
+            Defaults to 0.01.
+            collision_margin (float, optional): collision margin in [m], used for object placement during scene init.
+            Defaults to 0.0001.
+        """
+        self._mass = mass
+        self._collision_margin = collision_margin
         self._parent = self._get_abc_parent_dir(data_dir)
         self._material_generator = MetallicMaterialGenerator()
         self._material_generator.make_random_material(n_materials)
@@ -132,6 +147,45 @@ class ABCImporter(object):
         else:
             raise FileNotFoundError("data_dir must be a fullpath to ABC-STL data parent directory")
 
+    def _set_physical_properties(self, obj, scene=None, mass=None, collision_margin=None):
+        """Set required phyisical properties
+
+        Physics simulation is used to drop objects onto scene and place them realistically
+
+        Args:
+            obj: object handle
+            scene: Scene name, for files with multiple scenes. Defaults to None.
+            mass (float, optional): mass in [kg]. Defaults to None.
+            collision_margin (float, optional): collision margin in [m]. Defaults to None.
+        """
+        if scene is None:
+            scene_names = get_collection_item_names(bpy.data.scenes)
+            scene = scene_names[0]
+            if len(scene_names) > 1:
+                logger.warning("found {} scenes, linking object to scene={}".format(len(scene_names), scene))
+
+        _scene = bpy.data.scenes[scene]
+
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+
+        if _scene.rigidbody_world is None:
+            logger.debug("adding a rigidbody_world to scene, i.e. a RigidBodyWorld collection")
+            bpy.ops.rigidbody.world_add()
+
+        bpy.ops.rigidbody.object_add()
+        if obj.rigid_body is None:
+            raise AssertionError("Failed to link object to rigidbody_world collection")
+
+        if mass is None:
+            mass = self._mass
+        if collision_margin is None:
+            collision_margin = self._collision_margin
+        obj.rigid_body.type = "ACTIVE"
+        obj.rigid_body.use_margin = True
+        obj.rigid_body.mass = mass
+        obj.rigid_body.collision_margin = collision_margin
+
     def _rescale(self, obj, lower_limit, upper_limit):
         """Rescale objects to reasonable sizes (heuristic)
 
@@ -157,13 +211,15 @@ class ABCImporter(object):
         obj.scale *= scale
         return True
 
-    def import_object(self, object_type=None, filename=None, name=None):
+    def import_object(self, object_type=None, filename=None, name=None, mass=None, collision_margin=None):
         """Import an ABC STL and assign a material
 
         Args:
             object_type (string, optional): see object_types for options. Defaults to None (= random).
             filename (string, optional): filename in object-type directory (= object-id). Defaults to None (= random).
             name (string, optional): name for the new object. Defaults to None (= object_type_<random number>).
+            mass (float, optional): mass [kg]. Defaults to None; uses class instance config
+            collision_margin (float, optional): collision margin [m]. Defaults to None; uses class instance config
 
         Raises:
             AssertionError: [description]
@@ -206,6 +262,8 @@ class ABCImporter(object):
 
         mat = self._material_generator.get_random_material()
         obj_handle.active_material = mat
+
+        self._set_physical_properties(obj_handle)
 
         return obj_handle
 

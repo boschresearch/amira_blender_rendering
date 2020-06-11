@@ -182,8 +182,8 @@ def check_default_material(material: bpy.types.Material):
 
     # check if link from BSDF to output is available
     link_exists = False
-    for l in tree.links:
-        if (l.from_node == n_bsdf) and (l.to_node == n_output):
+    for lnk in tree.links:
+        if (lnk.from_node == n_bsdf) and (lnk.to_node == n_output):
             link_exists = True
             break
     if not link_exists:

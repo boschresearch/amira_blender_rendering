@@ -3,10 +3,10 @@
 Simple Toolcap Scenario
 =======================
 
-The Simple Toolcap Scenario represent a prototycal scenario of the 
-simplest type implemented in ABR. 
+The Simple Toolcap Scenario represent a prototypical scenario of the
+simplest type implemented in ABR.
 
-For an more in depth tutorial on how to set up a very simple custom scenario 
+For an more in depth tutorial on how to set up a very simple custom scenario
 refer to :ref:`Set Up a Simple Custom Scenario`
 
 Most of the following configurations are common to other scenarios.
@@ -22,7 +22,7 @@ For the SimpleToolCap scenario refer to the config file config/toolcap_train.cfg
     # Specify how many images should be rendered
     image_count = 5
 
-    # Specify the base path where data will be written to. Note that, 
+    # Specify the base path where data will be written to. Note that,
     # differently to more complex scenarios, e.g., see :ref:`Workstation Scenarios`,
     # here there is only one configuration and one camera.
     # Hence hence the base path coincides with the location where data are actually written.
@@ -41,7 +41,7 @@ For the SimpleToolCap scenario refer to the config file config/toolcap_train.cfg
     # resolution, then set these values to 0.
     width = 640
     height = 480
-    
+
     # The camera model to use. At the moment, this value is ignored in
     # amira_blender_rendering. However, because all rendering is in fact done with a
     # pinhole camera model, this value serves as documentation
@@ -80,7 +80,7 @@ For the SimpleToolCap scenario refer to the config file config/toolcap_train.cfg
     [scene_setup]
     # we also specify where to load environment textures from
     #
-    # For this simple case, this is the only scene-specific configuration value 
+    # For this simple case, this is the only scene-specific configuration value
     environment_textures = $AMIRA_DATASETS/OpenImagesV4/Images
 
     [parts]
