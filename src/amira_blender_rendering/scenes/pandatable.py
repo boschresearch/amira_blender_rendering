@@ -167,6 +167,17 @@ class PandaTable(interfaces.ABRScene):
         # that was used for rendering. Hence, we will store the effective
         # calibration matrix K alongside. Because we use identical cameras, we
         # can extract this from one of the cameras
+        self.get_effective_intrinsics()
+
+
+    def get_effective_intrinsics(self):
+        """Get the effective intrinsics that were used during rendering.
+
+        This function will copy original values for intrinsic, sensor_width, and
+        focal_length, and fov, to the configuration an prepend them with 'original_'. This
+        way, they are available in the dataset later on
+        """
+
         cam_str = self.config.scene_setup.cameras[0]
         cam = bpy.data.objects[f'{cam_str}'].data
 
@@ -186,19 +197,6 @@ class PandaTable(interfaces.ABRScene):
         Note that this does not select a camera for which to render. This will
         be selected elsewhere.
         """
-
-        # set up cameras from calibration information (if any)
-        if self.config.camera_info.intrinsic is None or len(self.config.camera_info.intrinsic) <= 0:
-            return
-
-        # convert the configuration value of K to a numpy format
-        if isinstance(self.config.camera_info.intrinsic, str):
-            intrinsics = np.fromstring(self.config.camera_info.intrinsic, sep=',', dtype=np.float32)
-        elif isinstance(self.config.camera_info.intrinsic, list):
-            intrinsics = np.asarray(self.config.camera_info.intrinsic, dtype=np.float32)
-        else:
-            raise RuntimeError("invalid value for camera_info.intrinsic")
-
         scene = bpy.context.scene
         for cam in self.config.scene_setup.cameras:
             # first get the camera name. this depends on the scene (blend file)
@@ -211,8 +209,7 @@ class PandaTable(interfaces.ABRScene):
             # modify camera according to the intrinsics
             blender_camera = bpy.data.objects[cam_name].data
             # set the calibration matrix
-            camera_utils.set_intrinsics(scene, blender_camera,
-                    intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3])
+            camera_utils.set_camera_info(scene, blender_camera, self.config.camera_info)
 
 
     def setup_objects(self):
