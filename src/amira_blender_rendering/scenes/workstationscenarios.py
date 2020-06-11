@@ -484,21 +484,9 @@ class WorkstationScenarios(interfaces.ABRScene):
                 for i_cam, cam in enumerate(self.config.scene_setup.cameras):
                     # activate camera
                     self.activate_camera(cam)
-                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                    print("THIS IS THE BEGINNING OF THE LOOP")
-                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-                    print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
                     for i_loc, loc in enumerate(locations_list):
                         # generate render filename
                         base_filename = f"camera_{i_cam:04}_location_{i_loc:04}"
-                        print("\n\n\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n")
-                        print(base_filename)
-                        print(base_filename)
-                        print(base_filename)
-                        print(base_filename)
-                        print(base_filename)
-                        print("\n ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n\n")
                         # update camera location
                         self.set_camera_location(location=loc)
                         # update path information in compositor
