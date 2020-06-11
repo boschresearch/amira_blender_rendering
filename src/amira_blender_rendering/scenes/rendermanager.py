@@ -27,6 +27,7 @@ from amira_blender_rendering.math.conversions import bu_to_mm
 from amira_blender_rendering.interfaces import PoseRenderResult, ResultsCollection
 from amira_blender_rendering.postprocessing import boundingbox_from_mask
 from amira_blender_rendering.utils.logging import get_logger
+from amira_blender_rendering.utils.convert_to_PASCAL_VOC_format import create_xml
 
 
 class RenderManager(abr_scenes.BaseSceneManager):
@@ -219,6 +220,9 @@ class RenderManager(abr_scenes.BaseSceneManager):
         json_data = results_cv.state_dict()
         with open(fpath_json, 'w') as f:
             json.dump(json_data, f, indent=0)
+
+        # create xml annotation files according to PASCAL VOC format
+        create_xml(fpath_json)
 
     def compute_2dbbox(self, fname_mask):
         """Compute the 2D bounding box around an object given the mask filename
