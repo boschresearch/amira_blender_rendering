@@ -33,8 +33,18 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         super(WorkstationScenariosConfiguration, self).__init__()
 
         # specific scene configuration
-        self.add_param('scene_setup.blend_file', '/home/pll1tv/PycharmProjects/amira_data_gfx/modeling/workstation_scenarios.blend', 'Path to .blend file with modeled scene')
-        self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images', 'Path to background images / environment textures')
+        try:
+            AMIRA_DATA_GFX = os.environ["AMIRA_DATA_GFX"]
+        except KeyError:
+            raise ("AMIRA_DATA_GFX ")
+
+        # $AMIRA_DATASETS
+
+        self.add_param('scene_setup.blend_file',
+                       '/home/pll1tv/PycharmProjects/amira_data_gfx/modeling/workstation_scenarios.blend',
+                       'Path to .blend file with modeled scene')
+        self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images',
+                       'Path to background images / environment textures')
         self.add_param('scene_setup.cameras', ['CameraLeft', 'Camera', 'CameraRight'], 'Cameras to render')
         self.add_param('scene_setup.forward_frames', 15, 'Number of frames in physics forward-simulation')
 
@@ -47,7 +57,6 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         # specific scenario configuration
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
         self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
-
 
 
 class WorkstationScenarios(interfaces.ABRScene):
@@ -65,7 +74,8 @@ class WorkstationScenarios(interfaces.ABRScene):
         # extract configuration, then build and activate a split config
         self.config = kwargs.get('config', WorkstationScenariosConfiguration())
         if self.config.dataset.scene_type.lower() != 'WorkstationScenarios'.lower():
-            raise RuntimeError(f"Invalid configuration of scene type {self.config.dataset.scene_type} for class WorkstationScenarios")
+            raise RuntimeError(
+                f"Invalid configuration of scene type {self.config.dataset.scene_type} for class WorkstationScenarios")
         # we might have to post-process the configuration
         self.postprocess_config()
 
@@ -79,9 +89,9 @@ class WorkstationScenarios(interfaces.ABRScene):
         # setup_scene(), because otherwise the information will be taken from
         # the file, and changes made by setup_renderer ignored
         self.renderman.setup_renderer(
-                self.config.render_setup.integrator,
-                self.config.render_setup.denoising,
-                self.config.render_setup.samples)
+            self.config.render_setup.integrator,
+            self.config.render_setup.denoising,
+            self.config.render_setup.samples)
 
         # grab environment textures
         self.setup_environment_textures()
@@ -98,7 +108,6 @@ class WorkstationScenarios(interfaces.ABRScene):
         # finally, setup the compositor
         self.setup_compositor()
 
-
     def postprocess_config(self):
         # convert all scaling factors from str to list of floats
         if 'ply_scale' not in self.config.parts:
@@ -106,12 +115,9 @@ class WorkstationScenarios(interfaces.ABRScene):
 
         for part in self.config.parts.ply_scale:
             vs = self.config.parts.ply_scale[part]
-            # print(f"part: {part}  vs: {vs}  is list: {isinstance(vs, list)}")
             vs = [v.strip() for v in vs.split(',')]
             vs = [float(v) for v in vs]
             self.config.parts.ply_scale[part] = vs
-        # print('End of postprocess_config \n \n')
-
 
     def setup_dirinfo(self):
         """Setup directory information for all cameras.
@@ -131,20 +137,25 @@ class WorkstationScenarios(interfaces.ABRScene):
             dirinfo = build_directory_info(camera_base_path)
             self.dirinfos.append(dirinfo)
 
+    for _path in []:
+
+        if os.path.isdir(_path):
+            pass
+        else:
+            prefix = utils.get_env_var(_path)
+            fullpath = os.path.join(prefix, _path)
 
     def setup_scene(self):
         """Set up the entire scene.
 
         Here, we simply load the main blender file from disk.
         """
-        print(self.config.scene_setup.blend_file)
         bpy.ops.wm.open_mainfile(filepath=expandpath(self.config.scene_setup.blend_file))
         # we need to hide all dropboxes and dropzones in the viewport, otherwise
         # occlusion testing will not work, because blender's ray_cast method
         # returns hits no empties!
         self.logger.info("Hiding all dropzones from viewport")
         bpy.data.collections['Dropzones'].hide_viewport = True
-
 
     def setup_render_output(self):
         """setup render output dimensions. This is not set for a specific camera,
@@ -176,7 +187,6 @@ class WorkstationScenarios(interfaces.ABRScene):
             self.config.camera_info.original_intrinsic = ''
         self.config.camera_info.intrinsic = list(effective_intrinsic)
 
-
     def setup_cameras(self):
         """Set up all cameras.
 
@@ -205,14 +215,11 @@ class WorkstationScenarios(interfaces.ABRScene):
             # select the camera. Blender often operates on the active object, to
             # make sure that this happens here, we select it
             blnd.select_object(cam_name)
-            # set camera location
-            bpy.data.objects[cam_name].location = (0, 0, 3)
             # modify camera according to the intrinsics
             blender_camera = bpy.data.objects[cam_name].data
             # set the calibration matrix
             camera_utils.set_intrinsics(scene, blender_camera,
-                    intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3])
-
+                                        intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3])
 
     def setup_objects(self):
         """This method populates the scene with objects.
@@ -235,7 +242,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         #       object_class_id     model type ID (simply incremental numbers)
         #       object_id           instance ID of the object
         #       bpy                 blender object reference
-        n_types = 0       # count how many types we have
+        n_types = 0  # count how many types we have
         n_instances = []  # count how many instances per type we have
         for obj_type_id, obj_spec in enumerate(self.config.scenario_setup.target_objects):
             obj_type, obj_count = obj_spec.split(':')
@@ -284,30 +291,27 @@ class WorkstationScenarios(interfaces.ABRScene):
 
                 # append all information
                 self.objs.append({
-                        'id_mask': '',
-                        'object_class_name': obj_type,
-                        'object_class_id': obj_type_id,
-                        'object_id': j,
-                        'bpy': new_obj
-                    })
+                    'id_mask': '',
+                    'object_class_name': obj_type,
+                    'object_class_id': obj_type_id,
+                    'object_id': j,
+                    'bpy': new_obj
+                })
 
         # build masks id for compositor of the format _N_M, where N is the model
         # id, and M is the object id
         m_w = ceil(log(n_types))  # format width for number of model types
         for i, obj in enumerate(self.objs):
-            o_w = ceil(log(n_instances[obj['object_class_id']]))   # format width for number of objects of same model
+            o_w = ceil(log(n_instances[obj['object_class_id']]))  # format width for number of objects of same model
             id_mask = f"_{obj['object_class_id']:0{m_w}}_{obj['object_id']:0{o_w}}"
             obj['id_mask'] = id_mask
-
 
     def setup_compositor(self):
         self.renderman.setup_compositor(self.objs)
 
-
     def setup_environment_textures(self):
         # get list of environment textures
         self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
-
 
     def randomize_object_transforms(self):
         """move all objects to random locations within their scenario dropzone,
@@ -344,27 +348,23 @@ class WorkstationScenarios(interfaces.ABRScene):
         dg = bpy.context.evaluated_depsgraph_get()
         dg.update()
 
-
     def randomize_environment_texture(self):
         # set some environment texture, randomize, and render
         env_txt_filepath = expandpath(random.choice(self.environment_textures))
         self.renderman.set_environment_texture(env_txt_filepath)
 
-
     def forward_simulate(self):
         self.logger.info(f"forward simulation of {self.config.scene_setup.forward_frames} frames")
         scene = bpy.context.scene
         for i in range(self.config.scene_setup.forward_frames):
-            scene.frame_set(i+1)
+            scene.frame_set(i + 1)
 
-
-    def activate_camera(self, cam:str):
+    def activate_camera(self, cam: str):
         # first get the camera name. this depends on the scene (blend file)
         # and is of the format CameraName.XXX, where XXX is a number with
         # leading zeros
         cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
         bpy.context.scene.camera = bpy.context.scene.objects[cam_name]
-
 
     def test_visibility(self):
         for i_cam, cam in enumerate(self.config.scene_setup.cameras):
@@ -373,13 +373,13 @@ class WorkstationScenarios(interfaces.ABRScene):
             for obj in self.objs:
                 not_visible_or_occluded = abr_geom.test_occlusion(
                     bpy.context.scene,
-                        bpy.context.scene.view_layers['View Layer'],
-                        cam_obj,
-                        obj['bpy'],
-                        bpy.context.scene.render.resolution_x,
-                        bpy.context.scene.render.resolution_y,
-                        require_all=False,
-                        origin_offset=0.01)
+                    bpy.context.scene.view_layers['View Layer'],
+                    cam_obj,
+                    obj['bpy'],
+                    bpy.context.scene.render.resolution_x,
+                    bpy.context.scene.render.resolution_y,
+                    require_all=False,
+                    origin_offset=0.01)
                 if not_visible_or_occluded:
                     self.logger.warn(f"object {obj} not visible or occluded")
                     self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
@@ -387,7 +387,6 @@ class WorkstationScenarios(interfaces.ABRScene):
                     return False
 
         return True
-
 
     def generate_dataset(self):
         """This will generate the dataset according to the configuration that
@@ -402,7 +401,7 @@ class WorkstationScenarios(interfaces.ABRScene):
 
         i = 0
         while i < self.config.dataset.image_count:
-            self.logger.info(f"Generating image {i+1} of {self.config.dataset.image_count}")
+            self.logger.info(f"Generating image {i + 1} of {self.config.dataset.image_count}")
 
             # generate render filename
             base_filename = "{:0{width}d}".format(i, width=format_width)
@@ -432,13 +431,14 @@ class WorkstationScenarios(interfaces.ABRScene):
                     # information, as well as fix filenames
                     try:
                         self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
-                                bpy.context.scene.camera, self.objs,
-                                self.config.camera_info.zeroing)
+                                                   bpy.context.scene.camera, self.objs,
+                                                   self.config.camera_info.zeroing)
                     except ValueError:
                         # This issue happens every now and then. The reason might be (not
                         # yet verified) that the target-object is occluded. In turn, this
                         # leads to a zero size 2D bounding box...
-                        self.logger.error(f"\033[1;31mValueError during post-processing, re-generating image index {i}\033[0;37m")
+                        self.logger.error(
+                            f"\033[1;31mValueError during post-processing, re-generating image index {i}\033[0;37m")
                         repeat_frame = True
 
                         # no need to continue with other cameras
@@ -449,7 +449,6 @@ class WorkstationScenarios(interfaces.ABRScene):
                 i = i + 1
 
         return True
-
 
     def generate_viewsphere_dataset(self):
         # TODO: This dataset does not yet suppor viewsphere data generation
@@ -475,7 +474,8 @@ class WorkstationScenarios(interfaces.ABRScene):
             # set camera locations
             self.config.scene_setup.num_camera_locations = int(self.config.scene_setup.num_camera_locations)
             if self.config.scene_setup.num_camera_locations > 1:
-                locations_list = camera_utils.generate_locations_list(num_locations=self.config.scene_setup.num_camera_locations)
+                locations_list = camera_utils.generate_locations_list(
+                    num_locations=self.config.scene_setup.num_camera_locations)
 
             # repeat if the cameras cannot see the objects
             repeat_frame = False
@@ -501,8 +501,8 @@ class WorkstationScenarios(interfaces.ABRScene):
                         # information, as well as fix filenames
                         try:
                             self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
-                                                   bpy.context.scene.camera, self.objs,
-                                                   self.config.camera_info.zeroing)
+                                                       bpy.context.scene.camera, self.objs,
+                                                       self.config.camera_info.zeroing)
                         except ValueError:
                             # This issue happens every now and then. The reason might be (not
                             # yet verified) that the target-object is occluded. In turn, this
@@ -540,7 +540,6 @@ class WorkstationScenarios(interfaces.ABRScene):
             output_path = dirinfo.base_path
             pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
             dump_config(self.config, output_path)
-
 
     def teardown(self):
         """Tear down the scene"""
