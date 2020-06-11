@@ -33,13 +33,6 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         super(WorkstationScenariosConfiguration, self).__init__()
 
         # specific scene configuration
-        try:
-            AMIRA_DATA_GFX = os.environ["AMIRA_DATA_GFX"]
-        except KeyError:
-            raise ("AMIRA_DATA_GFX ")
-
-        # $AMIRA_DATASETS
-
         self.add_param('scene_setup.blend_file',
                        '/home/pll1tv/PycharmProjects/amira_data_gfx/modeling/workstation_scenarios.blend',
                        'Path to .blend file with modeled scene')
@@ -136,14 +129,6 @@ class WorkstationScenarios(interfaces.ABRScene):
             camera_base_path = f"{self.config.dataset.base_path}-{cam}"
             dirinfo = build_directory_info(camera_base_path)
             self.dirinfos.append(dirinfo)
-
-    for _path in []:
-
-        if os.path.isdir(_path):
-            pass
-        else:
-            prefix = utils.get_env_var(_path)
-            fullpath = os.path.join(prefix, _path)
 
     def setup_scene(self):
         """Set up the entire scene.
@@ -295,7 +280,8 @@ class WorkstationScenarios(interfaces.ABRScene):
                     'object_class_name': obj_type,
                     'object_class_id': obj_type_id,
                     'object_id': j,
-                    'bpy': new_obj
+                    'bpy': new_obj,
+                    'dimensions': (self.config.camera_info.height, self.config.camera_info.width, 3)
                 })
 
         # build masks id for compositor of the format _N_M, where N is the model

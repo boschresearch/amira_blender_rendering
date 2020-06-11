@@ -1,5 +1,6 @@
 """
 Command lines:
+pip install -e .
 export AMIRA_DATA_GFX='/home/pll1tv/PycharmProjects/amira_data_gfx'
 blender -b -P cli/render_dataset.py -- --abr-path /home/pll1tv/PycharmProjects/amira_blender_rendering/src/amira_blender_rendering --config /home/pll1tv/PycharmProjects/amira_blender_rendering/config/workstation_scenario01_multiview_train.cfg --viewsphere
 """
