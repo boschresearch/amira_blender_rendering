@@ -234,7 +234,7 @@ class PoseRenderResult:
     def __init__(self, object_class_name, object_class_id, object_name, object_id,
                  rgb_const, rgb_random, depth, mask,
                  T_int, T_ext, rotation, translation,
-                 corners2d, corners3d, aabb, oobb,
+                 corners2d, corners3d, aabb, oobb, dimensions,
                  dense_features=None,
                  mask_name=''):
         """Initialize struct to store the result of rendering synthetic data
@@ -289,6 +289,7 @@ class PoseRenderResult:
         self.oobb = oobb
         self.aabb = aabb
         self.mask_name = mask_name
+        self.dimensions = dimensions
 
     def state_dict(self, retain_keys: list = None):
         data = {
@@ -305,8 +306,9 @@ class PoseRenderResult:
                 "corners2d": self.corners2d.tolist(),
                 "corners3d": self.corners3d.tolist(),
                 "aabb": self.aabb.tolist(),
-                "oobb": self.oobb.tolist(),
-            }
+                "oobb": self.oobb.tolist()
+            },
+            "dimensions": self.dimensions
         }
         return filter_state_keys(data, retain_keys)
 
