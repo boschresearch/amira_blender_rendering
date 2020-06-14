@@ -27,16 +27,15 @@ Example:
     $ blender -b -P scripts/render_dataset.py -- --abr-path ~/amira/amira_blender_rendering
 
 """
-
-import bpy
+# import bpy
 import sys
 import os
 import re
 import argparse
-import numpy as np
-import random
-import logging
-from math import log, ceil
+# import numpy as np
+# import random
+# import logging
+# from math import log, ceil
 
 
 def _err_msg():
