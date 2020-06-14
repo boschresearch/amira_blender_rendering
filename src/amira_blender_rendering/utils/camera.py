@@ -21,10 +21,53 @@ from mathutils import Vector, Matrix
 import warnings
 from math import degrees, radians, atan2
 import numpy as np
+
+from amira_blender_rendering.math.points_on_sphere import generate_points
 from amira_blender_rendering.utils.logging import get_logger
 
 
-def opengl_to_opencv(v : Vector) -> Vector:
+def opencv_to_blender(K, cam, scale=1.0):
+    """Convert the intrinsic camera from OpenCV to blender's format
+
+    Args:
+        K (np.array): 3x3 intrinsic camera calibration matrix
+
+    """
+
+    warnings.warn('opencv_to_blender() is deprecated, use set_calibration_matrix() instead')
+
+    if K is None:
+        return cam
+
+    sensor_width_mm = K[1, 1] * K[0, 2] / (K[0, 0] * K[1, 2])
+    sensor_height_mm = 1
+
+    # assume principal point in center
+    pixel_size_x = K[0, 2] * 2
+    pixel_size_y = K[1, 2] * 2
+    pixel_aspect = K[0, 0] / K[1, 1]
+
+    s_u = pixel_size_x / sensor_width_mm
+    s_v = pixel_size_y / sensor_height_mm
+
+    f_in_mm = K[0, 0] / s_u
+
+    scene = bpy.context.scene
+    scene.render.resolution_x = pixel_size_x / scale
+    scene.render.resolution_y = pixel_size_y / scale
+    scene.render.resolution_percentage = scale * 100
+    scene.render.pixel_aspect_x = 1.0
+    scene.render.pixel_aspect_y = pixel_aspect
+
+    # set perspective camera
+    cam.data.type = 'PERSP'
+    cam.data.lens = f_in_mm
+    cam.data.sensor_width = sensor_width_mm
+
+    return cam
+
+
+def opengl_to_opencv(v: Vector) -> Vector:
     """Turn a coordinate in OpenGL convention to OpenCV convention.
 
     OpenGL's (and blenders) coordinate system has x pointing right, y pointing
@@ -106,7 +149,8 @@ def set_camera_info(scene, cam, camera_info):
     if (sensor_width > 0.0) and (focal_length > 0.0):
         if (width == 0 or height == 0):
             if intrinsics is None:
-                raise RuntimeError("Please specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
+                raise RuntimeError(
+                    "Please specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
             else:
                 _setup_render_size_from_intrinsics(scene, intrinsics)
         logger.info("Setting camera information from sensor_width and focal_length")
@@ -119,7 +163,8 @@ def set_camera_info(scene, cam, camera_info):
     elif hfov > 0.0:
         if (width == 0 or height == 0):
             if intrinsics is None:
-                raise RuntimeError("Please specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
+                raise RuntimeError(
+                    "Please specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
             else:
                 _setup_render_size_from_intrinsics(scene, intrinsics)
         logger.info("Setting camera information from hFOV")
@@ -136,7 +181,8 @@ def set_camera_info(scene, cam, camera_info):
             logger.info("Setting camera information from intrinsics using mode 'mm'")
             _setup_camera_intrinsics_to_mm(scene, cam, intrinsics)
         else:
-            raise RuntimeError(f"Invalid mode '{mode}' to convert intrinsics. Needs to be either 'mm' (default) or 'fov'.")
+            raise RuntimeError(
+                f"Invalid mode '{mode}' to convert intrinsics. Needs to be either 'mm' (default) or 'fov'.")
 
     # if the user specified nothing at all, we will check if the width and
     # height of the image are set. In this case, the user will get the default
@@ -144,7 +190,8 @@ def set_camera_info(scene, cam, camera_info):
     # exception.
     # raise RuntimeError("Encountered invalid value for camera_info.intrinsic")
     elif (width == 0) or (height == 0):
-        raise RuntimeError("Encountered invalid value camera_info setup. Please specify intrinsics, sensor_width + focal length, hfov, or width + height")
+        raise RuntimeError(
+            "Encountered invalid value camera_info setup. Please specify intrinsics, sensor_width + focal length, hfov, or width + height")
 
 
 def _setup_render_size_from_intrinsics(scene, intrinsics):
@@ -297,7 +344,7 @@ def get_intrinsics(scene, cam):
     # extract additional sensor information (size in mm, sensor fit)
     sensor_size_mm = cam.sensor_height if cam.sensor_fit == 'VERTICAL' else cam.sensor_width
     sensor_fit = get_sensor_fit(cam.sensor_fit, render.pixel_aspect_x * resolution_x,
-                                                render.pixel_aspect_y * resolution_y)
+                                render.pixel_aspect_y * resolution_y)
 
     # compute pixel size in mm per pixel
     pixel_aspect_ratio = render.pixel_aspect_y / render.pixel_aspect_x
@@ -315,3 +362,33 @@ def get_intrinsics(scene, cam):
     # finalize K
     return s_u, s_v, u_0, v_0
 
+
+def generate_locations_list(num_locations=30, camera_scale=1, camera_bias=(0, 0, 1.5)):
+    """
+    Creates a list of XYZ locations in half a sphere around and over (0, 0, 0)
+
+    Args:
+        num_locations: number of required locations on the unit half sphere around (0, 0, 0)
+        camera_scale, camera_bias: scale and biase relative to unit sphere
+
+    Returns:
+        half_sphere_locations (list): a list of locations
+    """
+
+    sphere_locations = generate_points(2 * num_locations)
+
+    if isinstance(camera_scale, int):
+        camera_scale = [camera_scale] * 3
+
+    if isinstance(camera_scale, int):
+        camera_bias = [camera_bias] * 3
+
+    half_sphere_locations = []
+    for loc in sphere_locations:
+        if loc[-1] >= 0:
+            loc = [camera_scale[i] * x + camera_bias[i] for i, x in enumerate(loc)]
+            half_sphere_locations.append(tuple(loc))
+
+    assert (len(half_sphere_locations) == num_locations)
+
+    return half_sphere_locations
