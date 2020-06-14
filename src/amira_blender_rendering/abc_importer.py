@@ -61,7 +61,7 @@ class ABCDataLoader(object):
             sprocket=dict(
                 folder="Sprockets", lower_limit=0.01, upper_limit=0.15),
             spring=dict(
-                folder="Springs", lower_limit=0.01, upper_limit=0.2),
+                folder="Springs", lower_limit=0.005, upper_limit=0.1),
             flange=dict(
                 folder="Unthreaded_Flanges", lower_limit=0.01, upper_limit=0.2),
             bracket=dict(
@@ -81,23 +81,23 @@ class ABCDataLoader(object):
             busing_liner=dict(
                 folder="Bushing_Damping_Liners", lower_limit=0.01, upper_limit=0.15),
             shaft=dict(
-                folder="Shafts", lower_limit=0.01, upper_limit=0.3),
+                folder="Shafts", lower_limit=0.01, upper_limit=0.2),
             bolt=dict(
                 folder="Bolts", lower_limit=0.01, upper_limit=0.1),
             headless_screw=dict(
-                folder="HeadlessScrews", lower_limit=0.01, upper_limit=0.05),
+                folder="HeadlessScrews", lower_limit=0.003, upper_limit=0.05),
             flat_screw=dict(
-                folder="Slotted_Flat_Head_Screws", lower_limit=0.01, upper_limit=0.05),
+                folder="Slotted_Flat_Head_Screws", lower_limit=0.003, upper_limit=0.05),
             hex_screw=dict(
-                folder="Hex_Head_Screws", lower_limit=0.01, upper_limit=0.05),
+                folder="Hex_Head_Screws", lower_limit=0.003, upper_limit=0.05),
             socket_screw=dict(
-                folder="Socket_Head_Screws", lower_limit=0.01, upper_limit=0.05),
+                folder="Socket_Head_Screws", lower_limit=0.003, upper_limit=0.05),
             nut=dict(
                 folder="Nuts", lower_limit=0.01, upper_limit=0.05),
             push_ring=dict(
-                folder="Push_Rings", lower_limit=0.01, upper_limit=0.05),
+                folder="Push_Rings", lower_limit=0.0005, upper_limit=0.05),
             retaining_ring=dict(
-                folder="Retaining_Rings", lower_limit=0.01, upper_limit=0.05),
+                folder="Retaining_Rings", lower_limit=0.0005, upper_limit=0.05),
             washer=dict(
                 folder="Washers", lower_limit=0.01, upper_limit=0.05),
         )
@@ -164,7 +164,7 @@ class ABCDataLoader(object):
             tuple: fullpath to file, object_type, size lower limit [m], size upper limit [m]
                 size limits needed for scaling
         """
-        if object_type is None:
+        if object_type in [None, "random"]:
             object_type = random.sample(self.object_types, 1)[0]
         logger.debug(f"object_type={object_type}")
         dir_path = osp.join(self._parent, self._object_types_map[object_type]["folder"], "STL")
@@ -178,6 +178,7 @@ class ABCDataLoader(object):
         return file_path, object_type, lower_limit, upper_limit
 
 
+# TODO: move object origin to geometric center
 class STLImporter(object):
     """Imports an STL file and adds material and physical properties"""
 
@@ -368,9 +369,9 @@ class ABCImporter(object):
             # bpy.context.scene.objects.active = None
             obj_handle.select_set(True)
             bpy.ops.object.delete()
-            return None
+            return None, None
 
-        return obj_handle
+        return obj_handle, object_type
 
 
 if __name__ == "__main__":
@@ -401,7 +402,7 @@ if __name__ == "__main__":
 
     for x in range(7):
         for y in range(7):
-            obj = abc_importer.import_object()
+            obj, _ = abc_importer.import_object()
             if obj is None:
                 continue
             obj.location.x = x * step
@@ -423,7 +424,7 @@ if __name__ == "__main__":
 
         for x in range(4):
             for y in range(4):
-                obj = abc_importer.import_object(object_type=obj_t)
+                obj, _ = abc_importer.import_object(object_type=obj_t)
                 if obj is None:
                     continue
                 obj.location.x = x * step
