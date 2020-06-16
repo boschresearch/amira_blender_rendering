@@ -49,3 +49,6 @@ class BaseConfiguration(Configuration):
         self.add_param('render_setup.denoising', True, 'Use denoising algorithms during rendering')
         self.add_param('render_setup.samples', 128, 'Samples to use during rendering')
 
+        # logging
+        self.add_param('logging.debug', False, 'If True, enable log for debugging')
+
