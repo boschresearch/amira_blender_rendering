@@ -43,27 +43,7 @@ import amira_blender_rendering.math.geometry as abr_geom
 import amira_blender_rendering.utils.blender as blnd
 import amira_blender_rendering.interfaces as interfaces
 from amira_blender_rendering.abc_importer import ABCImporter
-
-
-class ObjectBookkeeper(object):
-    """Tracks object classes, and instance count"""
-    def __init__(self):
-        self._book = dict()
-
-    def add(self, object_class):
-        if object_class in self._book:
-            self._book[object_class]["instances"] += 1
-        else:
-            self._book[object_class] = dict(id=len(self._book), instances=1)
-
-    def __getitem__(self, object_class):
-        if object_class in self._book:
-            return self._book[object_class]
-        else:
-            return dict(id=None, instances=None)
-
-    def __str__(self):
-        return self._book.__str__()
+from amira_blender_rendering.utils.annotation import ObjectBookkeeper
 
 
 class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
@@ -90,6 +70,8 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
         self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
         self.add_param('scenario_setup.abc_objects', [], 'List of all ABC-Dataset objects to drop in environment')
+        self.add_param('scenario_setup.n_abc_colors', 3, 'Number of random metallic materials to generate')
+        # HINT: these object lists above are parsed as strings, later on split with ":" separator
 
 
 class WorkstationScenarios(interfaces.ABRScene):
@@ -328,17 +310,13 @@ class WorkstationScenarios(interfaces.ABRScene):
                 })
 
         # Adding ABC objects
-        try:
-            abc_objects = self.config.scenario_setup.abc_objects
-            try:
-                n_materials = int(self.config.scenario_setup.n_abc_colors)
-                self.logger.info(f"making {n_materials} random metallic materials")
-                abc_importer = ABCImporter(n_materials=n_materials)
-            except KeyError:
-                abc_importer = ABCImporter()
-        except KeyError:
-            abc_objects = list()
+        abc_objects = self.config.scenario_setup.abc_objects
+        if abc_objects == list():
             self.logger.info("Config file does NOT include ABC-Dataset objects")
+        else:
+            n_materials = int(self.config.scenario_setup.n_abc_colors)
+            self.logger.info(f"making {n_materials} random metallic materials")
+            abc_importer = ABCImporter(n_materials=n_materials)
 
         for class_id, obj_spec in enumerate(abc_objects):
             class_str, obj_count = obj_spec.split(':')
