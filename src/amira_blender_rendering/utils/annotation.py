@@ -36,3 +36,6 @@ class ObjectBookkeeper(object):
 
     def __str__(self):
         return self._book.__str__()
+
+    def __len__(self):
+        return len(self._book)
