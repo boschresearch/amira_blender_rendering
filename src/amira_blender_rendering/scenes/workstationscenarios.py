@@ -31,7 +31,6 @@ from mathutils import Vector
 import numpy as np
 import random
 from math import ceil, log
-from collections import defaultdict
 
 from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
@@ -71,7 +70,7 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
         self.add_param('scenario_setup.abc_objects', [], 'List of all ABC-Dataset objects to drop in environment')
         self.add_param('scenario_setup.n_abc_colors', 3, 'Number of random metallic materials to generate')
-        # HINT: these object lists above are parsed as strings, later on split with ":" separator
+        # HINT: these object lists above are parsed as strings, later on split with "," separator
 
 
 class WorkstationScenarios(interfaces.ABRScene):
@@ -247,13 +246,8 @@ class WorkstationScenarios(interfaces.ABRScene):
         #       object_class_id     model type ID (simply incremental numbers)
         #       object_id           instance ID of the object
         #       bpy                 blender object reference
-        n_types = 0  # count how many types we have
-        # n_instances = []  # count how many instances per type we have
-        n_instances = defaultdict(int)  # count how many instances per type we have
         for class_id, obj_spec in enumerate(self.config.scenario_setup.target_objects):
             class_str, obj_count = obj_spec.split(':')
-            n_types += 1
-            # n_instances[obj_type] = int(obj_count)
 
             # here we distinguish if we copy a part from the proto objects
             # within a scene, or if we have to load it from file
@@ -295,8 +289,6 @@ class WorkstationScenarios(interfaces.ABRScene):
                         new_obj = bpy.context.object
                         new_obj.name = f'{class_str}.{j:03d}'
 
-                n_instances[class_str] += 1
-
                 self._obk.add(class_str)
 
                 # append all information
@@ -319,11 +311,12 @@ class WorkstationScenarios(interfaces.ABRScene):
             abc_importer = ABCImporter(n_materials=n_materials)
 
         for class_id, obj_spec in enumerate(abc_objects):
-            class_str, obj_count = obj_spec.split(':')
+            _class_str, obj_count = obj_spec.split(':')
 
             for j in range(int(obj_count)):
                 bpy.ops.object.select_all(action='DESELECT')
-                obj_handle, class_str = abc_importer.import_object()
+
+                obj_handle, class_str = abc_importer.import_object(_class_str)
 
                 if obj_handle is None:
                     continue
@@ -341,11 +334,10 @@ class WorkstationScenarios(interfaces.ABRScene):
 
         # build masks id for compositor of the format _N_M, where N is the model
         # id, and M is the object id
-        w_class = ceil(log(n_types))  # format width for number of model types
+        w_class = ceil(log(len(self._obk)))  # format width for number of model types
         for i, obj in enumerate(self.objs):
-            # o_w = ceil(log(n_instances[obj['object_class_id']]))  # format width for number of objects of same model
             obj_id, class_id, class_str = obj["object_id"], obj['object_class_id'], obj["object_class_name"]
-            n_class_instances = self._obk[class_str]["instances"]  # n_instances[class_str]
+            n_class_instances = self._obk[class_str]["instances"]
             w_obj = ceil(log(n_class_instances))  # format width for number of objects of same model
             id_mask = f"_{class_id:0{w_class}}_{obj_id:0{w_obj}}"
             obj['id_mask'] = id_mask

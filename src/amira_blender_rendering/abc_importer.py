@@ -79,7 +79,7 @@ class ABCDataLoader(object):
             roller=dict(
                 folder="Rollers", lower_limit=0.01, upper_limit=0.1),
             busing_liner=dict(
-                folder="Bushing_Damping_Liners", lower_limit=0.01, upper_limit=0.15),
+                folder="Bushing_Damping_Liners", lower_limit=0.003, upper_limit=0.07),
             shaft=dict(
                 folder="Shafts", lower_limit=0.01, upper_limit=0.2),
             bolt=dict(
@@ -98,8 +98,8 @@ class ABCDataLoader(object):
                 folder="Push_Rings", lower_limit=0.0005, upper_limit=0.05),
             retaining_ring=dict(
                 folder="Retaining_Rings", lower_limit=0.0005, upper_limit=0.05),
-            washer=dict(
-                folder="Washers", lower_limit=0.01, upper_limit=0.05),
+            # washer=dict(  # deleted, caused error due to dimensions = (0, 0, 0)
+            #     folder="Washers", lower_limit=0.01, upper_limit=0.05),
         )
 
         missing = 0
@@ -189,6 +189,66 @@ class STLImporter(object):
         self._mass = mass
         self._collision_margin = collision_margin
 
+    def _set_scene_units(self, scene=None):
+        if scene is None:
+            for scene in bpy.data.scenes:
+                scene.unit_settings.length_unit = self._units
+        else:
+            if isinstance(scene, str):
+                try:
+                    bpy.data.scenes[scene].unit_settings.length_unit = self._units
+                except KeyError as err:
+                    logger.critical(f"{scene} is not a valid scene name")
+                    raise err
+            else:
+                try:
+                    scene.unit_settings.length_unit = self._units
+                except Exception as err:
+                    raise err
+
+    @staticmethod
+    def _random_rescale(obj, lower_limit, upper_limit):
+        """Rescale object to a reasonable size
+
+        (ABC) STL files do NOT retain length units
+
+        Args:
+            obj: blender object handle
+            lower_limit (float): lower size limit [m]
+            upper_limit (float): upper size limit [m]
+
+        Returns:
+            bool: success
+        """
+        epsilon = 1e-6
+        if np.min(np.abs(obj.dimensions)) < epsilon:
+            raise ZeroDivisionError(f"STL object dimensions < tolerance ({obj.dimensions})")
+
+        min_scale = lower_limit / np.min(obj.dimensions)
+        max_scale = upper_limit / np.max(obj.dimensions)
+        if min_scale > max_scale:
+            logger.error("Cannot resolve object scaling")
+            logger.warning(",".join((
+                f"name = {obj.name}",
+                f"dimensions = {obj.dimensions}",
+                f"lower_limit = {lower_limit}",
+                f"upper_limit = {upper_limit}",
+            )))
+            return False
+        delta = max_scale - min_scale
+        scale = min_scale + delta * np.random.rand(1)[0]
+        logger.debug(f"randomized scale = {scale}")
+        obj.scale *= scale
+        return True
+
+    @staticmethod
+    def _set_origin_to_center(obj):
+        """Set mesh origin (coordinate system) to geomtric center"""
+        bpy.ops.object.select_all(action='DESELECT')
+        obj.select_set(True)
+        bpy.ops.object.origin_set(type='ORIGIN_CENTER_OF_MASS')
+        obj.select_set(False)
+
     def _set_physical_properties(self, obj, scene=None, mass=None, collision_margin=None):
         """Set required phyisical properties
 
@@ -228,57 +288,10 @@ class STLImporter(object):
         if collision_margin is None:
             collision_margin = self._collision_margin
         obj.rigid_body.type = "ACTIVE"
-        obj.rigid_body.use_margin = True
         obj.rigid_body.mass = mass
+        obj.rigid_body.use_margin = True
+        obj.rigid_body.collision_shape = 'CONVEX_HULL'
         obj.rigid_body.collision_margin = collision_margin
-
-    def _set_scene_units(self, scene=None):
-        if scene is None:
-            for scene in bpy.data.scenes:
-                scene.unit_settings.length_unit = self._units
-        else:
-            if isinstance(scene, str):
-                try:
-                    bpy.data.scenes[scene].unit_settings.length_unit = self._units
-                except KeyError as err:
-                    logger.critical(f"{scene} is not a valid scene name")
-                    raise err
-            else:
-                try:
-                    scene.unit_settings.length_unit = self._units
-                except Exception as err:
-                    raise err
-
-    @staticmethod
-    def _random_rescale(obj, lower_limit, upper_limit):
-        """Rescale object to a reasonable size
-
-        (ABC) STL files do NOT retain length units
-
-        Args:
-            obj: blender object handle
-            lower_limit (float): lower size limit [m]
-            upper_limit (float): upper size limit [m]
-
-        Returns:
-            bool: success
-        """
-        min_scale = lower_limit / np.min(obj.dimensions)
-        max_scale = upper_limit / np.max(obj.dimensions)
-        if min_scale > max_scale:
-            logger.error("Cannot resolve object scaling")
-            logger.warning(",".join((
-                f"name = {obj.name}",
-                f"dimensions = {obj.dimensions}",
-                f"lower_limit = {lower_limit}",
-                f"upper_limit = {upper_limit}",
-            )))
-            return False
-        delta = max_scale - min_scale
-        scale = min_scale + delta * np.random.rand(1)[0]
-        logger.debug(f"randomized scale = {scale}")
-        obj.scale *= scale
-        return True
 
     def import_object(self, stl_fullpath, name, scale=None, size_limits=None, mass=None, collision_margin=None):
         """Import an STL file and assign material and physical properties
@@ -296,6 +309,8 @@ class STLImporter(object):
         """
         old_names = get_collection_item_names(bpy.data.objects)
         bpy.ops.import_mesh.stl(filepath=stl_fullpath)
+        logger.debug(f"importing {stl_fullpath}")
+
         # rename
         new_names = find_new_items(bpy.data.objects, old_names)
         temp_name = new_names.pop()
@@ -311,7 +326,13 @@ class STLImporter(object):
 
         if size_limits is not None:
             lower_limit, upper_limit = size_limits
-            rescale_success = self._random_rescale(obj, lower_limit, upper_limit)
+            try:
+                rescale_success = self._random_rescale(obj, lower_limit, upper_limit)
+            except ZeroDivisionError:
+                logger.notice(f"STL with Zero dimensions in {stl_fullpath}")
+                return obj, False
+
+        self._set_origin_to_center(obj)
 
         obj.active_material = self._mat_gen.get_material()
 
