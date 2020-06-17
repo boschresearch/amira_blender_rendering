@@ -369,7 +369,7 @@ def generate_locations_list(num_locations=30, camera_scale=1, camera_bias=(0, 0,
 
     Args:
         num_locations: number of required locations on the unit half sphere around (0, 0, 0)
-        camera_scale, camera_bias: scale and biase relative to unit sphere
+        camera_scale, camera_bias: scale and bias relative to unit sphere
 
     Returns:
         half_sphere_locations (list): a list of locations
