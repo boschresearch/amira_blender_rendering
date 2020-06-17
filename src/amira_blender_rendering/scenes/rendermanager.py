@@ -19,7 +19,6 @@
 """This module specifies a render manager that takes care of several
 intermediate steps."""
 
-
 import bpy
 from mathutils import Vector
 
@@ -27,6 +26,7 @@ import os
 from abc import ABC, abstractmethod
 import numpy as np
 import imageio
+
 try:
     import ujson as json
 except ModuleNotFoundError:
@@ -43,6 +43,7 @@ from amira_blender_rendering.math.conversions import bu_to_mm
 from amira_blender_rendering.interfaces import PoseRenderResult, ResultsCollection
 from amira_blender_rendering.postprocessing import boundingbox_from_mask
 from amira_blender_rendering.utils.logging import get_logger
+from amira_blender_rendering.utils.converters import to_PASCAL_VOC
 
 
 class RenderManager(abr_scenes.BaseSceneManager):
@@ -54,7 +55,6 @@ class RenderManager(abr_scenes.BaseSceneManager):
         # blender settings
         super(RenderManager, self).__init__()
         self.unit_conversion = unit_conversion
-
 
     def postprocess(self, dirinfo, base_filename, camera, objs, zeroing):
         """Postprocessing the scene.
@@ -81,7 +81,6 @@ class RenderManager(abr_scenes.BaseSceneManager):
             results_cv.add_result(render_result_cv)
         self.save_annotations(dirinfo, base_filename, results_gl, results_cv)
 
-
     def setup_renderer(self, integrator, enable_denoising, samples):
         """Setup blender CUDA rendering, and specify number of samples per pixel to
         use during rendering. If the setting render_setup.samples is not set in the
@@ -105,7 +104,6 @@ class RenderManager(abr_scenes.BaseSceneManager):
         bpy.context.scene.view_layers[0].cycles.use_denoising = enable_denoising
         self.logger.info(f"Denoising enabled" if enable_denoising else f"Denoising disabled")
 
-
     def setup_compositor(self, objs):
         """Setup output compositor nodes"""
         self.compositor = abr_nodes.CompositorNodesOutputRenderedObjects()
@@ -122,10 +120,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
     def render(self):
         bpy.ops.render.render(write_still=False)
 
-
     def setup_pathspec(self, dirinfo, render_filename: str, objs):
         self.compositor.setup_pathspec(dirinfo, render_filename, objs)
-
 
     def convert_units(self, render_result):
         """Convert render_result units from blender units to target unit"""
@@ -139,7 +135,6 @@ class RenderManager(abr_scenes.BaseSceneManager):
         result.oobb = self.unit_conversion(result.oobb)
 
         return result
-
 
     def build_render_result(self, obj, camera, zeroing):
         """Create render result.
@@ -179,7 +174,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
             corners3d=corners3d,
             aabb=aabb,
             oobb=oobb,
-            mask_name=obj['id_mask'])
+            mask_name=obj['id_mask'],
+            dimensions=obj['dimensions'])
 
         # build results in OpenCV format
         R_cv, t_cv = abr_geom.gl2cv(R, t)
@@ -201,7 +197,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
             corners3d=corners3d,
             aabb=aabb,
             oobb=oobb,
-            mask_name=obj['id_mask'])
+            mask_name=obj['id_mask'],
+            dimensions=obj['dimensions'])
 
         # convert to desired units
         render_result_gl = self.convert_units(render_result_gl)
@@ -233,6 +230,9 @@ class RenderManager(abr_scenes.BaseSceneManager):
         json_data = results_cv.state_dict()
         with open(fpath_json, 'w') as f:
             json.dump(json_data, f, indent=0)
+
+        # create xml annotation files according to PASCAL VOC format
+        to_PASCAL_VOC(fpath_json)
 
     def compute_2dbbox(self, fname_mask):
         """Compute the 2D bounding box around an object given the mask filename
@@ -336,5 +336,3 @@ class RenderManager(abr_scenes.BaseSceneManager):
             np_corners3d[i + 1, :] = np.array((corners3d[-1][0], corners3d[-1][1]))
 
         return np_aabb, np_oobb, np_corners3d
-
-

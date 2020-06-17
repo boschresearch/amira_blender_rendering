@@ -20,7 +20,7 @@
 project = 'AMIRA Blender Rendering (ABR)'
 copyright = '2020, The AMIRA Team'
 author = 'The AMIRA Team'
-
+master_doc = 'index'
 
 # -- General configuration ---------------------------------------------------
 
