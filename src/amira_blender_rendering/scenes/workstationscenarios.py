@@ -418,8 +418,9 @@ class WorkstationScenarios(interfaces.ABRScene):
                     origin_offset=0.01)
                 if not_visible_or_occluded:
                     self.logger.warn(f"object {obj} not visible or occluded")
-                    self.logger.info("saving blender file for debugging to /tmp/workstationscenarios.blend")
-                    bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
+                    if self.config.logging.debug:
+                        self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
+                        bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
                     return False
 
         return True
@@ -497,9 +498,9 @@ class WorkstationScenarios(interfaces.ABRScene):
             return False
         # format_width = int(ceil(log(image_count, 10)))
 
-        i = 0
-        while i < self.config.dataset.image_count:
-            self.logger.info(f"Generating image {i + 1} of {self.config.dataset.image_count}")
+        i_scn = 0
+        while i_scn < self.config.dataset.image_count:
+            self.logger.info(f"Generating image {i_scn + 1} of {self.config.dataset.image_count}")
 
             # randomize scene: move objects at random locations, and forward
             # simulate physics
@@ -519,40 +520,41 @@ class WorkstationScenarios(interfaces.ABRScene):
                 self.logger.warn("\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
                 repeat_frame = True
             else:
-                # loop through all cameras
-                for i_cam, cam in enumerate(self.config.scene_setup.cameras):
-                    # activate camera
-                    self.activate_camera(cam)
-                    for i_loc, loc in enumerate(locations_list):
-                        # generate render filename
-                        base_filename = f"camera_{i_cam:04}_location_{i_loc:04}"
-                        # update camera location
-                        self.set_camera_location(location=loc)
-                        # update path information in compositor
-                        self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
-                        # finally, render
-                        self.renderman.render()
+                # use the first camera and move it across all views
+                i_cam = 0
+                cam = self.config.scene_setup.cameras[i_cam]
+                # activate camera
+                self.activate_camera(cam)
+                for i_loc, loc in enumerate(locations_list):
+                    # generate render filename
+                    base_filename = f"scenario_{i_scn:04}_cameralocation_{i_loc:04}"
+                    # update camera location
+                    self.set_camera_location(location=loc)
+                    # update path information in compositor
+                    self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
+                    # finally, render
+                    self.renderman.render()
 
-                        # postprocess. this will take care of creating additional
-                        # information, as well as fix filenames
-                        try:
-                            self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
-                                                       bpy.context.scene.camera, self.objs,
-                                                       self.config.camera_info.zeroing)
-                        except ValueError:
-                            # This issue happens every now and then. The reason might be (not
-                            # yet verified) that the target-object is occluded. In turn, this
-                            # leads to a zero size 2D bounding box...
-                            self.logger.error(
-                                f"\033[1;31mValueError during post-processing, re-generating image index {i}\033[0;37m")
-                            repeat_frame = True
+                    # postprocess. this will take care of creating additional
+                    # information, as well as fix filenames
+                    try:
+                        self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
+                                                   bpy.context.scene.camera, self.objs,
+                                                   self.config.camera_info.zeroing)
+                    except ValueError:
+                        # This issue happens every now and then. The reason might be (not
+                        # yet verified) that the target-object is occluded. In turn, this
+                        # leads to a zero size 2D bounding box...
+                        self.logger.error(
+                            f"\033[1;31mValueError during post-processing, re-generating image index {i_scn}\033[0;37m")
+                        repeat_frame = True
 
-                            # no need to continue with other cameras
-                            break
+                        # no need to continue with other cameras
+                        break
 
             # if we need to repeat this frame, then do not increment the counter
             if not repeat_frame:
-                i = i + 1
+                i_scn = i_scn + 1
         return True
 
     def set_camera_location(self, location=(0, 0, 2)):

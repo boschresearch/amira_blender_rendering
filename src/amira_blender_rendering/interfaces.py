@@ -234,7 +234,7 @@ class PoseRenderResult:
     def __init__(self, object_class_name, object_class_id, object_name, object_id,
                  rgb_const, rgb_random, depth, mask,
                  T_int, T_ext, rotation, translation,
-                 corners2d, corners3d, aabb, oobb, dimensions,
+                 corners2d, corners3d, aabb, oobb, dimensions=(None,None,None),
                  dense_features=None,
                  mask_name=''):
         """Initialize struct to store the result of rendering synthetic data

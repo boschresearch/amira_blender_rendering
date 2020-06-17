@@ -39,9 +39,7 @@ import argparse
 
 
 def _err_msg():
-    return \
-        """Error: Could not import amira_blender_rendering. Either install it as a package,
-        or specify a valid path to its location with the --abr-path command line argument."""
+    return """Error: Could not import amira_blender_rendering. Either install it as a package, or specify a valid path to its location with the --abr-path command line argument."""
 
 
 def import_abr(path=None):
