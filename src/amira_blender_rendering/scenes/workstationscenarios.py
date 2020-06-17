@@ -379,8 +379,9 @@ class WorkstationScenarios(interfaces.ABRScene):
                     origin_offset=0.01)
                 if not_visible_or_occluded:
                     self.logger.warn(f"object {obj} not visible or occluded")
-                    self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
-                    bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
+                    if self.config.logging.debug:
+                        self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
+                        bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
                     return False
 
         return True
