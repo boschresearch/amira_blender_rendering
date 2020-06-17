@@ -1,5 +1,21 @@
 #!/usr/bin/env python
 
+# Copyright (c) 2020 - for information on the respective copyright owner
+# see the NOTICE file and/or the repository
+# <https://github.com/boschresearch/amira-blender-rendering>.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http:#www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 This file implements generation of datasets for workstation scenarios. The file
 depends on a suitable workstation scenarion blender file such as
@@ -160,6 +176,17 @@ class WorkstationScenarios(interfaces.ABRScene):
         # that was used for rendering. Hence, we will store the effective
         # calibration matrix K alongside. Because we use identical cameras, we
         # can extract this from one of the cameras
+        self.get_effective_intrinsics()
+
+
+    def get_effective_intrinsics(self):
+        """Get the effective intrinsics that were used during rendering.
+
+        This function will copy original values for intrinsic, sensor_width, and
+        focal_length, and fov, to the configuration an prepend them with 'original_'. This
+        way, they are available in the dataset later on
+        """
+
         cam_str = self.config.scene_setup.cameras[0]
         cam_name = f"{cam_str}.{self.config.scenario_setup.scenario:03}"
         cam = bpy.data.objects[cam_name].data
@@ -180,19 +207,6 @@ class WorkstationScenarios(interfaces.ABRScene):
         Note that this does not select a camera for which to render. This will
         be selected elsewhere.
         """
-
-        # set up cameras from calibration information (if any)
-        if self.config.camera_info.intrinsic is None or len(self.config.camera_info.intrinsic) <= 0:
-            return
-
-        # convert the configuration value of K to a numpy format
-        if isinstance(self.config.camera_info.intrinsic, str):
-            intrinsics = np.fromstring(self.config.camera_info.intrinsic, sep=',', dtype=np.float32)
-        elif isinstance(self.config.camera_info.intrinsic, list):
-            intrinsics = np.asarray(self.config.camera_info.intrinsic, dtype=np.float32)
-        else:
-            raise RuntimeError("invalid value for camera_info.intrinsic")
-
         scene = bpy.context.scene
         for cam in self.config.scene_setup.cameras:
             # first get the camera name. this depends on the scene (blend file)
@@ -205,8 +219,7 @@ class WorkstationScenarios(interfaces.ABRScene):
             # modify camera according to the intrinsics
             blender_camera = bpy.data.objects[cam_name].data
             # set the calibration matrix
-            camera_utils.set_intrinsics(scene, blender_camera,
-                    intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3])
+            camera_utils.set_camera_info(scene, blender_camera, self.config.camera_info)
 
 
     def setup_objects(self):
@@ -377,8 +390,9 @@ class WorkstationScenarios(interfaces.ABRScene):
                         origin_offset=0.01)
                 if not_visible_or_occluded:
                     self.logger.warn(f"object {obj} not visible or occluded")
-                    self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
-                    bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
+                    if self.config.logging.debug:
+                        self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
+                        bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
                     return False
 
         return True
