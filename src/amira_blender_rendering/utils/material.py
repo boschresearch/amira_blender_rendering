@@ -97,8 +97,8 @@ class BaseMaterialGenerator(ABC):
 class MetallicMaterialGenerator(BaseMaterialGenerator):
     """Generate randomized metallic materials"""
     def __init__(self):
-        self._rgb_lower_limits = (0.9, 0.7, 0.6)
-        self._shift_to_white = 2.0
+        self._rgb_lower_limits = (0.9, 0.7, 0.5)
+        self._shift_to_white = 1.0
         self._max_roughness = 0.4
         self._max_texture_scale = 0.7
         self._max_texture_detail = 3.0
