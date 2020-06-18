@@ -77,7 +77,14 @@ class RenderManager(abr_scenes.BaseSceneManager):
         results_cv = ResultsCollection()
         for obj in objs:
             render_result_gl, render_result_cv = self.build_render_result(obj, camera, zeroing)
+            if render_result_gl.corners2d is not None:
+                results_gl.add_result(render_result_gl)
+            if render_result_cv.corners2d is not None:
+                results_cv.add_result(render_result_cv)
+        # if there's no visible object, add single instance results to have general scene information annotated
+        if len(results_gl) == 0:
             results_gl.add_result(render_result_gl)
+        if len(results_cv) == 0:
             results_cv.add_result(render_result_cv)
         self.save_annotations(dirinfo, base_filename, results_gl, results_cv)
 
@@ -155,7 +162,12 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         # compute bounding boxes
         corners2d = self.compute_2dbbox(obj['fname_mask'])
-        aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
+        #if the object is not visible:
+        if corners2d is not None:
+            aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
+        else:
+            # return None, None
+            aabb, oobb, corners3d = [None]*3
 
         render_result_gl = PoseRenderResult(
             object_class_name=obj['object_class_name'],
