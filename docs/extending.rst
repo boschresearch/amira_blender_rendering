@@ -1,2 +1,0 @@
-Extending AMIRA Blender Rendering
-=================================

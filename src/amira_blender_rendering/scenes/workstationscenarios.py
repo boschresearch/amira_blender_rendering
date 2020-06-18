@@ -23,10 +23,11 @@ worstationscenarios.blend.
 """
 
 import bpy
-import os, sys
+import os
+# import sys
 import pathlib
 from mathutils import Vector
-import time
+# import time
 import numpy as np
 import random
 from math import ceil, log
@@ -34,12 +35,14 @@ from math import ceil, log
 from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
 from amira_blender_rendering.utils.logging import get_logger
-from amira_blender_rendering.datastructures import Configuration, flatten
+# from amira_blender_rendering.datastructures import Configuration, flatten
 from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 import amira_blender_rendering.utils.blender as blnd
 import amira_blender_rendering.interfaces as interfaces
+from amira_blender_rendering.abc_importer import ABCImporter
+from amira_blender_rendering.utils.annotation import ObjectBookkeeper
 
 
 class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
@@ -65,6 +68,9 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         # specific scenario configuration
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
         self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
+        self.add_param('scenario_setup.abc_objects', [], 'List of all ABC-Dataset objects to drop in environment')
+        self.add_param('scenario_setup.n_abc_colors', 3, 'Number of random metallic materials to generate')
+        # HINT: these object lists above are parsed as strings, later on split with "," separator
 
 
 class WorkstationScenarios(interfaces.ABRScene):
@@ -227,8 +233,10 @@ class WorkstationScenarios(interfaces.ABRScene):
         blender file, and number indicates how often the object shall be
         duplicated.
         """
+        rgb_shape = (self.config.camera_info.height, self.config.camera_info.width, 3)
         # let's start with an empty list
         self.objs = []
+        self._obk = ObjectBookkeeper()
 
         # extract all objects from the configuration. An object has a certain
         # type, as well as an own id. this information is storeed in the objs
@@ -238,19 +246,15 @@ class WorkstationScenarios(interfaces.ABRScene):
         #       object_class_id     model type ID (simply incremental numbers)
         #       object_id           instance ID of the object
         #       bpy                 blender object reference
-        n_types = 0  # count how many types we have
-        n_instances = []  # count how many instances per type we have
-        for obj_type_id, obj_spec in enumerate(self.config.scenario_setup.target_objects):
-            obj_type, obj_count = obj_spec.split(':')
-            n_types += 1
-            n_instances.append(int(obj_count))
+        for class_id, obj_spec in enumerate(self.config.scenario_setup.target_objects):
+            class_str, obj_count = obj_spec.split(':')
 
             # here we distinguish if we copy a part from the proto objects
             # within a scene, or if we have to load it from file
-            is_proto_object = not obj_type.startswith('parts.')
+            is_proto_object = not class_str.startswith('parts.')
             if not is_proto_object:
                 # split off the prefix for all files that we load from blender
-                obj_type = obj_type[6:]
+                class_str = class_str[6:]
 
             # TODO: file loading happens only very late in this loop. This might
             #       be an issue for large object counts and could be changed to
@@ -260,47 +264,82 @@ class WorkstationScenarios(interfaces.ABRScene):
                 bpy.ops.object.select_all(action='DESELECT')
                 if is_proto_object:
                     # duplicate proto-object
-                    blnd.select_object(obj_type)
+                    blnd.select_object(class_str)
                     bpy.ops.object.duplicate()
                     new_obj = bpy.context.object
                 else:
                     # we need to load this object from file. This could be
                     # either a blender file, or a PLY file
-                    blendfile = expandpath(self.config.parts[obj_type], check_file=False)
+                    blendfile = expandpath(self.config.parts[class_str], check_file=False)
                     if os.path.exists(blendfile):
                         # this is a blender file, so we should load it
                         # we can now load the object into blender
-                        blnd.append_object(blendfile, obj_type)
+                        blnd.append_object(blendfile, class_str)
                         # NOTE: bpy.context.object is **not** the object that we are
                         # interested in here! We need to select it via original name
                         # first, then we rename it to be able to select additional
                         # objects later on
-                        new_obj = bpy.data.objects[obj_type]
-                        new_obj.name = f'{obj_type}.{j:03d}'
+                        new_obj = bpy.data.objects[class_str]
+                        new_obj.name = f'{class_str}.{j:03d}'
                     else:
                         # no blender file given, so we will load the PLY file
-                        ply_path = expandpath(self.config.parts.ply[obj_type], check_file=True)
+                        ply_path = expandpath(self.config.parts.ply[class_str], check_file=True)
                         bpy.ops.import_mesh.ply(filepath=ply_path)
                         # here we can use bpy.context.object!
                         new_obj = bpy.context.object
-                        new_obj.name = f'{obj_type}.{j:03d}'
+                        new_obj.name = f'{class_str}.{j:03d}'
+
+                self._obk.add(class_str)
 
                 # append all information
                 self.objs.append({
                     'id_mask': '',
-                    'object_class_name': obj_type,
-                    'object_class_id': obj_type_id,
+                    'object_class_name': class_str,
+                    'object_class_id': class_id,
                     'object_id': j,
                     'bpy': new_obj,
-                    'dimensions': (self.config.camera_info.height, self.config.camera_info.width, 3)
+                    'dimensions': rgb_shape
+                })
+
+        # Adding ABC objects
+        abc_objects = self.config.scenario_setup.abc_objects
+        if abc_objects == list():
+            self.logger.info("Config file does NOT include ABC-Dataset objects")
+        else:
+            n_materials = int(self.config.scenario_setup.n_abc_colors)
+            self.logger.info(f"making {n_materials} random metallic materials")
+            abc_importer = ABCImporter(n_materials=n_materials)
+
+        for class_id, obj_spec in enumerate(abc_objects):
+            _class_str, obj_count = obj_spec.split(':')
+
+            for j in range(int(obj_count)):
+                bpy.ops.object.select_all(action='DESELECT')
+
+                obj_handle, class_str = abc_importer.import_object(_class_str)
+
+                if obj_handle is None:
+                    continue
+
+                self._obk.add(class_str)
+
+                self.objs.append({
+                    'id_mask': '',
+                    'object_class_name': class_str,
+                    'object_class_id': self._obk[class_str]["id"],
+                    'object_id': self._obk[class_str]["instances"] - 1,
+                    'bpy': obj_handle,
+                    'dimensions': rgb_shape
                 })
 
         # build masks id for compositor of the format _N_M, where N is the model
         # id, and M is the object id
-        m_w = ceil(log(n_types))  # format width for number of model types
+        w_class = ceil(log(len(self._obk)))  # format width for number of model types
         for i, obj in enumerate(self.objs):
-            o_w = ceil(log(n_instances[obj['object_class_id']]))  # format width for number of objects of same model
-            id_mask = f"_{obj['object_class_id']:0{m_w}}_{obj['object_id']:0{o_w}}"
+            obj_id, class_id, class_str = obj["object_id"], obj['object_class_id'], obj["object_class_name"]
+            n_class_instances = self._obk[class_str]["instances"]
+            w_obj = ceil(log(n_class_instances))  # format width for number of objects of same model
+            id_mask = f"_{class_id:0{w_class}}_{obj_id:0{w_obj}}"
             obj['id_mask'] = id_mask
 
     def setup_compositor(self):
@@ -418,7 +457,7 @@ class WorkstationScenarios(interfaces.ABRScene):
             # repeat if the cameras cannot see the objects
             repeat_frame = False
             if not self.test_visibility():
-                self.logger.warn(f"\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
+                self.logger.warn("\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
                 repeat_frame = True
             else:
                 # loop through all cameras
@@ -462,7 +501,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         image_count = self.config.dataset.image_count
         if image_count <= 0:
             return False
-        format_width = int(ceil(log(image_count, 10)))
+        # format_width = int(ceil(log(image_count, 10)))
 
         i_frm = 0
         while i_frm < int(self.config.scene_setup.num_frames):
@@ -533,7 +572,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         return True
 
     def set_camera_location(self, location=(0, 0, 2)):
-        scene = bpy.context.scene
+        # scene = bpy.context.scene
         for cam in self.config.scene_setup.cameras:
             # first get the camera name. this depends on the scene (blend file)
             # and is of the format CameraName.XXX, where XXX is a number with

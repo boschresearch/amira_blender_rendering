@@ -83,7 +83,26 @@ information.
     # created dataset, so you can easily retrieve the effective_intrinsics in
     # downstream applications
     intrinsics = 9.9801747708520452e+02,9.9264009290521165e+02,6.6049856967197002e+02,3.6404286361152555e+02,0
-
+    
+    # A default camera in blender with 0 rotation applied to its transform looks
+    # along the -Z direction. Blender's modelling viewport, however, assumes that
+    # the surface plane is spanned by X and Y, where X indicates left/right. This
+    # can be observed by putting the modelling viewport into the front viewpoint
+    # (Numpad 1). Then, the viewport looks along the Y direction.
+    #
+    # As a consequence, the relative rotation between a camera image and an object
+    # is only 0 when the camera would look onto the top of the object. Note that
+    # this is rather unintuitive, as most people would expect that the relative
+    # rotation is 0 when the camera looks at the front of an object.
+    #
+    # To accomodate for this, users can set their preferred 'zeroing' rotation 
+    # by using the following configuration parameter encoding rotations 
+    # around x, y and z-axis, respectively, in degrees.
+    #
+    # As an example, a value of 90, 0, 0 will apply a rotation of 90[deg] around x
+    # when computing the relative rotation between the camera and an object in the
+    # in the camera reference frame.
+    zeroing = 0.0, 0.0, 0.0
 
 render_setup
 ------------
