@@ -367,6 +367,8 @@ class WorkstationScenarios(interfaces.ABRScene):
         for i_cam, cam in enumerate(self.config.scene_setup.cameras):
             cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
             cam_obj = bpy.data.objects[cam_name]
+            self.any_visible_object = False
+            self.all_objects_visible = True
             for obj in self.objs:
                 not_visible_or_occluded = abr_geom.test_occlusion(
                     bpy.context.scene,
@@ -378,12 +380,15 @@ class WorkstationScenarios(interfaces.ABRScene):
                     require_all=False,
                     origin_offset=0.01)
                 if not_visible_or_occluded:
-                    self.logger.warn(f"object {obj} not visible or occluded")
-                    if self.config.logging.debug:
-                        self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
-                        bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
-                    return False
-
+                    self.all_objects_visible = False
+                else:
+                    self.any_visible_object = True
+            if not_visible_or_occluded:
+                self.logger.warn(f"object {obj} not visible or occluded")
+                if self.config.logging.debug:
+                    self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
+                    bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
+                return False
         return True
 
     def generate_dataset(self):
@@ -459,9 +464,9 @@ class WorkstationScenarios(interfaces.ABRScene):
             return False
         format_width = int(ceil(log(image_count, 10)))
 
-        i_scn = 0
-        while i_scn < self.config.dataset.image_count:
-            self.logger.info(f"Generating image {i_scn + 1} of {self.config.dataset.image_count}")
+        i_frm = 0
+        while i_frm < int(self.config.scene_setup.num_frames):
+            self.logger.info(f"Generating image {i_frm + 1} of {self.config.dataset.image_count}")
 
             # randomize scene: move objects at random locations, and forward
             # simulate physics
@@ -476,10 +481,18 @@ class WorkstationScenarios(interfaces.ABRScene):
                     num_locations=self.config.scene_setup.num_camera_locations)
 
             # repeat if the cameras cannot see the objects
+            self.test_visibility()
             repeat_frame = False
-            if not self.test_visibility():
-                self.logger.warn(f"\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
-                repeat_frame = True
+            if self.any_visible_object == False:
+                print('\n\n\n ~~~~~~~~~~~~~~~~~~~~~~~~~` \n ~~~~~~~~~~~~~~~~~~~~~~~~ \n NO OBJECT VISIBLE! \n ~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n ~~~~~~~~~~~~~~~~~~~~~~~~~~~ \n\n\n')
+            if False:
+                zzzzz = 8
+            # if not self.any_visible_object:
+            #     self.logger.warn(f"\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
+                # repeat_frame = True
+            # if not self.test_visibility():
+            #     self.logger.warn(f"\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
+            #     repeat_frame = True
             else:
                 # use the first camera and move it across all views
                 i_cam = 0
@@ -488,7 +501,7 @@ class WorkstationScenarios(interfaces.ABRScene):
                 self.activate_camera(cam)
                 for i_loc, loc in enumerate(locations_list):
                     # generate render filename
-                    base_filename = f"scenario_{i_scn:04}_cameralocation_{i_loc:04}"
+                    base_filename = f"scenario_{i_frm:04}_cameralocation_{i_loc:04}"
                     # update camera location
                     self.set_camera_location(location=loc)
                     # update path information in compositor
@@ -498,24 +511,25 @@ class WorkstationScenarios(interfaces.ABRScene):
 
                     # postprocess. this will take care of creating additional
                     # information, as well as fix filenames
-                    try:
-                        self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
+                    # try:
+                    self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
                                                    bpy.context.scene.camera, self.objs,
                                                    self.config.camera_info.zeroing)
-                    except ValueError:
-                        # This issue happens every now and then. The reason might be (not
-                        # yet verified) that the target-object is occluded. In turn, this
-                        # leads to a zero size 2D bounding box...
-                        self.logger.error(
-                            f"\033[1;31mValueError during post-processing, re-generating image index {i_scn}\033[0;37m")
-                        repeat_frame = True
-
-                        # no need to continue with other cameras
-                        break
+                    # except ValueError:
+                    #     # This issue happens every now and then. The reason might be (not
+                    #     # yet verified) that the target-object is occluded. In turn, this
+                    #     # leads to a zero size 2D bounding box...
+                    #     self.logger.error(
+                    #         f"\033[1;31mValueError during post-processing, re-generating image index {i_frm}\033[0;37m")
+                    #     repeat_frame = True
+                    #     print(
+                    #
+                    #     # no need to continue with other cameras
+                    #     break
 
             # if we need to repeat this frame, then do not increment the counter
             if not repeat_frame:
-                i_scn = i_scn + 1
+                i_frm = i_frm + 1
         return True
 
     def set_camera_location(self, location=(0, 0, 2)):

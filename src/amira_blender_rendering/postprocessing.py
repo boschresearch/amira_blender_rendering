@@ -31,9 +31,12 @@ def boundingbox_from_mask(mask):
     ys = np.sum(mask, axis=1)
     xs = np.nonzero(xs)
     ys = np.nonzero(ys)
-    x = (np.min(xs), np.max(xs))
-    y = (np.min(ys), np.max(ys))
-
+    # return None if mask is empty
+    if (xs[0].shape[0] == 0) or (ys[0].shape[0] == 0):
+        return None
+    else:
+        x = (np.min(xs), np.max(xs))
+        y = (np.min(ys), np.max(ys))
     return np.array([[x[0], y[0]],
                      [x[1], y[1]]])
 
