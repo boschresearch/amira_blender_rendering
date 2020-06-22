@@ -62,4 +62,10 @@ line by
 
 .. code-block:: bash
 
-   $ blender -b -P scripts/render_dataset.py -- --dataset.image_count 2
+   $ abrgen --dataset.image_count 2
+
+Equivalently, by using the explicit command
+
+.. code-block:: bash
+
+   $ blender -b -P path_to_abr_src/cli/render_dataset.py -- --dataset.image_count 2
