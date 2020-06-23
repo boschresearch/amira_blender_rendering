@@ -40,8 +40,8 @@ def bu_to_m(x):
 
 def bu_to_cm(x):
     """Convert blender units to cm."""
-    return x * 100.0
+    return x * 100.0 if x is not None else x
 
 def bu_to_mm(x):
     """Convert blender units to mm."""
-    return x * 1000.0
+    return x * 1000.0 if x is not None else x
