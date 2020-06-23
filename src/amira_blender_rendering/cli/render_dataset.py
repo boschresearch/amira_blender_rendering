@@ -236,6 +236,9 @@ def main():
     if not success:
         get_logger().error("Error while generating dataset")
 
+    print("saving blender file for debugging to /tmp/abc_debug_2.blend")
+    import bpy
+    bpy.ops.wm.save_as_mainfile(filepath="/tmp/abc_debug_2.blend")
     # tear down scene. should be handled by blender, but a scene might have
     # other things opened that it should close gracefully
     scene.teardown()

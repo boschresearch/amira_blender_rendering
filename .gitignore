@@ -12,3 +12,4 @@ build/
 *.egg-info
 src/amira_blender_rendering/version.py
 $AMIRA_DATASETS/
+scripts/sh/*abc*.sh

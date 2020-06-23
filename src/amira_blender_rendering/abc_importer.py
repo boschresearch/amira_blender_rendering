@@ -182,7 +182,7 @@ class ABCDataLoader(object):
 class STLImporter(object):
     """Imports an STL file and adds material and physical properties"""
 
-    def __init__(self, material_generator, units="METERS", enable_physics=True, mass=0.01, collision_margin=0.0001):
+    def __init__(self, material_generator, units="METERS", enable_physics=True, mass=0.02, collision_margin=0.0001):
         self._mat_gen = material_generator
         self._units = units
         self._physhics = enable_physics
@@ -290,7 +290,7 @@ class STLImporter(object):
         obj.rigid_body.type = "ACTIVE"
         obj.rigid_body.mass = mass
         obj.rigid_body.use_margin = True
-        obj.rigid_body.collision_shape = 'CONVEX_HULL'
+        obj.rigid_body.collision_shape = 'MESH'
         obj.rigid_body.collision_margin = collision_margin
 
     def import_object(self, stl_fullpath, name, scale=None, size_limits=None, mass=None, collision_margin=None):
