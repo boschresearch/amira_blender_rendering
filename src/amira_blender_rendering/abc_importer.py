@@ -71,7 +71,7 @@ class ABCDataLoader(object):
             pipe=dict(
                 folder="Pipes", lower_limit=0.01, upper_limit=0.4),
             pipe_fitting=dict(
-                folder="Pipe_Fittings", lower_limit=0.01, upper_limit=0.15),
+                folder="Pipe_Fittings", lower_limit=0.01, upper_limit=0.1),
             pipe_joint=dict(
                 folder="Pipe_Joints", lower_limit=0.01, upper_limit=0.1),
             bushing=dict(
@@ -178,16 +178,17 @@ class ABCDataLoader(object):
         return file_path, object_type, lower_limit, upper_limit
 
 
-# TODO: move object origin to geometric center
 class STLImporter(object):
     """Imports an STL file and adds material and physical properties"""
 
-    def __init__(self, material_generator, units="METERS", enable_physics=True, mass=0.02, collision_margin=0.0001):
+    def __init__(self, material_generator, units="METERS", enable_physics=True, collision_margin=0.0001, density=8000):
         self._mat_gen = material_generator
         self._units = units
         self._physhics = enable_physics
-        self._mass = mass
         self._collision_margin = collision_margin
+        self._density = density  # kg/m^3, Steel ~ 8000
+        self._mass_top_limit = 1.0  # [kg]
+        self._mass_bottom_limit = 0.01
 
     def _set_scene_units(self, scene=None):
         if scene is None:
@@ -238,7 +239,11 @@ class STLImporter(object):
         delta = max_scale - min_scale
         scale = min_scale + delta * np.random.rand(1)[0]
         logger.debug(f"randomized scale = {scale}")
-        obj.scale *= scale
+        # obj.scale *= scale  # scaling causes issues with physics
+        for ver in obj.data.vertices:
+            old = ver.co
+            for i in range(3):
+                ver.co[i] = old[i] * 0.01
         return True
 
     @staticmethod
@@ -284,11 +289,14 @@ class STLImporter(object):
             raise AssertionError("Failed to link object to rigidbody_world collection")
 
         if mass is None:
-            mass = self._mass
+            estimated_volume = np.prod(obj.dimensions)
+            mass = estimated_volume * self._density
+            mass = min(self._mass_top_limit, max(mass, self._mass_bottom_limit))
         if collision_margin is None:
             collision_margin = self._collision_margin
         obj.rigid_body.type = "ACTIVE"
         obj.rigid_body.mass = mass
+        logger.debug(f"setting mass to {mass} kg")
         obj.rigid_body.use_margin = True
         obj.rigid_body.collision_shape = 'MESH'
         obj.rigid_body.collision_margin = collision_margin
@@ -343,13 +351,13 @@ class STLImporter(object):
 
 class ABCImporter(object):
     """Import ABC STL into blender session and assign material and physical properties"""
-    def __init__(self, data_dir=None, n_materials=3, mass=0.01, collision_margin=0.0001):
+    def __init__(self, data_dir=None, n_materials=3, collision_margin=0.0001, density=8000):
         """Configuration
 
         Args:
             data_dir (str, optional): fullpath to ABC dataset parent directory. Defaults to None.
             n_materials (int, optional): Number of random materials to generate. Defaults to 3.
-            mass (float, optional): mass in [kg]. Defaults to 0.01.
+            density (float, optional): density in [kg/m^3]. Default to 8000, for Steel.
             collision_margin (float, optional): collision_margin in [m]. Defaults to 0.0001.
             Physics simulation params are necessary for randomized object placement.
         """
@@ -357,7 +365,7 @@ class ABCImporter(object):
         material_generator = MetallicMaterialGenerator()
         material_generator.make_random_material(n=n_materials)
         self._stl_importer = STLImporter(
-            material_generator, units="METERS", enable_physics=True, mass=mass, collision_margin=collision_margin)
+            material_generator, units="METERS", enable_physics=True, collision_margin=collision_margin, density=density)
 
     @property
     def object_types(self):
@@ -370,7 +378,7 @@ class ABCImporter(object):
             object_type (string, optional): see object_types for options. Defaults to None (= random).
             filename (string, optional): filename in object-type directory (= object-id). Defaults to None (= random).
             name (string, optional): name for the new object. Defaults to None (= object_type_<random number>).
-            mass (float, optional): mass [kg]. Defaults to None; uses class instance config
+            mass (float, optional): density [kg]. Defaults to None; uses class instance density
             collision_margin (float, optional): collision margin [m]. Defaults to None; uses class instance config
 
         Returns:

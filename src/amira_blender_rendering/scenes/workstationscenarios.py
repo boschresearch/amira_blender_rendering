@@ -61,9 +61,18 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
 
         # specific parts configuration. This is just a dummy entry for purposes
         # of demonstration and help message generation
-        # self.add_param('parts.example_dummy', '/path/to/example_dummy.blend', 'Path to additional blender files containing invidual parts. Format must be partname = /path/to/blendfile.blend')
-        # self.add_param('parts.ply.example_dummy', '/path/to/example_dummy.ply', 'Path to PLY files containing part "example_dummy". Format must be ply.partname = /path/to/blendfile.ply')
-        # self.add_param('parts.ply_scale.example_dummy', [1.0, 1.0, 1.0], 'Scaling factor in X, Y, Z dimensions of part "example_dummy". Format must be a list of 3 floats.')
+        # self.add_param(
+        #     'parts.example_dummy',
+        #     '/path/to/example_dummy.blend',
+        #     'Path to additional blender files containing invidual parts. Format: partname = /path/to/blendfile.blend')
+        # self.add_param(
+        #     'parts.ply.example_dummy',
+        #     '/path/to/example_dummy.ply',
+        #     'Path to PLY files containing part "example_dummy". Format: ply.partname = /path/to/blendfile.ply')
+        # self.add_param(
+        #     'parts.ply_scale.example_dummy',
+        #     [1.0, 1.0, 1.0],
+        #     'Scaling factor in X, Y, Z dimensions of part "example_dummy". Format must be a list of 3 floats.')
 
         # specific scenario configuration
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
@@ -143,7 +152,8 @@ class WorkstationScenarios(interfaces.ABRScene):
         for cam in self.config.scene_setup.cameras:
             # DEPRECATED:
             # paths are set up as: base_path + Scenario## + CameraName
-            # camera_base_path = f"{self.config.dataset.base_path}-Scenario{self.config.scenario_setup.scenario:02}-{cam}"
+            # camera_base_path = \
+            #     f"{self.config.dataset.base_path}-Scenario{self.config.scenario_setup.scenario:02}-{cam}"
 
             # NEW:
             # paths are set up as: base_path + CameraName
@@ -402,34 +412,6 @@ class WorkstationScenarios(interfaces.ABRScene):
         cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
         bpy.context.scene.camera = bpy.context.scene.objects[cam_name]
 
-    # def test_visibility(self):
-    #     for i_cam, cam in enumerate(self.config.scene_setup.cameras):
-    #         cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
-    #         cam_obj = bpy.data.objects[cam_name]
-    #         self.any_visible_object = False
-    #         self.all_objects_visible = True
-    #         for obj in self.objs:
-    #             not_visible_or_occluded = abr_geom.test_occlusion(
-    #                 bpy.context.scene,
-    #                 bpy.context.scene.view_layers['View Layer'],
-    #                 cam_obj,
-    #                 obj['bpy'],
-    #                 bpy.context.scene.render.resolution_x,
-    #                 bpy.context.scene.render.resolution_y,
-    #                 require_all=False,
-    #                 origin_offset=0.01)
-    #             if not_visible_or_occluded:
-    #                 self.all_objects_visible = False
-    #             else:
-    #                 self.any_visible_object = True
-    #         if not_visible_or_occluded:
-    #             self.logger.warn(f"object {obj} not visible or occluded")
-    #             if self.config.logging.debug:
-    #                 self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
-    #                 bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
-    #             return False
-    #     return True
-
     def test_visibility(self):
         for i_cam, cam in enumerate(self.config.scene_setup.cameras):
             cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
@@ -447,7 +429,7 @@ class WorkstationScenarios(interfaces.ABRScene):
                 if not_visible_or_occluded:
                     self.logger.warn(f"object {obj} not visible or occluded")
                     if self.config.logging.debug:
-                        self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
+                        self.logger.info("saving blender file for debugging to /tmp/workstationscenarios.blend")
                         bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
                     return False
 
@@ -480,7 +462,8 @@ class WorkstationScenarios(interfaces.ABRScene):
             # repeat if the cameras cannot see the objects
             repeat_frame = False
             if not self.test_visibility():
-                self.logger.warn("\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
+                # HINT: removed style codes, UNNECESSARY when using coloredlogs
+                self.logger.warn("Object(s) not visible from every camera. Re-randomizing... ")
                 repeat_frame = True
             else:
                 # loop through all cameras
@@ -503,7 +486,7 @@ class WorkstationScenarios(interfaces.ABRScene):
                         # yet verified) that the target-object is occluded. In turn, this
                         # leads to a zero size 2D bounding box...
                         self.logger.error(
-                            f"\033[1;31mValueError during post-processing, re-generating image index {i}\033[0;37m")
+                            f"ValueError during post-processing, re-generating image index {i}")
                         repeat_frame = True
 
                         # no need to continue with other cameras
@@ -570,7 +553,7 @@ class WorkstationScenarios(interfaces.ABRScene):
                         # yet verified) that the target-object is occluded. In turn, this
                         # leads to a zero size 2D bounding box...
                         self.logger.error(
-                            f"\033[1;31mValueError during post-processing, re-generating image index {i_frm}\033[0;37m")
+                            f"ValueError during post-processing, re-generating image index {i_frm}")
                         repeat_frame = True
 
                         # no need to continue with other cameras
@@ -578,7 +561,7 @@ class WorkstationScenarios(interfaces.ABRScene):
 
             # repeat frame if objects are occluded and occlusions are not allowed
             else:
-                self.logger.warn(f"\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
+                self.logger.warn("Object(s) not visible from every camera. Re-randomizing... ")
                 repeat_frame = True
 
             # if we need to repeat this frame, then do not increment the counter
