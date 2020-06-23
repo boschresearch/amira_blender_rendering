@@ -303,12 +303,15 @@ class PoseRenderResult:
                 "t": self.t.tolist(),
             },
             "bbox": {
-                "corners2d": self.corners2d.tolist(),
-                "corners3d": self.corners3d.tolist(),
-                "aabb": self.aabb.tolist(),
-                "oobb": self.oobb.tolist()
+                "corners2d": self.to_list(self.corners2d),
+                "corners3d": self.to_list(self.corners3d),
+                "aabb": self.to_list(self.aabb),
+                "oobb": self.to_list(self.oobb)
             },
             "dimensions": self.dimensions
         }
         return filter_state_keys(data, retain_keys)
+
+    def to_list(self, x):
+        return x.tolist() if x is not None else None
 
