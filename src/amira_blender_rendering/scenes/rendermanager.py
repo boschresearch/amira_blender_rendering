@@ -131,6 +131,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         # convert all relevant units from blender units to target units
         result = render_result
         result.t = self.unit_conversion(result.t)
+        result.t_cam = self.unit_conversion(result.t_cam)
         result.aabb = self.unit_conversion(result.aabb)
         result.oobb = self.unit_conversion(result.oobb)
 
@@ -152,6 +153,10 @@ class RenderManager(abr_scenes.BaseSceneManager):
         # that we actually get the state dict defined in pose render result
         t = np.asarray(abr_geom.get_relative_translation(obj['bpy'], camera))
         R = np.asarray(abr_geom.get_relative_rotation_to_cam_deg(obj['bpy'], camera, Vector(zeroing)).to_matrix())
+
+        # camera world coordinate transformation
+        t_cam = np.asarray(camera.matrix_world.to_translation())
+        R_cam = np.asarray(camera.matrix_world.to_3x3())
 
         # compute bounding boxes
         corners2d = self.compute_2dbbox(obj['fname_mask'])
@@ -175,7 +180,9 @@ class RenderManager(abr_scenes.BaseSceneManager):
             aabb=aabb,
             oobb=oobb,
             mask_name=obj['id_mask'],
-            dimensions=obj['dimensions'])
+            # dimensions=obj['dimensions'],
+            camera_rotation=R_cam,
+            camera_translation=t_cam)
 
         # build results in OpenCV format
         R_cv, t_cv = abr_geom.gl2cv(R, t)
@@ -198,7 +205,9 @@ class RenderManager(abr_scenes.BaseSceneManager):
             aabb=aabb,
             oobb=oobb,
             mask_name=obj['id_mask'],
-            dimensions=obj['dimensions'])
+            # dimensions=obj['dimensions'],
+            camera_rotation=R_cam,
+            camera_translation=t_cam)
 
         # convert to desired units
         render_result_gl = self.convert_units(render_result_gl)
@@ -232,7 +241,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
             json.dump(json_data, f, indent=0)
 
         # create xml annotation files according to PASCAL VOC format
-        to_PASCAL_VOC(fpath_json)
+        # TODO: this should be an option or convert afterwards. Not everyone wants to convert to PASCAL_VOC
+        # to_PASCAL_VOC(fpath_json)
 
     def compute_2dbbox(self, fname_mask):
         """Compute the 2D bounding box around an object given the mask filename
