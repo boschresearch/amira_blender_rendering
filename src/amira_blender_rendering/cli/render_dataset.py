@@ -114,9 +114,9 @@ def get_cmd_argparser():
         help='Path where amira_blender_rendering (abr) can be found')
 
     parser.add_argument(
-        '--viewsphere',
+        '--multiview',
         action='store_true',
-        help='Generate Viewsphere instead of RenderedObjects dataset')
+        help='Generate desired type of multiview (moving camera) dataset')
 
     parser.add_argument(
         '--list-scenes',
@@ -229,8 +229,8 @@ def main():
 
     # generate the dataset
     success = False
-    if cmd_args.viewsphere:
-        success = scene.generate_viewsphere_dataset()
+    if cmd_args.multiview:
+        success = scene.generate_multiview_dataset()
     else:
         success = scene.generate_dataset()
     if not success:
