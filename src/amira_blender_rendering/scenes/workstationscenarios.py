@@ -34,7 +34,7 @@ from math import ceil, log
 
 from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
-from amira_blender_rendering.utils.logging import get_logger
+from amira_blender_rendering.utils.logging import get_logger, add_file_handler
 # from amira_blender_rendering.datastructures import Configuration, flatten
 from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
 import amira_blender_rendering.scenes as abr_scenes
@@ -88,6 +88,7 @@ class WorkstationScenarios(interfaces.ABRScene):
     def __init__(self, **kwargs):
         super(WorkstationScenarios, self).__init__()
         self.logger = get_logger()
+        add_file_handler(self.logger)
 
         # we do composition here, not inheritance anymore because it is too
         # limiting in its capabilities. Using a render manager is a better way
