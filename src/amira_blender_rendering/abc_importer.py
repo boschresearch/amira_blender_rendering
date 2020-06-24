@@ -28,8 +28,6 @@ import amira_blender_rendering.utils.logging as log_utils
 from amira_blender_rendering.utils.blender import get_collection_item_names, find_new_items
 from amira_blender_rendering.utils.material import MetallicMaterialGenerator, set_viewport_shader
 
-logger = log_utils.get_logger()
-
 
 class ABCDataLoader(object):
     """Dataloader for STL files from the ABC dataset
@@ -42,6 +40,8 @@ class ABCDataLoader(object):
         Args:
             data_dir (str, optional): fullpath to ABC dataset parent directory. Defaults to None.
         """
+        self._logger = log_utils.get_logger()
+        log_utils.add_file_handler(self._logger)
         self._parent = self._get_abc_parent_dir(data_dir)
         self._object_types_map = self._get_object_types_map()
 
@@ -85,7 +85,7 @@ class ABCDataLoader(object):
             bolt=dict(
                 folder="Bolts", lower_limit=0.01, upper_limit=0.1),
             headless_screw=dict(
-                folder="HeadlessScrews", lower_limit=0.003, upper_limit=0.05),
+                folder="HeadlessScrews", lower_limit=0.003, upper_limit=0.02),
             flat_screw=dict(
                 folder="Slotted_Flat_Head_Screws", lower_limit=0.003, upper_limit=0.05),
             hex_screw=dict(
@@ -110,14 +110,13 @@ class ABCDataLoader(object):
                 verified_types[obj] = object_types_map[obj]
             else:
                 missing += 1
-                logger.warning("did not find a sub-directory corrseponding to: {}".format(obj))
+                self._logger.warning("did not find a sub-directory corrseponding to: {}".format(obj))
         if missing > 0:
-            logger.warning("MISSING {} object-type subdirs in parent directory {}".format(missing, self._parent))
+            self._logger.warning("MISSING {} object-type subdirs in parent directory {}".format(missing, self._parent))
 
         return verified_types
 
-    @staticmethod
-    def _get_abc_parent_dir(data_dir):
+    def _get_abc_parent_dir(self, data_dir):
         """Get and check data path
 
         Args:
@@ -136,7 +135,7 @@ class ABCDataLoader(object):
             try:
                 data_parent = os.environ["AMIRA_DATA_GFX"]
             except KeyError as err:
-                logger.critical(
+                self._logger.critical(
                     "Please set an environment variable AMIRA_DATA_GFX to parent directory of ABC_stl directory")
                 raise err
 
@@ -166,11 +165,11 @@ class ABCDataLoader(object):
         """
         if object_type in [None, "random"]:
             object_type = random.sample(self.object_types, 1)[0]
-        logger.debug(f"object_type={object_type}")
+        self._logger.debug(f"object_type={object_type}")
         dir_path = osp.join(self._parent, self._object_types_map[object_type]["folder"], "STL")
         if filename is None:
             filename = random.sample(os.listdir(dir_path), 1)[0]
-        logger.debug(f"filename={filename}")
+        self._logger.debug(f"filename={filename}")
         file_path = osp.join(dir_path, filename)
 
         lower_limit = self._object_types_map[object_type]["lower_limit"]
@@ -182,6 +181,8 @@ class STLImporter(object):
     """Imports an STL file and adds material and physical properties"""
 
     def __init__(self, material_generator, units="METERS", enable_physics=True, collision_margin=0.0001, density=8000):
+        self._logger = log_utils.get_logger()
+        log_utils.add_file_handler(self._logger)
         self._mat_gen = material_generator
         self._units = units
         self._physhics = enable_physics
@@ -199,7 +200,7 @@ class STLImporter(object):
                 try:
                     bpy.data.scenes[scene].unit_settings.length_unit = self._units
                 except KeyError as err:
-                    logger.critical(f"{scene} is not a valid scene name")
+                    self._logger.critical(f"{scene} is not a valid scene name")
                     raise err
             else:
                 try:
@@ -207,8 +208,7 @@ class STLImporter(object):
                 except Exception as err:
                     raise err
 
-    @staticmethod
-    def _random_rescale(obj, lower_limit, upper_limit):
+    def _random_rescale(self, obj, lower_limit, upper_limit):
         """Rescale object to a reasonable size
 
         (ABC) STL files do NOT retain length units
@@ -228,22 +228,23 @@ class STLImporter(object):
         min_scale = lower_limit / np.min(obj.dimensions)
         max_scale = upper_limit / np.max(obj.dimensions)
         if min_scale > max_scale:
-            logger.error("Cannot resolve object scaling")
-            logger.warning(",".join((
+            self._logger.error("Cannot resolve object scaling")
+            msg = ",".join((
                 f"name = {obj.name}",
                 f"dimensions = {obj.dimensions}",
                 f"lower_limit = {lower_limit}",
                 f"upper_limit = {upper_limit}",
-            )))
+            ))
+            self._logger.warning(msg)
             return False
         delta = max_scale - min_scale
         scale = min_scale + delta * np.random.rand(1)[0]
-        logger.debug(f"randomized scale = {scale}")
+        self._logger.debug(f"obj {obj.name}, randomized scale = {scale}")
         # obj.scale *= scale  # scaling causes issues with physics
         for ver in obj.data.vertices:
             old = ver.co
             for i in range(3):
-                ver.co[i] = old[i] * 0.01
+                ver.co[i] = old[i] * scale
         return True
 
     @staticmethod
@@ -266,14 +267,14 @@ class STLImporter(object):
             collision_margin (float, optional): collision margin in [m]. Defaults to None.
         """
         if not self._physhics:
-            logger.debug("Skipping _set_physical_properties")
+            self._logger.debug("Skipping _set_physical_properties")
             return
 
         if scene is None:
             scene_names = get_collection_item_names(bpy.data.scenes)
             scene = scene_names[0]
             if len(scene_names) > 1:
-                logger.warning("found {} scenes, linking object to scene={}".format(len(scene_names), scene))
+                self._logger.warning("found {} scenes, linking object to scene={}".format(len(scene_names), scene))
 
         _scene = bpy.data.scenes[scene]
 
@@ -281,7 +282,7 @@ class STLImporter(object):
         obj.select_set(True)
 
         if _scene.rigidbody_world is None:
-            logger.debug("adding a rigidbody_world to scene, i.e. a RigidBodyWorld collection")
+            self._logger.debug("adding a rigidbody_world to scene, i.e. a RigidBodyWorld collection")
             bpy.ops.rigidbody.world_add()
 
         bpy.ops.rigidbody.object_add()
@@ -296,7 +297,7 @@ class STLImporter(object):
             collision_margin = self._collision_margin
         obj.rigid_body.type = "ACTIVE"
         obj.rigid_body.mass = mass
-        logger.debug(f"setting mass to {mass} kg")
+        self._logger.debug(f"setting mass to {mass} kg")
         obj.rigid_body.use_margin = True
         obj.rigid_body.collision_shape = 'MESH'
         obj.rigid_body.collision_margin = collision_margin
@@ -317,7 +318,7 @@ class STLImporter(object):
         """
         old_names = get_collection_item_names(bpy.data.objects)
         bpy.ops.import_mesh.stl(filepath=stl_fullpath)
-        logger.debug(f"importing {stl_fullpath}")
+        self._logger.debug(f"importing {stl_fullpath}")
 
         # rename
         new_names = find_new_items(bpy.data.objects, old_names)
@@ -330,14 +331,14 @@ class STLImporter(object):
             obj.scale *= scale
         elif scale is None:
             if size_limits is None:
-                logger.warning("both scale and size_limits are None, object scale left unchanged")
+                self._logger.warning("both scale and size_limits are None, object scale left unchanged")
 
         if size_limits is not None:
             lower_limit, upper_limit = size_limits
             try:
                 rescale_success = self._random_rescale(obj, lower_limit, upper_limit)
             except ZeroDivisionError:
-                logger.notice(f"STL with Zero dimensions in {stl_fullpath}")
+                self._logger.notice(f"STL with Zero dimensions in {stl_fullpath}")
                 return obj, False
 
         self._set_origin_to_center(obj)
@@ -361,6 +362,8 @@ class ABCImporter(object):
             collision_margin (float, optional): collision_margin in [m]. Defaults to 0.0001.
             Physics simulation params are necessary for randomized object placement.
         """
+        self._logger = log_utils.get_logger()
+        log_utils.add_file_handler(self._logger)
         self._dataloader = ABCDataLoader(data_dir=data_dir)
         material_generator = MetallicMaterialGenerator()
         material_generator.make_random_material(n=n_materials)
@@ -405,8 +408,12 @@ class ABCImporter(object):
 
 if __name__ == "__main__":
 
+    logger = log_utils.get_logger()
+    log_utils.add_file_handler(logger)
     logger.info("starting __main__")
 
+    n_rand = 7
+    n_per_type = 4
     step = 0.3
     out_dir = osp.join(os.environ["HOME"], "Desktop", "stl_import_demo")
     try:
@@ -429,8 +436,8 @@ if __name__ == "__main__":
     abc_importer = ABCImporter(n_materials=10)
     logger.info("instantiated an ABCImporter for STL files")
 
-    for x in range(7):
-        for y in range(7):
+    for x in range(n_rand):
+        for y in range(n_rand):
             obj, _ = abc_importer.import_object()
             if obj is None:
                 continue
@@ -451,8 +458,8 @@ if __name__ == "__main__":
         abc_importer = ABCImporter(n_materials=10)
         logger.info("instantiated an ABCImporter for STL files")
 
-        for x in range(4):
-            for y in range(4):
+        for x in range(n_per_type):
+            for y in range(n_per_type):
                 obj, _ = abc_importer.import_object(object_type=obj_t)
                 if obj is None:
                     continue
