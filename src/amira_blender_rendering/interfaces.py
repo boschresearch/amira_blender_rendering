@@ -234,9 +234,11 @@ class PoseRenderResult:
     def __init__(self, object_class_name, object_class_id, object_name, object_id,
                  rgb_const, rgb_random, depth, mask,
                  T_int, T_ext, rotation, translation,
-                 corners2d, corners3d, aabb, oobb, dimensions=(None,None,None),
+                 corners2d, corners3d, aabb, oobb, dimensions=(None, None, None),
                  dense_features=None,
-                 mask_name=''):
+                 mask_name='',
+                 camera_rotation=None,
+                 camera_translation=None):
         """Initialize struct to store the result of rendering synthetic data
 
         Args:
@@ -290,6 +292,18 @@ class PoseRenderResult:
         self.aabb = aabb
         self.mask_name = mask_name
         self.dimensions = dimensions
+        if camera_rotation is None:
+            q_cam = None
+        else:
+            if camera_rotation.shape == (3, 3):
+                q_cam = rotation_matrix_to_quaternion(camera_rotation)
+            else:
+                q_cam = camera_rotation.flatten()
+                if q_cam.shape != (4,):
+                    q_cam = None
+                    raise ValueError('Rotation must be either a (3,3) matrix or a (4,) quaternion (WXYZ)')
+        self.q_cam = q_cam
+        self.t_cam = camera_translation
 
     def state_dict(self, retain_keys: list = None):
         data = {
@@ -308,7 +322,10 @@ class PoseRenderResult:
                 "aabb": self.aabb.tolist(),
                 "oobb": self.oobb.tolist()
             },
-            "dimensions": self.dimensions
+            "dimensions": self.dimensions,
+            "camera_pose": {
+                "q": self.q_cam.tolist() if self.q_cam is not None else None,
+                "t": self.t_cam.tolist() if self.t_cam is not None else None
+            }
         }
         return filter_state_keys(data, retain_keys)
-
