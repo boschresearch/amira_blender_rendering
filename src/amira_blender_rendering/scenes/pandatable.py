@@ -682,6 +682,7 @@ class PandaTable(interfaces.ABRScene):
                     # postprocess. this will take care of creating additional
                     # information, as well as fix filenames
                     # try-catch similar to generate_dataset (see below)
+                    # TODO: the try catch should not be necessary anymore
                     try:
                         self.renderman.postprocess(
                             self.dirinfos[i_cam],
