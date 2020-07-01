@@ -156,11 +156,13 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         # camera world coordinate transformation
         t_cam = np.asarray(camera.matrix_world.to_translation())
-        R_cam = np.asarray(camera.matrix_world.to_3x3())
+        R_cam = np.asarray(camera.matrix_world.to_3x3().normalized())
 
         # compute bounding boxes
-        corners2d = self.compute_2dbbox(obj['fname_mask'])
-        aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
+        corners2d, corners3d, aabb, oobb = None, None, None, None
+        if obj['visible']:
+            corners2d = self.compute_2dbbox(obj['fname_mask'])
+            aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
 
         render_result_gl = PoseRenderResult(
             object_class_name=obj['object_class_name'],
@@ -171,8 +173,6 @@ class RenderManager(abr_scenes.BaseSceneManager):
             rgb_random=None,
             depth=None,
             mask=None,
-            T_int=None,
-            T_ext=None,
             rotation=R,
             translation=t,
             corners2d=corners2d,
@@ -180,7 +180,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
             aabb=aabb,
             oobb=oobb,
             mask_name=obj['id_mask'],
-            # dimensions=obj['dimensions'],
+            visible=obj['visible'],
             camera_rotation=R_cam,
             camera_translation=t_cam)
 
@@ -196,8 +196,6 @@ class RenderManager(abr_scenes.BaseSceneManager):
             rgb_random=None,
             depth=None,
             mask=None,
-            T_int=None,
-            T_ext=None,
             rotation=R_cv,
             translation=t_cv,
             corners2d=corners2d,
@@ -205,7 +203,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
             aabb=aabb,
             oobb=oobb,
             mask_name=obj['id_mask'],
-            # dimensions=obj['dimensions'],
+            visible=obj['visible'],
             camera_rotation=R_cam,
             camera_translation=t_cam)
 

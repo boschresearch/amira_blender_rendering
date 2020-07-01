@@ -254,8 +254,8 @@ class PandaTable(interfaces.ABRScene):
         #       object_class_id     model type ID (simply incremental numbers)
         #       object_id   instance ID of the object
         #       bpy         blender object reference
-        n_types = 0      # count how many types we have
-        n_instances = [] # count how many instances per type we have
+        n_types = 0       # count how many types we have
+        n_instances = []  # count how many instances per type we have
         for obj_type_id, obj_spec in enumerate(target_objects):
             obj_type, obj_count = obj_spec.split(':')
             n_types += 1
@@ -312,12 +312,13 @@ class PandaTable(interfaces.ABRScene):
                     'object_class_name': obj_type,
                     'object_class_id': obj_type_id,
                     'object_id': j,
-                    'bpy': new_obj
+                    'bpy': new_obj,
+                    'visible': None
                 })
 
         # build masks id for compositor of the format _N_M, where N is the model
         # id, and M is the object id
-        m_w = ceil(log(n_types))  # format width for number of model types
+        m_w = ceil(log(n_types)) if n_types else 0  # format width for number of model types
         for i, obj in enumerate(objs):
             o_w = ceil(log(n_instances[obj['object_class_id']]))   # format width for number of objects of same model
             id_mask = f"_{obj['object_class_id']:0{m_w}}_{obj['object_id']:0{o_w}}"
@@ -396,6 +397,8 @@ class PandaTable(interfaces.ABRScene):
         # leading zeros
         cam_name = f"{cam}"
         bpy.context.scene.camera = bpy.context.scene.objects[cam_name]
+        camera = bpy.context.scene.camera
+        return camera
 
 
     def generate_multiview_cameras_locations(self, **kw):
@@ -478,7 +481,8 @@ class PandaTable(interfaces.ABRScene):
                 locations[cam_name] = points_on_wave(view_count, r, c, w, A)
 
                 # for visual debug
-                plot_points(np.array(locations[cam_name]))
+                if self.config.logging.debug:
+                    plot_points(np.array(locations[cam_name]))
 
                 repeat_frame = False
                 if not self.config.scenario_setup.multiview.allow_occlusions:
@@ -537,7 +541,10 @@ class PandaTable(interfaces.ABRScene):
 
 
     def test_single_camera_visibility(self, camera):
-        "Test whether given camera sees all target objects"
+        """Test whether given camera sees all target objects
+        and store visibility level/label for each target object"""
+        # TODO: can we distinguish among full visibility, partial visibility and complete occlusion?
+        any_not_visible_or_occluded = False
         for obj in self.objs:
             not_visible_or_occluded = abr_geom.test_occlusion(
                 bpy.context.scene,
@@ -548,12 +555,21 @@ class PandaTable(interfaces.ABRScene):
                 bpy.context.scene.render.resolution_y,
                 require_all=False,
                 origin_offset=0.01)
+            
+            obj['visible'] = True
+
             if not_visible_or_occluded:
                 self.logger.warn(f"object {obj} not visible or occluded")
+                obj['visible'] = False
                 if self.config.logging.debug:
                     self.logger.info(f"saving blender file for debugging to /tmp/robottable.blend")
                     bpy.ops.wm.save_as_mainfile(filepath="/tmp/robottable.blend")
-                return False
+        
+            # keep trace if any obj was not visible or occluded
+            any_not_visible_or_occluded = any_not_visible_or_occluded or not_visible_or_occluded
+
+        if any_not_visible_or_occluded:
+            return False
         return True
 
 
@@ -624,18 +640,18 @@ class PandaTable(interfaces.ABRScene):
                 continue
 
             # loop over cameras
-            for cam in self.config.scenario_setup.multiview.cameras:
+            for cam_name in self.config.scenario_setup.multiview.cameras:
                 # extract camera index
-                i_cam = self.config.scene_setup.cameras.index(cam)
-
+                i_cam = self.config.scene_setup.cameras.index(cam_name)
+                
                 # extract camera locations
-                camera_locations = multiview_cameras_locations[cam]
+                camera_locations = multiview_cameras_locations[cam_name]
                 
                 # compute format width
                 view_format_width = int(ceil(log(len(camera_locations), 10)))
                 
                 # activate camera
-                self.activate_camera(cam)
+                camera = self.activate_camera(cam_name)
 
                 # loop over locations
                 for vc, cam_loc in enumerate(camera_locations):
@@ -649,7 +665,13 @@ class PandaTable(interfaces.ABRScene):
                                                                              cam_width=view_format_width)
 
                     # set camera location
-                    self.set_camera_location(cam, cam_loc)
+                    self.set_camera_location(cam_name, cam_loc)
+
+                    # at this point all the locations have already been tested for visibility
+                    # according to allow_occlusions config.
+                    # Here, we re-run visibility to set object visibility level
+                    # TODO: avoid redundant check
+                    self.test_single_camera_visibility(camera)
                     
                     # update path information in compositor
                     self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
@@ -668,7 +690,7 @@ class PandaTable(interfaces.ABRScene):
                             self.objs,
                             self.config.camera_info.zeroing)
                     except ValueError:
-                        self.logger.error(f"\033[1;31mValueError during post-processing, re-generating image {ic}/{image_count}\033[0;37m")
+                        self.logger.error(f"\033[1;31mValueError during post-processing, re-generating image {ic + 1}/{image_count}\033[0;37m")
                         repeat_frame = True
                         break
 
