@@ -36,7 +36,6 @@ except ImportError:
     # print("FAIL to import coloredlogs, consider installing with pip")
     coloredlogs = None
 
-
 # local logger configuration
 __logger_name = "amira_blender_rendering"
 __logger_logdir = os.path.expandvars("$HOME/.amira_blender_rendering")
@@ -86,11 +85,7 @@ def get_logger(level="INFO", fmt=None):
     if fmt is None:
         fmt = __basic_format
 
-    logging.basicConfig(
-        level=level,
-        format=fmt,
-        filename=__logger_filename
-    )
+    logging.basicConfig(level=level, format=fmt, filename=__logger_filename)
 
     if coloredlogs is not None:
         coloredlogs.install(
@@ -113,7 +108,7 @@ def _get_level_enum(level):
         return getattr(logging, level)
 
 
-def add_file_handler(logger, filename="/tmp/ABR.log", level="DEBUG"):
+def add_file_handler(logger, filename=__logger_filename, level="DEBUG"):
     """Explicitly force logging to the terminal (in addition to other logging, e..g to file)"""
     # logger level can block stream-handler
     file_logging_level = _get_level_enum(level)
