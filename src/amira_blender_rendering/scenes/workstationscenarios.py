@@ -15,7 +15,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 This file implements generation of datasets for workstation scenarios. The file
 depends on a suitable workstation scenarion blender file such as
@@ -112,10 +111,8 @@ class WorkstationScenarios(interfaces.ABRScene):
         # setup the renderer. do this _AFTER_ the file was loaded during
         # setup_scene(), because otherwise the information will be taken from
         # the file, and changes made by setup_renderer ignored
-        self.renderman.setup_renderer(
-            self.config.render_setup.integrator,
-            self.config.render_setup.denoising,
-            self.config.render_setup.samples)
+        self.renderman.setup_renderer(self.config.render_setup.integrator, self.config.render_setup.denoising,
+                                      self.config.render_setup.samples)
 
         # grab environment textures
         self.setup_environment_textures()
@@ -151,12 +148,6 @@ class WorkstationScenarios(interfaces.ABRScene):
         # compute directory information for each of the cameras
         self.dirinfos = list()
         for cam in self.config.scene_setup.cameras:
-            # DEPRECATED:
-            # paths are set up as: base_path + Scenario## + CameraName
-            # camera_base_path = \
-            #     f"{self.config.dataset.base_path}-Scenario{self.config.scenario_setup.scenario:02}-{cam}"
-
-            # NEW:
             # paths are set up as: base_path + CameraName
             camera_base_path = f"{self.config.dataset.base_path}-{cam}"
             dirinfo = build_directory_info(camera_base_path)
@@ -418,15 +409,14 @@ class WorkstationScenarios(interfaces.ABRScene):
             cam_name = f"{cam}.{self.config.scenario_setup.scenario:03}"
             cam_obj = bpy.data.objects[cam_name]
             for obj in self.objs:
-                not_visible_or_occluded = abr_geom.test_occlusion(
-                    bpy.context.scene,
-                    bpy.context.scene.view_layers['View Layer'],
-                    cam_obj,
-                    obj['bpy'],
-                    bpy.context.scene.render.resolution_x,
-                    bpy.context.scene.render.resolution_y,
-                    require_all=False,
-                    origin_offset=0.01)
+                not_visible_or_occluded = abr_geom.test_occlusion(bpy.context.scene,
+                                                                  bpy.context.scene.view_layers['View Layer'],
+                                                                  cam_obj,
+                                                                  obj['bpy'],
+                                                                  bpy.context.scene.render.resolution_x,
+                                                                  bpy.context.scene.render.resolution_y,
+                                                                  require_all=False,
+                                                                  origin_offset=0.01)
                 if not_visible_or_occluded:
                     self.logger.warn(f"object {obj} not visible or occluded")
                     if self.config.logging.debug:
@@ -479,15 +469,13 @@ class WorkstationScenarios(interfaces.ABRScene):
                     # postprocess. this will take care of creating additional
                     # information, as well as fix filenames
                     try:
-                        self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
-                                                   bpy.context.scene.camera, self.objs,
-                                                   self.config.camera_info.zeroing)
+                        self.renderman.postprocess(self.dirinfos[i_cam], base_filename, bpy.context.scene.camera,
+                                                   self.objs, self.config.camera_info.zeroing)
                     except ValueError:
                         # This issue happens every now and then. The reason might be (not
                         # yet verified) that the target-object is occluded. In turn, this
                         # leads to a zero size 2D bounding box...
-                        self.logger.error(
-                            f"ValueError during post-processing, re-generating image index {i}")
+                        self.logger.error(f"ValueError during post-processing, re-generating image index {i}")
                         repeat_frame = True
 
                         # no need to continue with other cameras
@@ -546,15 +534,13 @@ class WorkstationScenarios(interfaces.ABRScene):
                     # postprocess. this will take care of creating additional
                     # information, as well as fix filenames
                     try:
-                        self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
-                                                   bpy.context.scene.camera, self.objs,
-                                                   self.config.camera_info.zeroing)
+                        self.renderman.postprocess(self.dirinfos[i_cam], base_filename, bpy.context.scene.camera,
+                                                   self.objs, self.config.camera_info.zeroing)
                     except ValueError:
                         # This issue happens every now and then. The reason might be (not
                         # yet verified) that the target-object is occluded. In turn, this
                         # leads to a zero size 2D bounding box...
-                        self.logger.error(
-                            f"ValueError during post-processing, re-generating image index {i_frm}")
+                        self.logger.error(f"ValueError during post-processing, re-generating image index {i_frm}")
                         repeat_frame = True
 
                         # no need to continue with other cameras
