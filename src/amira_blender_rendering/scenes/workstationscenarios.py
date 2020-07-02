@@ -453,7 +453,6 @@ class WorkstationScenarios(interfaces.ABRScene):
             # repeat if the cameras cannot see the objects
             repeat_frame = False
             if not self.test_visibility():
-                # HINT: removed style codes, UNNECESSARY when using coloredlogs
                 self.logger.warn("Object(s) not visible from every camera. Re-randomizing... ")
                 repeat_frame = True
             else:
@@ -488,7 +487,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         return True
 
     def generate_viewsphere_dataset(self):
-        # TODO: This dataset does not yet suppor viewsphere data generation
+        # TODO: This dataset does not yet support viewsphere data generation
         """This will generate the dataset according to the configuration that
                was passed in the constructor.
                """
