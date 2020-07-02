@@ -77,7 +77,7 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
         self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
         self.add_param('scenario_setup.abc_objects', [], 'List of all ABC-Dataset objects to drop in environment')
-        self.add_param('scenario_setup.n_abc_colors', 3, 'Number of random metallic materials to generate')
+        self.add_param('scenario_setup.num_abc_colors', 3, 'Number of random metallic materials to generate')
         # HINT: these object lists above are parsed as strings, later on split with "," separator
 
 
@@ -308,7 +308,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         if abc_objects == list():
             self.logger.info("Config file does NOT include ABC-Dataset objects")
         else:
-            n_materials = int(self.config.scenario_setup.n_abc_colors)
+            n_materials = int(self.config.scenario_setup.num_abc_colors)
             self.logger.info(f"making {n_materials} random metallic materials")
             abc_importer = ABCImporter(n_materials=n_materials)
 
