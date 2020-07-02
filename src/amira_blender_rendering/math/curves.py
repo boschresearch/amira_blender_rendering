@@ -8,7 +8,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http:#www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,8 +17,6 @@
 # limitations under the License.
 
 import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 
 def points_on_bezier(num_points: int, p0: np.array, p1: np.array, p2: np.array, start: float = 0, stop: float = 1):
@@ -39,10 +37,12 @@ def points_on_bezier(num_points: int, p0: np.array, p1: np.array, p2: np.array, 
     Returns:
         list of points
     """
-    points = []
-    for t in np.linspace(start, stop, num_points, endpoint=False):
-        p = (1 - t)**3 * p0 + 3 * (1 - t)**2 * t * p1 + 3 * (1 - t) * t**2 * p2 + t**3 * p0
-        points.append(p)
+    T = np.linspace(start, stop, num_points, endpoint=False)
+    T0 = (1 - T)**3
+    T1 = 3 * (1 - T)**2 * T
+    T2 = 3 * (1 - T) * T**2
+    T3 = T**3
+    points = np.outer(T0, p0) + np.outer(T1, p1) + np.outer(T2, p2) + np.outer(T3, p0)
     return points
 
 
@@ -58,12 +58,10 @@ def points_on_circle(num_points: int, radius: float = 1, center: np.array = np.a
         center(np.array)
         
     Returns:
-        list of points
+        np.ndarray of points
     """
-    points = []
-    for t in np.linspace(0, 2 * np.pi, num_points, endpoint=False):
-        p = center + np.array([radius * np.cos(t), radius * np.sin(t), 0])
-        points.append(p)
+    T = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
+    points = center + np.vstack([np.cos(T), np.sin(T), np.zeros(T.size)]).transpose()
     return points
 
 
@@ -86,15 +84,8 @@ def points_on_wave(num_points, radius: float = 1, center: np.array = np.array([0
     Returns:
         list of points
     """
-    points = []
-    for t in np.linspace(0, 2 * np.pi, num_points, endpoint=False):
-        # point on circle
-        p_c = center + np.array([radius * np.cos(t), radius * np.sin(t), 0])
-        # point on sin wave
-        p_w = np.array([0, 0, amplitude * (np.cos(frequency * t) - 1)])
-        # overall point
-        points.append(p_c + p_w)
-
+    T = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
+    points = center + np.vstack([np.cos(T), np.sin(T), amplitude * (np.cos(frequency * T) - 1)]).transpose()
     return points
 
 
@@ -102,6 +93,9 @@ def plot_points(points):
     """
     3D plot of generated points
     """
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     ax.plot(points[:, 0], points[:, 1], points[:, 2])
