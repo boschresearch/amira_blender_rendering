@@ -409,7 +409,10 @@ class PandaTable(interfaces.ABRScene):
                 p = np.fromstring(p, sep=',')
             return p
 
+        # init container
         locations = {}
+        original_locations = {}
+
         # additional configs to control specific mode
         mode_cfg = kw.get('config', Configuration())
 
@@ -417,18 +420,20 @@ class PandaTable(interfaces.ABRScene):
 
         # loop over cameras
         for cam_name in self.config.scenario_setup.multiview.cameras:
-            # init camera location list
-            locations[cam_name] = []
-            
+
             # log
             self.logger.info(f'Generating locations according to {self.config.scenario_setup.multiview.mode} mode')
 
             # extract camera object
             camera = bpy.context.scene.objects[cam_name]
+
+            # init camera location list and store original
+            locations[cam_name] = []
+            original_locations[cam_name] = np.asarray(camera.matrix_world.to_translation())
                  
             if self.config.scenario_setup.multiview.mode == 'random':
 
-                cam_loc0 = np.asarray(camera.matrix_world.to_translation())
+                cam_loc0 = original_locations[cam_name]
                 vc = 0
                 while vc < view_count:
                     p = cam_loc0 + np.random.randn(cam_loc0.size)
@@ -457,7 +462,7 @@ class PandaTable(interfaces.ABRScene):
                 # adjust their orientation
                 start = float(mode_cfg.get('start', 0))
                 stop = float(mode_cfg.get('stop', 1))
-                p0 = get_array_from_str(mode_cfg, 'p0', np.asarray(camera.matrix_world.to_translation()))
+                p0 = get_array_from_str(mode_cfg, 'p0', original_locations[cam_name])
                 p1 = get_array_from_str(mode_cfg, 'p1', p0 + np.random.randn(p0.size))
                 p2 = get_array_from_str(mode_cfg, 'p2', p0 + np.random.randn(p0.size))
                 
@@ -474,7 +479,7 @@ class PandaTable(interfaces.ABRScene):
             elif self.config.scenario_setup.multiview.mode == 'circle':
                 # extract config
                 r = float(mode_cfg.get('radius', 1))
-                c = get_array_from_str(mode_cfg, 'center', np.asarray(camera.matrix_world.to_translation()))
+                c = get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
                 locations[cam_name] = points_on_circle(view_count, r, c)
 
                 # for visual debug
@@ -487,7 +492,7 @@ class PandaTable(interfaces.ABRScene):
 
             elif self.config.scenario_setup.multiview.mode == 'wave':
                 r = float(mode_cfg.get('radius', 1))
-                c = get_array_from_str(mode_cfg, 'center', np.asarray(camera.matrix_world.to_translation()))
+                c = get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
                 w = float(mode_cfg.get('frequency', 1))
                 A = float(mode_cfg.get('amplitude', 1))
                 locations[cam_name] = points_on_wave(view_count, r, c, w, A)
@@ -507,7 +512,7 @@ class PandaTable(interfaces.ABRScene):
             else:
                 raise ValueError('Selected mode {self.config.scenario_setup.multiview.mode} not supported for multiview locations')
 
-        return locations, repeat_frame
+        return locations, original_locations, repeat_frame
 
 
     def set_camera_location(self, name, location):
@@ -629,6 +634,7 @@ class PandaTable(interfaces.ABRScene):
         
         # control loop for the number of static scenes to render
         ic = 0
+        original_cam_locs = None
         while ic < image_count:
 
             # randomize scene: move objects at random locations, and forward simulate physics
@@ -639,9 +645,18 @@ class PandaTable(interfaces.ABRScene):
             # then drop targets
             self.randomize_object_transforms(self.objs)
             self.forward_simulate()
-            
+
+            # since multiview locations might be camera dependant,
+            # restore original locations if we changed them during previous iteration
+            if original_cam_locs is not None:
+                for cam_name in self.config.scenario_setup.multiview.cameras:
+                    camera = bpy.context.scene.objects[cam_name]
+                    camera.location = original_cam_locs[cam_name]
+                # update depsgraph
+                bpy.context.evaluated_depsgraph_get().update()
+
             # generate views for current static scene
-            multiview_cameras_locations, repeat_frame = self.generate_multiview_cameras_locations(
+            multiview_cam_locs, original_cam_locs, repeat_frame = self.generate_multiview_cameras_locations(
                 config=self.config.scenario_setup.multiview.mode_config
             )
 
@@ -657,7 +672,7 @@ class PandaTable(interfaces.ABRScene):
                 i_cam = self.config.scene_setup.cameras.index(cam_name)
                 
                 # extract camera locations
-                camera_locations = multiview_cameras_locations[cam_name]
+                camera_locations = multiview_cam_locs[cam_name]
                 
                 # compute format width
                 view_format_width = int(ceil(log(len(camera_locations), 10)))
