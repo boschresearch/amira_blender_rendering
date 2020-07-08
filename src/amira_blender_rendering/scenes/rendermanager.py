@@ -186,6 +186,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         # build results in OpenCV format
         R_cv, t_cv = abr_geom.gl2cv(R, t)
+        R_cam_cv, t_cam_cv = abr_geom.gl2cv(R_cam, t_cam)
 
         render_result_cv = PoseRenderResult(
             object_class_name=obj['object_class_name'],
@@ -204,8 +205,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
             oobb=oobb,
             mask_name=obj['id_mask'],
             visible=obj['visible'],
-            camera_rotation=R_cam,
-            camera_translation=t_cam)
+            camera_rotation=R_cam_cv,
+            camera_translation=t_cam_cv)
 
         # convert to desired units
         render_result_gl = self.convert_units(render_result_gl)
