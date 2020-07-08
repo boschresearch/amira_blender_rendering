@@ -89,7 +89,7 @@ def points_on_wave(num_points, radius: float = 1, center: np.array = np.array([0
     return points
 
 
-def plot_points(points):
+def plot_points(points, camera=None, plot_axis: bool = False):
     """
     3D plot of generated points
     """
@@ -99,4 +99,40 @@ def plot_points(points):
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     ax.plot(points[:, 0], points[:, 1], points[:, 2])
+
+    # collect tranforms
+    if camera is not None and plot_axis:
+        import bpy
+        rotations = []
+        translations = []
+        for loc in points:
+            # set location
+            camera.location = loc
+            # update graph
+            bpy.context.evaluated_depsgraph_get().update()
+            # extract transform
+            R = np.asarray(camera.matrix_world.to_3x3().normalized())
+            t = np.asarray(camera.matrix_world.to_translation())
+            rotations.append(R)
+            translations.append(t)
+
+        length = 0.05
+        x_axis_0 = np.float32([length, 0, 0])
+        y_axis_0 = np.float32([0, length, 0])
+        z_axis_0 = np.float32([0, 0, length])
+
+        for R, t in zip(rotations, translations):
+            # compute transformed points
+            x_axis = R.dot(x_axis_0) + t
+            y_axis = R.dot(y_axis_0) + t
+            z_axis = R.dot(z_axis_0) + t
+            neg_z_axis = R.dot(-30 * z_axis_0) + t
+            # plot x
+            ax.plot([t[0], x_axis[0]], [t[1], x_axis[1]], [t[2], x_axis[2]], color='r')
+            # plot y
+            ax.plot([t[0], y_axis[0]], [t[1], y_axis[1]], [t[2], y_axis[2]], color='g')
+            # plot z
+            ax.plot([t[0], z_axis[0]], [t[1], z_axis[1]], [t[2], z_axis[2]], color='b')
+            # virtual neg z
+            ax.plot([t[0], neg_z_axis[0]], [t[1], neg_z_axis[1]], [t[2], neg_z_axis[2]], color='b', linestyle='--')   
     plt.show()
