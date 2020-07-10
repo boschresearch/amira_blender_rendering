@@ -177,7 +177,7 @@ def _setup_render_size_from_intrinsics(scene, intrinsics):
     render.resolution_percentage = scale * 100
     render.pixel_aspect_x = 1.0
     render.pixel_aspect_y = pixel_aspect_ratio
-
+    
 
 def _setup_camera_by_swfl(scene, cam, sensor_width, focal_length):
     """Setup the camera by sensor width and focal length
@@ -244,7 +244,7 @@ def _setup_camera_intrinsics_to_mm(scene, cam, intrinsics):
     _setup_render_size_from_intrinsics(scene, intrinsics)
 
     # set to perspective camera with computed focal length and sensor size
-    _setup_camera_by_swfl(scene, cam, f_in_mm, sensor_size_mm)
+    _setup_camera_by_swfl(scene, cam, sensor_size_mm, f_in_mm)
 
 
 def _setup_camera_intrinsics_to_fov(scene, cam, intrinsics):
@@ -307,7 +307,7 @@ def get_intrinsics(scene, cam):
 
     # compute pixel size in mm per pixel
     pixel_aspect_ratio = render.pixel_aspect_y / render.pixel_aspect_x
-    view_fac_in_px = resolution_x if sensor_fit == 'HORIZONTAL' else resolution_y
+    view_fac_in_px = resolution_x if sensor_fit == 'HORIZONTAL' else resolution_y * pixel_aspect_ratio
     pixel_size_mm_per_px = sensor_size_mm / f_in_mm / view_fac_in_px
 
     # compute focal length in x and y direction (s_u, s_v)
