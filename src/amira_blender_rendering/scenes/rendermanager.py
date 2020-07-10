@@ -70,6 +70,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         # the compositor postprocessing takes care of fixing file names
         # and saving the masks filename into objs
+
         self.compositor.postprocess()
 
         # compute bounding boxes and save annotations
@@ -80,6 +81,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
             results_gl.add_result(render_result_gl)
             results_cv.add_result(render_result_cv)
         self.save_annotations(dirinfo, base_filename, results_gl, results_cv)
+
 
     def setup_renderer(self, integrator, enable_denoising, samples):
         """Setup blender CUDA rendering, and specify number of samples per pixel to
@@ -186,7 +188,13 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         # build results in OpenCV format
         R_cv, t_cv = abr_geom.gl2cv(R, t)
-        R_cam_cv, t_cam_cv = abr_geom.gl2cv(R_cam, t_cam)
+
+        # for the camera we only need to update the rotation. That is because in OpenCV
+        # format it is assumed the camera looks towards positive z (rotation of pi around x)
+        # Thus to express the rotation in world coordinate we post-multiply the rotation matrix.
+        # However, its position/location wrt to the world coordinate system does not change.
+        R_cam_cv = R_cam.dot(abr_geom.euler_x_to_matrix(np.pi))
+        t_cam_cv = t_cam
 
         render_result_cv = PoseRenderResult(
             object_class_name=obj['object_class_name'],
