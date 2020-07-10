@@ -433,7 +433,7 @@ class PandaTable(interfaces.ABRScene):
                  
             if self.config.scenario_setup.multiview.mode == 'random':
 
-                cam_loc0 = original_locations[cam_name]
+                cam_loc0 = get_array_from_str(mode_cfg, 'start_location', original_locations[cam_name])
                 vc = 0
                 while vc < view_count:
                     p = cam_loc0 + np.random.randn(cam_loc0.size)
