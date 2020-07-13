@@ -4,8 +4,8 @@
 # Use in combination with generate_slurm_scripts.py
 
 # required positional argument to select desired basename for config/slurmbatch.sh scripts
-BASENAME=${1?Error: no BASENAME for slurmbatch .sh script to deploy given}
-# optional (positional) argument to generate set base path to config
+BASENAME=${1?Error: no BASENAME for lsfbatch .sh script to deploy given}
+# optional (positional) argument to define path to config
 BASEPATH=${2:-$HOME/amira_blender_rendering/config}
 # optional (positional) argument to generate slurm bash scripts
 GENSCRIPTS=${3:-False}
@@ -18,34 +18,37 @@ DEPLOY=${5:-True}
 if [[ $GENSCRIPTS == "True" ]]; then
 
     # setup
-    NAME=marco.todescato
     CFGBASENAME=$BASENAME
     CFGBASEPATH=$BASEPATH
     PYENVNAME=blender
-    CUDNN_VERSION=10.0_v7.3.1
-    GPU=4
+    CUDNN_VERSION=10.1_v7.6
+    CONDA_VERSION=4.4.8-readonly
+    GPU=2
+    GPU_TYPE=rb_basic
     CPU=4
-    SSD=20
-    RAM=32
-    DAYS=2
-    HH=0
+    RAM=8
+    HH=36
     MM=0
+    AMIRA_STORAGE=/fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA
     ABR=$HOME/amira_blender_rendering
-    OUTPATH=/data/Employees/$USER/slurm_results
-    conda activate $PYENVNAME
+    HEAVY_DUTY_DIR=$HOME/lsf_results
+    OUT_DIR=/fs/scratch/rng_cr_bcai_dl/$USER/lsf_results
+    source activate $PYENVNAME
     echo "Generating (generate_slurm_scrpts.py) slurm bash scripts with following configuration values:"
-    echo "User name:     $NAME"
-    echo "cfg_base_name: $CFGBASENAME"
-    echo "cfg_base_path: $CFGBASEPATH"
-    echo "python env:    $PYENVNAME"
-    echo "cudnn_version: $CUDNN_VERSION"
-    echo "gpus:          $GPU"
-    echo "cpus:          $CPU"
-    echo "ssd:           $SSD"
-    echo "ram:           $RAM"
-    echo "dd-hh:mm       $DAYS-$HH:$MM"
-    echo "abr_base_path: $ABR"
-    echo "out_path:      $OUTPATH"
+    echo "cfg_base_name:  $CFGBASENAME"
+    echo "cfg_base_path:  $CFGBASEPATH"
+    echo "python env:     $PYENVNAME"
+    echo "cudnn_version:  $CUDNN_VERSION"
+    echo "conda_version:  $CONDA_VERSION"
+    echo "gpus:           $GPU"
+    echo "gpu_type:       $GPU_TYPE"
+    echo "cpus:           $CPU"
+    echo "ram:            $RAM"
+    echo "hh:mm           $HH:$MM"
+    echo "amira_storage:  $AMIRA_STORAGE"
+    echo "abr_base_path:  $ABR"
+    echo "heavy_duty_dir: $HEAVY_DUTY_DIR"
+    echo "out_dir:        $OUT_DIR"
 
     # check for user
     echo -n "Continue? [Y/N]: "
@@ -56,30 +59,31 @@ if [[ $GENSCRIPTS == "True" ]]; then
     fi
 
     # generate scripts
-    python generate_slurm_scripts.py \
-        $NAME \
+    python generate_lsf_scripts.py \
         $CFGBASENAME \
         $CFGBASEPATH \
         $PYENVNAME \
-	--cudnn $CUDNN_VERSION \
+        --cudnn $CUDNN_VERSION \
+        --conda $CONDA_VERSION \
         --gpu $GPU \
+        --gpu-type $GPU_TYPE \
         --cpu $CPU \
-        --ssd $SSD \
         --ram $RAM \
-        --dd $DAYS \
         --hh $HH \
         --mm $MM \
+        --amira-storage $AMIRA_STORAGE \
         --abr-path $ABR \
-        --out-path $OUTPATH
-    conda deactivate
+        --heavy-duty-dir $HEAVY_DUTY_DIR \
+        --out-dir $OUT_DIR
+    source deactivate
 fi
 
 # deployment
 if [[ $DEPLOY == "True" ]]; then
     echo ''
-    for f in `ls ./tmp-slurmbatch-$BASENAME*.sh`; do
+    for f in `ls ./tmp-lsfbatch-$BASENAME*.sh`; do
         echo "Deploying batch job: $f"
-        sbatch  $f
+        bsub < $f
     done
 fi
 
@@ -87,5 +91,5 @@ fi
 if [[ $CLEAN == "True" ]]; then
     echo ''
     echo "Cleaning up..."
-    rm tmp-slurmbatch-$BASENAME*.sh
+    rm tmp-lsfbatch-$BASENAME*.sh
 fi
