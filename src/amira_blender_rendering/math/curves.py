@@ -61,7 +61,7 @@ def points_on_circle(num_points: int, radius: float = 1, center: np.array = np.a
         np.ndarray of points
     """
     T = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
-    points = center + np.vstack([np.cos(T), np.sin(T), np.zeros(T.size)]).transpose()
+    points = center + radius * np.vstack([np.cos(T), np.sin(T), np.zeros(T.size)]).transpose()
     return points
 
 
@@ -85,7 +85,7 @@ def points_on_wave(num_points, radius: float = 1, center: np.array = np.array([0
         list of points
     """
     T = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
-    points = center + np.vstack([np.cos(T), np.sin(T), amplitude * (np.cos(frequency * T) - 1)]).transpose()
+    points = center + radius * np.vstack([np.cos(T), np.sin(T), amplitude * (np.cos(frequency * T) - 1)]).transpose()
     return points
 
 
