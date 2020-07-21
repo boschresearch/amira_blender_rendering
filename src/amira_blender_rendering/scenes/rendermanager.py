@@ -87,6 +87,12 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         # rectify depth map (if requested)
         if rectify_depth:
+            # get parameters
+            res_x = bpy.context.scene.render.resolution_x
+            res_y = bpy.context.scene.render.resolution_y
+            sensor_width = camera.data.sensor_width
+            f_in_mm = camera.data.lens
+            # filenames
             fpath = os.path.join(dirinfo.images.depth, f'{base_filename}.exr')
             outfpath = fpath
             if not overwrite:
@@ -94,7 +100,9 @@ class RenderManager(abr_scenes.BaseSceneManager):
                 if not os.path.exists(dirpath):
                     os.mkdir(dirpath)
                 outfpath = os.path.join(dirpath, f'{base_filename}.exr')
-            camera_utils.project_pinhole_depth_to_rectilinear(fpath, outfpath)
+            # rectify
+            camera_utils.project_pinhole_depth_to_rectilinear(
+                fpath, outfpath, res_x, res_y, sensor_width, f_in_mm)
 
         # compute bounding boxes and save annotations
         results_gl = ResultsCollection()
