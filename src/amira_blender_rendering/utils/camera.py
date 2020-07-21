@@ -351,3 +351,57 @@ def generate_locations_list(num_locations=30, camera_scale=1, camera_bias=(0, 0,
     assert (len(half_sphere_locations) == num_locations)
 
     return half_sphere_locations
+
+
+def project_pinhole_depth_to_rectilinear(filepath: str, outfilepath: str,
+                                         res_x: int = bpy.context.scene.render.resolution_x,
+                                         res_y: int = bpy.context.scene.render.resolution_y,
+                                         sensor_width: float = bpy.context.scene.camera.data.sensor_width,
+                                         f_in_mm: float = bpy.context.scene.camera.data.lens):
+    """
+    Given a depth map computed (as standard in ABR setup) using a perfect pinhole model,
+    compute the projected rectilinear depth
+    
+    Args:
+        filepath(str): path to file with depth map to load
+        outfilepath(str): path to write rectfied map to
+        res_x(int): render/image x resolution
+        res_y(int): render/image y resolution
+        sensor_width(float): camera sensor width
+        f_in_mm(float): camera focal lenght in mm
+    """
+    import cv2
+    logger = get_logger()
+
+    sensor_height = res_y / res_x * sensor_width
+
+    # read image
+    image = (cv2.imread(filepath, cv2.IMREAD_ANYDEPTH)).astype(np.float32)
+
+    # init array
+    rect_depth = np.zeros(image.shape, dtype=np.float32)
+    
+    logger.info('Rectifying pinhole depth map')
+    for u in range(image.shape[1]):
+        for v in range(image.shape[0]):
+
+            d = image[v, u]
+
+            # if d > 100.0:
+            #     continue
+
+            # coordinates on camera plane
+            x = (0.5 - float(u) / float(image.shape[1])) * sensor_width / f_in_mm
+            y = (0.5 - float(v) / float(image.shape[0])) * sensor_height / f_in_mm
+            z = 1.0
+            norm = np.linalg.norm([x, y, z])
+
+            # normalize = project point on unit sphere, then apply depth
+            z = d * z / norm
+            
+            # fill depth map
+            rect_depth[v, u] = z
+    
+    # overwrite file
+    cv2.imwrite(outfilepath, rect_depth, [cv2.IMWRITE_EXR_TYPE, cv2.IMWRITE_EXR_TYPE_FLOAT])
+    logger.info(f'Saved rectified depth map at {outfilepath}')

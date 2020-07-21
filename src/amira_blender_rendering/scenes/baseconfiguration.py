@@ -52,3 +52,6 @@ class BaseConfiguration(Configuration):
         # logging
         self.add_param('logging.debug', False, 'If True, enable log for debugging')
 
+        # postprocess
+        self.add_param('postprocess.rectify_depth', False, 'If True, from pinhole depth map, compute rectilinear map')
+        self.add_param('postprocess.overwrite', False, 'It True (when computing rectified depth) overwrite depth map')
