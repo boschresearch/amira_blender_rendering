@@ -437,7 +437,7 @@ class PandaTable(interfaces.ABRScene):
                 scale = float(mode_cfg.get('scale', 1))
                 vc = 0
                 while vc < view_count:
-                    p = cam_loc0  + scale * np.random.randn(cam_loc0.size)
+                    p = cam_loc0 + scale * np.random.randn(cam_loc0.size)
                     # check if occlusions are allowed
                     if not self.config.scenario_setup.multiview.allow_occlusions:
                         # if not, test for visibility
