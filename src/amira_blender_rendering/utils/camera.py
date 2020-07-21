@@ -365,7 +365,10 @@ def project_pinhole_depth_to_rectilinear(filepath: str, outfilepath: str,
     Args:
         filepath(str): path to file with depth map to load
         outfilepath(str): path to write rectfied map to
-        camera(bpy.types.CameraData): active camera object data
+        res_x(int): render/image x resolution
+        res_y(int): render/image y resolution
+        sensor_width(float): camera sensor width
+        f_in_mm(float): camera focal lenght in mm
     """
     import cv2
     logger = get_logger()
@@ -383,6 +386,9 @@ def project_pinhole_depth_to_rectilinear(filepath: str, outfilepath: str,
         for v in range(image.shape[0]):
 
             d = image[v, u]
+
+            # if d > 100.0:
+            #     continue
 
             # coordinates on camera plane
             x = (0.5 - float(u) / float(image.shape[1])) * sensor_width / f_in_mm
