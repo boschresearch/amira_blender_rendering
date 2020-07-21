@@ -434,9 +434,10 @@ class PandaTable(interfaces.ABRScene):
             if self.config.scenario_setup.multiview.mode == 'random':
 
                 cam_loc0 = get_array_from_str(mode_cfg, 'start_location', original_locations[cam_name])
+                scale = float(mode_cfg.get('scale', 1))
                 vc = 0
                 while vc < view_count:
-                    p = cam_loc0 + np.random.randn(cam_loc0.size)
+                    p = cam_loc0  + scale * np.random.randn(cam_loc0.size)
                     # check if occlusions are allowed
                     if not self.config.scenario_setup.multiview.allow_occlusions:
                         # if not, test for visibility
@@ -716,7 +717,9 @@ class PandaTable(interfaces.ABRScene):
                             base_filename,
                             bpy.context.scene.camera,
                             self.objs,
-                            self.config.camera_info.zeroing)
+                            self.config.camera_info.zeroing,
+                            rectify_depth=self.config.postprocess.rectify_depth,
+                            overwrite=self.config.postprocess.overwrite)
                     except ValueError:
                         self.logger.error(f"\033[1;31mValueError during post-processing, re-generating image {ic + 1}/{image_count}\033[0;37m")
                         repeat_frame = True
@@ -786,9 +789,13 @@ class PandaTable(interfaces.ABRScene):
                     # postprocess. this will take care of creating additional
                     # information, as well as fix filenames
                     try:
-                        self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
-                                bpy.context.scene.camera, self.objs,
-                                self.config.camera_info.zeroing)
+                        self.renderman.postprocess(
+                            self.dirinfos[i_cam],
+                            base_filename,
+                            bpy.context.scene.camera, self.objs,
+                            self.config.camera_info.zeroing,
+                            rectify_depth=self.config.postprocess.rectify_depth,
+                            overwrite=self.config.postprocess.overwrite)
                     except ValueError:
                         # This issue happens every now and then. The reason might be (not
                         # yet verified) that the target-object is occluded. In turn, this
