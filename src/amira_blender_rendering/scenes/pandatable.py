@@ -338,7 +338,7 @@ class PandaTable(interfaces.ABRScene):
         self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
 
 
-    def randomize_object_transforms(self, objs: list):
+    def randomize_object_transforms(self, objs: list, are_targets: bool = False):
         """move all objects to random locations within their scenario dropzone,
         and rotate them.
         
@@ -365,10 +365,12 @@ class PandaTable(interfaces.ABRScene):
         for i, obj in enumerate(objs):
             if obj['bpy'] is None:
                 continue
-
+        
             obj['bpy'].location.x = drop_location.x + (rnd[i, 0] - .5) * 2.0 * drop_scale[0]
             obj['bpy'].location.y = drop_location.y + (rnd[i, 1] - .5) * 2.0 * drop_scale[1]
             obj['bpy'].location.z = drop_location.z + (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
+            if are_targets:
+                obj['bpy'].location.z = drop_location.z + 2 * (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
             obj['bpy'].rotation_euler = Vector((rnd_rot[i, :] * np.pi))
 
             self.logger.info(f"Object {obj['object_class_name']}: {obj['bpy'].location}, {obj['bpy'].rotation_euler}")
@@ -644,9 +646,8 @@ class PandaTable(interfaces.ABRScene):
             self.randomize_environment_texture()
             # first drop non target objects which are visible in the scene
             self.randomize_object_transforms(self.nt_objs)
-            self.forward_simulate()
-            # then drop targets
-            self.randomize_object_transforms(self.objs)
+            # set target
+            self.randomize_object_transforms(self.objs, are_targets=True)
             self.forward_simulate()
 
             # since multiview locations might be camera dependant,
