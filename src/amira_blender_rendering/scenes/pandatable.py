@@ -65,6 +65,8 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scenario_setup.multiview.mode_config', Configuration(), 'Mode specific configuration')
         self.add_param('scenario_setup.multiview.allow_occlusions', False, 'If True, target objects visibility is not tested')
 
+        self.add_param('logging.plot_axis', False, 'If True, in debug mode, plot camera coordinate systems')
+
 
 class PandaTable(interfaces.ABRScene):
 
@@ -453,7 +455,7 @@ class PandaTable(interfaces.ABRScene):
 
                 # for visual debug
                 if self.config.logging.debug:
-                    plot_points(np.array(locations[cam_name]), camera, plot_axis=bool(self.config.logging.plot_axis))
+                    plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
 
 
             elif self.config.scenario_setup.multiview.mode == 'bezier':
@@ -471,7 +473,7 @@ class PandaTable(interfaces.ABRScene):
 
                 # for visual debug
                 if self.config.logging.debug:
-                    plot_points(np.array(locations[cam_name]), camera, plot_axis=bool(self.config.logging.plot_axis))
+                    plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
                 
                 repeat_frame = False
                 if not self.config.scenario_setup.multiview.allow_occlusions:
@@ -485,7 +487,7 @@ class PandaTable(interfaces.ABRScene):
 
                 # for visual debug
                 if self.config.logging.debug:
-                    plot_points(np.array(locations[cam_name]), camera, plot_axis=bool(self.config.logging.plot_axis))
+                    plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
 
                 repeat_frame = False
                 if not self.config.scenario_setup.multiview.allow_occlusions:
@@ -500,7 +502,7 @@ class PandaTable(interfaces.ABRScene):
 
                 # for visual debug
                 if self.config.logging.debug:
-                    plot_points(np.array(locations[cam_name]), camera, plot_axis=bool(self.config.logging.plot_axis))
+                    plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
 
                 repeat_frame = False
                 if not self.config.scenario_setup.multiview.allow_occlusions:

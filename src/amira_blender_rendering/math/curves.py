@@ -85,7 +85,9 @@ def points_on_wave(num_points, radius: float = 1, center: np.array = np.array([0
         list of points
     """
     T = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
-    points = center + radius * np.vstack([np.cos(T), np.sin(T), amplitude * (np.cos(frequency * T) - 1)]).transpose()
+    circle = points_on_circle(num_points, radius, center)
+    z_wave = np.vstack([np.zeros(T.size), np.zeros(T.size), amplitude * (np.cos(frequency * T) - 1)]).transpose()
+    points = circle + z_wave
     return points
 
 
@@ -95,7 +97,7 @@ def plot_points(points, camera=None, plot_axis: bool = False):
     """
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
-    
+
     fig = plt.figure()
     ax = fig.gca(projection='3d')
     ax.plot(points[:, 0], points[:, 1], points[:, 2])
