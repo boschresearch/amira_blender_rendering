@@ -36,7 +36,7 @@ AMIRA_DATA_GFX_GIT=ssh://git@sourcecode.socialcoding.bosch.com:7999/amira/amira_
 mkdir -p $AMIRA_DATA
 
 # copy/extract datasets
-# git clone --quiet $AMIRA_DATA_GFX_GIT $AMIRA_DATA/amira_data_gfx
+git clone --quiet $AMIRA_DATA_GFX_GIT $AMIRA_DATA/amira_data_gfx
 tar -C $AMIRA_DATA -xf $AMIRA_STORAGE/OpenImagesV4.tar
 # fix wrong directory name
 mv $AMIRA_DATA/OpenImageV4 $AMIRA_DATA/OpenImagesV4
