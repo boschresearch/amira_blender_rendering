@@ -30,7 +30,7 @@ def err_msg():
 or specify a valid path to its location with the --abr-path command line argument.
 
 Example:
-        $ abrgen --abr-path $HOME/abr/src --additional options
+        $ abr_rect_depth --abr-path $HOME/abr/src --additional options
 
 For more help, see documentation, or invoke with --help."""
 
@@ -81,5 +81,5 @@ if __name__ == "__main__":
         path = sys.argv[idx + 1]
     import_abr(path)
     # build command and arguments to run
-    cmd = ['blender', '-b', '-P', os.path.join(abr.__pkgdir__, 'cli', 'render_dataset.py'), '--'] + sys.argv[1:]
+    cmd = ['blender', '-b', '-P', os.path.join(abr.__pkgdir__, 'cli', 'rectify_pinhole_depth_map.py'), '--'] + sys.argv[1:]
     subprocess.run(cmd)

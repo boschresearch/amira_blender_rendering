@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/bin/bash
 
-# Copyright (c) 2016 - for information on the respective copyright owner
+# Copyright (c) 2020 - for information on the respective copyright owner
 # see the NOTICE file and/or the repository
 # <https://github.com/boschresearch/amira-blender-rendering>.
 #
@@ -15,3 +15,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# Script to deploy scripts
+
+# required positional argument to select desired basename for config/slurmbatch.sh scripts
+BASENAME=${1?Error: no BASENAME for config and associated slurmbatch .sh script to deploy given}
+
+echo ''
+for f in `ls ./$BASENAME*.sh`; do
+    echo "Deploying batch job: $f"
+    sbatch  $f
+done
