@@ -8,7 +8,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http:#www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -228,15 +228,17 @@ class ResultsCollection:
         raise NotImplementedError
 
 
-
 class PoseRenderResult:
 
     def __init__(self, object_class_name, object_class_id, object_name, object_id,
                  rgb_const, rgb_random, depth, mask,
-                 T_int, T_ext, rotation, translation,
-                 corners2d, corners3d, aabb, oobb, dimensions=(None,None,None),
+                 rotation, translation,
+                 corners2d, corners3d, aabb, oobb,
                  dense_features=None,
-                 mask_name=''):
+                 mask_name='',
+                 visible=None,
+                 camera_rotation=None,
+                 camera_translation=None):
         """Initialize struct to store the result of rendering synthetic data
 
         Args:
@@ -248,8 +250,6 @@ class PoseRenderResult:
             rgb_random: image with a random light position
             depth: depth image
             mask: stencil that masks the object
-            T_int: intrinsic camera transformation matrix
-            T_ext: homogeneous transformation matrix
             rotation(np.array(3,3) or np.array(4): rotation embedded as 3x3 rotation matrix or (4,) quaternion (WXYZ).
                 Internally, we store rotation as quaternion only.
             translation(np.array(3,)): translation vector
@@ -257,8 +257,13 @@ class PoseRenderResult:
             corners2d: object-oriented bbox projected to image space (first element is the centroid)
             aabb: axis aligned bounding box around object (this is in model-coordinates before model-world transform)
             oobb: object-oriented bounding box in 3D world coordinates (this is after view-rotation)
-            *dense_features: optional dense feature representation of the surface
-            *mask_name(str): optional mask name to indetify correct mask in multi object scenarios. Default: ''
+        
+        Optional Args:
+            dense_features: optional dense feature representation of the surface
+            mask_name(str): optional mask name to indetify correct mask in multi object scenarios. Default: ''
+            visible(bool): optional visibility flag
+            camera_rotation(np.array): camera extrinsic rotation (world coordinate)
+            camera_translation(np.array): camera extrinsic translation (world coordinate)
         """
         self.object_class_name = object_class_name
         self.object_class_id = object_class_id
@@ -269,8 +274,6 @@ class PoseRenderResult:
         self.depth = depth
         self.mask = mask
         self.dense_features = dense_features
-        self.T_int = T_int
-        self.T_ext = T_ext
         # internally convert matrix to quanternion WXYZ
         if rotation is None:
             q = None
@@ -289,7 +292,19 @@ class PoseRenderResult:
         self.oobb = oobb
         self.aabb = aabb
         self.mask_name = mask_name
-        self.dimensions = dimensions
+        self.visible = visible
+        if camera_rotation is None:
+            q_cam = None
+        else:
+            if camera_rotation.shape == (3, 3):
+                q_cam = rotation_matrix_to_quaternion(camera_rotation)
+            else:
+                q_cam = camera_rotation.flatten()
+                if q_cam.shape != (4,):
+                    q_cam = None
+                    raise ValueError('Rotation must be either a (3,3) matrix or a (4,) quaternion (WXYZ)')
+        self.q_cam = q_cam
+        self.t_cam = camera_translation
 
     def state_dict(self, retain_keys: list = None):
         data = {
@@ -298,17 +313,24 @@ class PoseRenderResult:
             "object_name": self.object_name,
             "object_id": self.object_id,
             "mask_name": self.mask_name,
+            "visible": self.visible,
             "pose": {
-                "q": self.q.tolist(),
-                "t": self.t.tolist(),
+                "q": try_to_list(self.q),
+                "t": try_to_list(self.t),
             },
             "bbox": {
-                "corners2d": self.corners2d.tolist(),
-                "corners3d": self.corners3d.tolist(),
-                "aabb": self.aabb.tolist(),
-                "oobb": self.oobb.tolist()
+                "corners2d": try_to_list(self.corners2d),
+                "corners3d": try_to_list(self.corners3d),
+                "aabb": try_to_list(self.aabb),
+                "oobb": try_to_list(self.oobb)
             },
-            "dimensions": self.dimensions
+            "camera_pose": {
+                "q": try_to_list(self.q_cam),
+                "t": try_to_list(self.t_cam)
+            }
         }
         return filter_state_keys(data, retain_keys)
 
+    
+def try_to_list(in_array):
+    return in_array.tolist() if in_array is not None else None

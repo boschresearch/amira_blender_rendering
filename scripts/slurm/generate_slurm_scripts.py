@@ -1,5 +1,21 @@
 #!/usr/bin/env python3
 
+# Copyright (c) 2020 - for information on the respective copyright owner
+# see the NOTICE file and/or the repository
+# <https://github.com/boschresearch/amira-blender-rendering>.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 """
 Script to create the slurmbatch bash directive scripts.
 
@@ -49,6 +65,8 @@ def parse_args():
                         help='Name of python environemt used for rendering')
 
     # optional arguments
+    parser.add_argument('--input-flag', type=str, dest='input_flag', default='',
+                         help='one additional input flag (without prefix --) for main script')
     parser.add_argument('--cudnn', metavar='x.y_vM.N.P', type=str, default='10.0_v7.3.1',
 			help='Cudnn module version to load (Check available running "module avail"). Default: 10.0_v7.3.1')
     parser.add_argument('--gpu', metavar='N', type=int, default=4,
@@ -62,12 +80,14 @@ def parse_args():
     parser.add_argument('--dd', type=int, default=0, help='Number of days of life for the batch job. Default: 0')
     parser.add_argument('--hh', type=int, default=0, help='Number of hours of life for the batch job. Default: 0')
     parser.add_argument('--mm', type=int, default=5, help='Number of mins of life for the batch job. Default: 5')
-    parser.add_argument('--amira-data', metavar='pa/th', type=str, dest='amira_data', default='$HDD/data',
+    parser.add_argument('--amira-data', metavar='pa/th', type=str, dest='amira_data', default='$SSD/data',
                         help='path where data are moved/stored during job execution')
     parser.add_argument('--abr-path', metavar='pa/th', type=str, dest='abr_path', default='$HOME/amira_blender_rendering',
                         help='(Absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering')
     parser.add_argument('--out-path', metavar='pa/th', type=str, dest='out_path', default='/data/Employees/$USER/slurm_results/',
                         help='(Absolute) path where data are moved to for storage after rendering. Default: /data/Employees/$USER/slurm_results')
+    parser.add_argument('--dset-name', metavar='name', type=str, dest='dset_name', default='PhIRM',
+                        help='Name of directory with dataset to pack')
 
     # parse
     args = parser.parse_args()
@@ -134,6 +154,7 @@ def gen_script(user: str,
                cfgfile: str,
                job_name: str = 'BlenderRender',
                py_env_name: str = 'blender-env',
+               input_flag = '',
 	       cudnn_version: str = '10.0_v7.3.1',
                gpu: int = 2,
                cpu: int = 4,
@@ -142,9 +163,10 @@ def gen_script(user: str,
                days: int = 0,
                hh: int = 0,
                mm: int = 5,
-               amira_data: str = '$HDD/data',
+               amira_data: str = '$SSD/data',
                abr_path: str = '$HOME/amira_blender_rendering',
-               out_path: str = '/data/Employees/$USER/slurm_results'):
+               out_path: str = '/data/Employees/$USER/slurm_results',
+               dset_name: str = 'PhIRM'):
     """Generate slurm batch script from configs
 
     Args:
@@ -152,6 +174,7 @@ def gen_script(user: str,
         cfgfile(str): path to cfg file the script is generated for
         job_name(str): job name
         py_env_name(str): name of python environment to use. Default: blender-env
+        input_flag(str): string with one additional flag for main script. Default ''
         cudnn_version(str): version of cudnn module to load. Default: 10_v7.3
 	gpu(int): number of required GPUs. Default: 2
         cpu(int): number of required CPUs. Detault: 4
@@ -163,6 +186,7 @@ def gen_script(user: str,
         amira_data(str): base path where to store data. Default: $HDD/data
         abr_path(str): (absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering
         out_path(str): (absolute) path where data are moved to for storage after rendering. Default: /data/Employees/$USER/slurm_results
+        dset_name(str): name of directory with dataset to pack. Default: PhIRM
 
     Returns:
         formatted string corresponding to slurm script
@@ -186,9 +210,7 @@ echo "System setup"
 module load slurm
 module load cudnn/{cudnn_version}
 conda activate {py_env_name}
-# the following assumes that amira_blender_rendering is located in the $USER home
 cd {abr_path}
-#[ -d $SSD/tmp ] || mkdir $SSD/tmp
 
 # setup env variables
 AMIRA_DATA={amira_data}
@@ -197,10 +219,10 @@ AMIRA_DATA={amira_data}
 AMIRA_DATA=$AMIRA_DATA sh scripts/sh/setup_render_env_cluster.sh
 
 # --- Step 2 --- rendering
-AMIRA_DATASETS=$AMIRA_DATA AMIRA_DATA_GFX={os.path.join(amira_data, 'amira_data_gfx')} scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile}
+AMIRA_DATASETS=$AMIRA_DATA AMIRA_DATA_GFX={os.path.join(amira_data, 'amira_data_gfx')} scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile} {'--' + input_flag if input_flag else ''}
 
 # --- Step 3 --- copy results to user directory
-cd $AMIRA_DATA && tar -cf {os.path.join(out_path, job_name)}-$SLURM_JOB_ID.tar ./PhIRM
+cd $AMIRA_DATA && tar -cf {os.path.join(out_path, job_name)}-$SLURM_JOB_ID.tar ./{dset_name}
 
 # --- Step 4 --- finalize
 set +e
@@ -221,6 +243,7 @@ if __name__ == "__main__":
                             cfgfile=cfg,
                             job_name=cfg.stem,
                             py_env_name=args.py_env_name,
+                            input_flag=args.input_flag,
                             gpu=args.gpu,
                             cpu=args.cpu,
                             ssd=args.ssd,
@@ -229,7 +252,8 @@ if __name__ == "__main__":
                             hh=args.hh,
                             mm=args.mm,
                             amira_data=args.amira_data,
-                            out_path=args.out_path)
+                            out_path=args.out_path,
+                            dset_name=args.dset_name)
         # write out
         fname = f"tmp-slurmbatch-{cfg.stem}.sh"
 
