@@ -114,9 +114,10 @@ def get_cmd_argparser():
         help='Path where amira_blender_rendering (abr) can be found')
 
     parser.add_argument(
-        '--multiview',
+        '--multiview-dataset',
         action='store_true',
-        help='Generate desired type of multiview (moving camera) dataset')
+        help='Generate desired type of multiview (moving camera) dataset',
+        dest='multiview')
 
     parser.add_argument(
         '--list-scenes',
