@@ -40,6 +40,7 @@ import amira_blender_rendering.utils.blender as blnd
 import amira_blender_rendering.interfaces as interfaces
 from amira_blender_rendering.math.curves import points_on_bezier, points_on_circle, points_on_wave, plot_points
 from amira_blender_rendering.datastructures import Configuration
+from amira_blender_rendering.utils.annotation import ObjectBookkeeper
 
 
 class PandaTableConfiguration(abr_scenes.BaseConfiguration):
@@ -49,23 +50,31 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
         super(PandaTableConfiguration, self).__init__()
 
         # specific scene configuration
-        self.add_param('scene_setup.blend_file', '~/gfx/modeling/robottable_empty.blend', 'Path to .blend file with modeled scene')
-        self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images', 'Path to background images / environment textures')
-        self.add_param('scene_setup.cameras', ['Camera,' 'StereoCamera.Left', 'StereoCamera.Right', 'Camera.FrontoParallel.Left', 'Camera.FrontoParallel.Right'], 'Cameras to render')
+        self.add_param('scene_setup.blend_file', '~/gfx/modeling/robottable_empty.blend',
+                       'Path to .blend file with modeled scene')
+        self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images',
+                       'Path to background images / environment textures')
+        self.add_param('scene_setup.cameras',
+                       ['Camera,' 'StereoCamera.Left', 'StereoCamera.Right', 'Camera.FrontoParallel.Left',
+                        'Camera.FrontoParallel.Right'], 'Cameras to render')
         self.add_param('scene_setup.forward_frames', 25, 'Number of frames in physics forward-simulation')
 
         # scenario: target objects
         self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
-        self.add_param('scenario_setup.non_target_objects', [], 'List of objects visible in the scene but of which infos are not stored')
+        self.add_param('scenario_setup.non_target_objects', [],
+                       'List of objects visible in the scene but of which infos are not stored')
         
         # multiview configuration (if implemented)
         self.add_param('scenario_setup.multiview.cameras', [], 'Cameras to render in multiview setup')
         self.add_param('scenario_setup.multiview.view_count', 0, 'Number of view points, i.e., camera locations')
-        self.add_param('scenario_setup.multiview.mode', '', 'Selected mode to generate view points, i.e., random, bezier, viewsphere')
+        self.add_param('scenario_setup.multiview.mode', '',
+                       'Selected mode to generate view points, i.e., random, bezier, viewsphere')
         self.add_param('scenario_setup.multiview.mode_config', Configuration(), 'Mode specific configuration')
-        self.add_param('scenario_setup.multiview.allow_occlusions', False, 'If True, target objects visibility is not tested')
+        self.add_param('scenario_setup.multiview.allow_occlusions', False,
+                       'If True, target objects visibility is not tested')
 
         self.add_param('logging.plot_axis', False, 'If True, in debug mode, plot camera coordinate systems')
+        self.add_param('logging.scatter', False, 'If True, in debug mode, enable scatter plot')
 
 
 class PandaTable(interfaces.ABRScene):
@@ -117,7 +126,6 @@ class PandaTable(interfaces.ABRScene):
         # finally, setup the compositor
         self.setup_compositor()
 
-
     def postprocess_config(self):
         # convert all scaling factors from str to list of floats
         if 'ply_scale' not in self.config.parts:
@@ -129,7 +137,6 @@ class PandaTable(interfaces.ABRScene):
             vs = [float(v) for v in vs]
             self.config.parts.ply_scale[part] = vs
 
-
     def setup_dirinfo(self):
         """Setup directory information for all cameras.
 
@@ -138,11 +145,6 @@ class PandaTable(interfaces.ABRScene):
         # compute directory information for each of the cameras
         self.dirinfos = list()
         for cam in self.config.scene_setup.cameras:
-            # DEPRECATED:
-            # paths are set up as: base_path + Scenario## + CameraName
-            # camera_base_path = f"{self.config.dataset.base_path}-Scenario{self.config.scenario_setup.scenario:02}-{cam}"
-
-            # NEW:
             # paths are set up as: base_path + CameraName
             camera_base_path = f"{self.config.dataset.base_path}-{cam}"
             dirinfo = build_directory_info(camera_base_path)
@@ -159,7 +161,6 @@ class PandaTable(interfaces.ABRScene):
         # returns hits no empties!
         self.logger.info("Hiding all dropzones from viewport")
         bpy.data.collections['Dropzones'].hide_viewport = True
-
 
     def setup_render_output(self):
         """setup render output dimensions. This is not set for a specific camera,
@@ -179,7 +180,6 @@ class PandaTable(interfaces.ABRScene):
         # calibration matrix K alongside. Because we use identical cameras, we
         # can extract this from one of the cameras
         self.get_effective_intrinsics()
-
 
     def get_effective_intrinsics(self):
         """Get the effective intrinsics that were used during rendering.
@@ -201,7 +201,6 @@ class PandaTable(interfaces.ABRScene):
             self.config.camera_info.original_intrinsic = ''
         self.config.camera_info.intrinsic = list(effective_intrinsic)
 
-
     def setup_cameras(self):
         """Set up all cameras.
 
@@ -222,7 +221,6 @@ class PandaTable(interfaces.ABRScene):
             # set the calibration matrix
             camera_utils.set_camera_info(scene, blender_camera, self.config.camera_info)
 
-
     def setup_objects(self, target_objects):
         """This method populates the scene with objects.
 
@@ -241,6 +239,7 @@ class PandaTable(interfaces.ABRScene):
         """
         # let's start with an empty list
         objs = []
+        obk = ObjectBookkeeper()
 
         # first reset the render pass index for all panda model objects (links,
         # hand, etc)
@@ -256,19 +255,15 @@ class PandaTable(interfaces.ABRScene):
         #       object_class_id     model type ID (simply incremental numbers)
         #       object_id   instance ID of the object
         #       bpy         blender object reference
-        n_types = 0       # count how many types we have
-        n_instances = []  # count how many instances per type we have
-        for obj_type_id, obj_spec in enumerate(target_objects):
-            obj_type, obj_count = obj_spec.split(':')
-            n_types += 1
-            n_instances.append(int(obj_count))
+        for class_id, obj_spec in enumerate(target_objects):
+            class_name, obj_count = obj_spec.split(':')
 
             # here we distinguish if we copy a part from the proto objects
             # within a scene, or if we have to load it from file
-            is_proto_object = not obj_type.startswith('parts.')
+            is_proto_object = not class_name.startswith('parts.')
             if not is_proto_object:
                 # split off the prefix for all files that we load from blender
-                obj_type = obj_type[6:]
+                class_name = class_name[6:]
 
             # TODO: file loading happens only very late in this loop. This might
             #       be an issue for large object counts and could be changed to
@@ -278,41 +273,43 @@ class PandaTable(interfaces.ABRScene):
                 bpy.ops.object.select_all(action='DESELECT')
                 if is_proto_object:
                     # duplicate proto-object
-                    blnd.select_object(obj_type)
+                    blnd.select_object(class_name)
                     bpy.ops.object.duplicate()
                     new_obj = bpy.context.object
                 else:
                     # we need to load this object from file. This could be
                     # either a blender file, or a PLY file
-                    blendfile = expandpath(self.config.parts[obj_type], check_file=False)
+                    blendfile = expandpath(self.config.parts[class_name], check_file=False)
                     if os.path.exists(blendfile):
                         # this is a blender file, so we should load it
                         # we can now load the object into blender
-                        blnd.append_object(blendfile, obj_type)
+                        blnd.append_object(blendfile, class_name)
                         # NOTE: bpy.context.object is **not** the object that we are
                         # interested in here! We need to select it via original name
                         # first, then we rename it to be able to select additional
                         # objects later on
-                        new_obj = bpy.data.objects[obj_type]
-                        new_obj.name = f'{obj_type}.{j:03d}'
+                        new_obj = bpy.data.objects[class_name]
+                        new_obj.name = f'{class_name}.{j:03d}'
                     else:
                         # no blender file given, so we will load the PLY file
-                        ply_path = expandpath(self.config.parts.ply[obj_type], check_file=True)
+                        ply_path = expandpath(self.config.parts.ply[class_name], check_file=True)
                         bpy.ops.import_mesh.ply(filepath=ply_path)
                         # here we can use bpy.context.object!
                         new_obj = bpy.context.object
-                        new_obj.name = f'{obj_type}.{j:03d}'
+                        new_obj.name = f'{class_name}.{j:03d}'
 
                 # move object to collection
                 collection = bpy.data.collections['TargetObjects']
                 if new_obj.name not in collection.objects:
                     collection.objects.link(new_obj)
 
+                obk.add(class_name)
+
                 # append all information
                 objs.append({
                     'id_mask': '',
-                    'object_class_name': obj_type,
-                    'object_class_id': obj_type_id,
+                    'object_class_name': class_name,
+                    'object_class_id': class_id,
                     'object_id': j,
                     'bpy': new_obj,
                     'visible': None
@@ -320,23 +317,20 @@ class PandaTable(interfaces.ABRScene):
 
         # build masks id for compositor of the format _N_M, where N is the model
         # id, and M is the object id
-        m_w = ceil(log(n_types)) if n_types else 0  # format width for number of model types
+        w_class = ceil(log(len(obk))) if len(obk) else 0  # format width for number of model types
         for i, obj in enumerate(objs):
-            o_w = ceil(log(n_instances[obj['object_class_id']]))   # format width for number of objects of same model
-            id_mask = f"_{obj['object_class_id']:0{m_w}}_{obj['object_id']:0{o_w}}"
+            w_obj = ceil(log(obk[obj['object_class_name']]['instances']))   # format width for num of objs of same model
+            id_mask = f"_{obj['object_class_id']:0{w_class}}_{obj['object_id']:0{w_obj}}"
             obj['id_mask'] = id_mask
         
         return objs
 
-
     def setup_compositor(self):
         self.renderman.setup_compositor(self.objs)
-
 
     def setup_environment_textures(self):
         # get list of environment textures
         self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
-
 
     def randomize_object_transforms(self, objs: list, are_targets: bool = False):
         """move all objects to random locations within their scenario dropzone,
@@ -381,19 +375,16 @@ class PandaTable(interfaces.ABRScene):
         dg = bpy.context.evaluated_depsgraph_get()
         dg.update()
 
-
     def randomize_environment_texture(self):
         # set some environment texture, randomize, and render
         env_txt_filepath = expandpath(random.choice(self.environment_textures))
         self.renderman.set_environment_texture(env_txt_filepath)
 
-
     def forward_simulate(self):
         self.logger.info(f"forward simulation of {self.config.scene_setup.forward_frames} frames")
         scene = bpy.context.scene
         for i in range(self.config.scene_setup.forward_frames):
-            scene.frame_set(i+1)
-
+            scene.frame_set(i + 1)
 
     def activate_camera(self, cam: str):
         # first get the camera name. this depends on the scene (blend file)
@@ -404,120 +395,118 @@ class PandaTable(interfaces.ABRScene):
         camera = bpy.context.scene.camera
         return camera
 
+    # def generate_multiview_cameras_locations(self, **kw):
 
-    def generate_multiview_cameras_locations(self, **kw):
+    #     def get_array_from_str(cfg, name, default):
+    #         p = cfg.get(name, default)
+    #         if isinstance(p, str):
+    #             p = np.fromstring(p, sep=',')
+    #         return p
 
-        def get_array_from_str(cfg, name, default):
-            p = cfg.get(name, default)
-            if isinstance(p, str):
-                p = np.fromstring(p, sep=',')
-            return p
+    #     # init container
+    #     locations = {}
+    #     original_locations = {}
 
-        # init container
-        locations = {}
-        original_locations = {}
+    #     # additional configs to control specific mode
+    #     mode_cfg = kw.get('config', Configuration())
 
-        # additional configs to control specific mode
-        mode_cfg = kw.get('config', Configuration())
+    #     view_count = self.config.scenario_setup.multiview.view_count
 
-        view_count = self.config.scenario_setup.multiview.view_count
+    #     # loop over cameras
+    #     for cam_name in self.config.scenario_setup.multiview.cameras:
 
-        # loop over cameras
-        for cam_name in self.config.scenario_setup.multiview.cameras:
+    #         # log
+    #         self.logger.info(f'Generating locations according to {self.config.scenario_setup.multiview.mode} mode')
 
-            # log
-            self.logger.info(f'Generating locations according to {self.config.scenario_setup.multiview.mode} mode')
+    #         # extract camera object
+    #         camera = bpy.context.scene.objects[cam_name]
 
-            # extract camera object
-            camera = bpy.context.scene.objects[cam_name]
-
-            # init camera location list and store original
-            locations[cam_name] = []
-            original_locations[cam_name] = np.asarray(camera.matrix_world.to_translation())
+    #         # init camera location list and store original
+    #         locations[cam_name] = []
+    #         original_locations[cam_name] = np.asarray(camera.matrix_world.to_translation())
                  
-            if self.config.scenario_setup.multiview.mode == 'random':
+    #         if self.config.scenario_setup.multiview.mode == 'random':
 
-                cam_loc0 = get_array_from_str(mode_cfg, 'start_location', original_locations[cam_name])
-                scale = float(mode_cfg.get('scale', 1))
-                vc = 0
-                while vc < view_count:
-                    p = cam_loc0 + scale * np.random.randn(cam_loc0.size)
-                    # check if occlusions are allowed
-                    if not self.config.scenario_setup.multiview.allow_occlusions:
-                        # if not, test for visibility
-                        if not self.test_multiview_visibility(camera, [p]):
-                            # if not visible, generate new p
-                            continue
-                    locations[cam_name].append(p)
-                    vc = vc + 1
+    #             cam_loc0 = get_array_from_str(mode_cfg, 'start_location', original_locations[cam_name])
+    #             scale = float(mode_cfg.get('scale', 1))
+    #             vc = 0
+    #             while vc < view_count:
+    #                 p = cam_loc0 + scale * np.random.randn(cam_loc0.size)
+    #                 # check if occlusions are allowed
+    #                 if not self.config.scenario_setup.multiview.allow_occlusions:
+    #                     # if not, test for visibility
+    #                     if not self.test_multiview_visibility(camera, [p]):
+    #                         # if not visible, generate new p
+    #                         continue
+    #                 locations[cam_name].append(p)
+    #                 vc = vc + 1
 
-                # since either we checked all the positions or it does not matter,
-                # repeat frame is always False
-                repeat_frame = False
+    #             # since either we checked all the positions or it does not matter,
+    #             # repeat frame is always False
+    #             repeat_frame = False
 
-                # for visual debug
-                if self.config.logging.debug:
-                    plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
+    #             # for visual debug
+    #             if self.config.logging.debug:
+    #                 plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
 
 
-            elif self.config.scenario_setup.multiview.mode == 'bezier':
-                # Define control points for bezier curve
-                # here it is assumed to cameras have an aiming point to a empty in blender.
-                # Hence, by changing the location, the cameras should automatically
-                # adjust their orientation
-                start = float(mode_cfg.get('start', 0))
-                stop = float(mode_cfg.get('stop', 1))
-                p0 = get_array_from_str(mode_cfg, 'p0', original_locations[cam_name])
-                p1 = get_array_from_str(mode_cfg, 'p1', p0 + np.random.randn(p0.size))
-                p2 = get_array_from_str(mode_cfg, 'p2', p0 + np.random.randn(p0.size))
+    #         elif self.config.scenario_setup.multiview.mode == 'bezier':
+    #             # Define control points for bezier curve
+    #             # here it is assumed to cameras have an aiming point to a empty in blender.
+    #             # Hence, by changing the location, the cameras should automatically
+    #             # adjust their orientation
+    #             start = float(mode_cfg.get('start', 0))
+    #             stop = float(mode_cfg.get('stop', 1))
+    #             p0 = get_array_from_str(mode_cfg, 'p0', original_locations[cam_name])
+    #             p1 = get_array_from_str(mode_cfg, 'p1', p0 + np.random.randn(p0.size))
+    #             p2 = get_array_from_str(mode_cfg, 'p2', p0 + np.random.randn(p0.size))
                 
-                locations[cam_name] = points_on_bezier(view_count, p0, p1, p2, start, stop)
+    #             locations[cam_name] = points_on_bezier(view_count, p0, p1, p2, start, stop)
 
-                # for visual debug
-                if self.config.logging.debug:
-                    plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
+    #             # for visual debug
+    #             if self.config.logging.debug:
+    #                 plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
                 
-                repeat_frame = False
-                if not self.config.scenario_setup.multiview.allow_occlusions:
-                    repeat_frame = not self.test_multiview_visibility(camera, locations[cam_name])
+    #             repeat_frame = False
+    #             if not self.config.scenario_setup.multiview.allow_occlusions:
+    #                 repeat_frame = not self.test_multiview_visibility(camera, locations[cam_name])
 
-            elif self.config.scenario_setup.multiview.mode == 'circle':
-                # extract config
-                r = float(mode_cfg.get('radius', 1))
-                c = get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
-                locations[cam_name] = points_on_circle(view_count, r, c)
+    #         elif self.config.scenario_setup.multiview.mode == 'circle':
+    #             # extract config
+    #             r = float(mode_cfg.get('radius', 1))
+    #             c = get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
+    #             locations[cam_name] = points_on_circle(view_count, r, c)
 
-                # for visual debug
-                if self.config.logging.debug:
-                    plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
+    #             # for visual debug
+    #             if self.config.logging.debug:
+    #                 plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
 
-                repeat_frame = False
-                if not self.config.scenario_setup.multiview.allow_occlusions:
-                    repeat_frame = not self.test_multiview_visibility(camera, locations[cam_name])
+    #             repeat_frame = False
+    #             if not self.config.scenario_setup.multiview.allow_occlusions:
+    #                 repeat_frame = not self.test_multiview_visibility(camera, locations[cam_name])
 
-            elif self.config.scenario_setup.multiview.mode == 'wave':
-                r = float(mode_cfg.get('radius', 1))
-                c = get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
-                w = float(mode_cfg.get('frequency', 1))
-                A = float(mode_cfg.get('amplitude', 1))
-                locations[cam_name] = points_on_wave(view_count, r, c, w, A)
+    #         elif self.config.scenario_setup.multiview.mode == 'wave':
+    #             r = float(mode_cfg.get('radius', 1))
+    #             c = get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
+    #             w = float(mode_cfg.get('frequency', 1))
+    #             A = float(mode_cfg.get('amplitude', 1))
+    #             locations[cam_name] = points_on_wave(view_count, r, c, w, A)
 
-                # for visual debug
-                if self.config.logging.debug:
-                    plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
+    #             # for visual debug
+    #             if self.config.logging.debug:
+    #                 plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
 
-                repeat_frame = False
-                if not self.config.scenario_setup.multiview.allow_occlusions:
-                    repeat_frame = not self.test_multiview_visibility(camera, locations[cam_name])
+    #             repeat_frame = False
+    #             if not self.config.scenario_setup.multiview.allow_occlusions:
+    #                 repeat_frame = not self.test_multiview_visibility(camera, locations[cam_name])
 
+    #         elif self.config.scenario_setup.multiview.mode == 'viewsphere':
+    #             raise NotImplementedError
 
-            elif self.config.scenario_setup.multiview.mode == 'viewsphere':
-                raise NotImplementedError
+    #         else:
+    #             raise ValueError('Selected mode {self.config.scenario_setup.multiview.mode} not supported for multiview locations')
 
-            else:
-                raise ValueError('Selected mode {self.config.scenario_setup.multiview.mode} not supported for multiview locations')
-
-        return locations, original_locations, repeat_frame
+    #     return locations, original_locations, repeat_frame
 
 
     def set_camera_location(self, name, location):
@@ -533,23 +522,21 @@ class PandaTable(interfaces.ABRScene):
         # set pose
         bpy.data.objects[name].location = location
 
+    # def test_multiview_visibility(self, camera, locations):
+    #     """Test visibility of target object from camera locations
 
-    def test_multiview_visibility(self, camera, locations):
-        """Test visibility of target object from camera locations
-
-        Args:
-            camera(bpy.objects.camera): camera object
-            locations(list): list of locations for camera
+    #     Args:
+    #         camera(bpy.objects.camera): camera object
+    #         locations(list): list of locations for camera
         
-        Returns:
-            True if target objects are visible. False otherwise.
-        """
-        for location in locations:
-            camera.location = location
-            if not self.test_single_camera_visibility(camera):
-                return False
-        return True
-
+    #     Returns:
+    #         True if target objects are visible. False otherwise.
+    #     """
+    #     for location in locations:
+    #         camera.location = location
+    #         if not self.test_single_camera_visibility(camera):
+    #             return False
+    #     return True
 
     def test_visibility(self):
         """Test visibility for target object from all fixed camera in the scene"""
@@ -557,43 +544,52 @@ class PandaTable(interfaces.ABRScene):
             cam_name = f"{cam}"
             cam_obj = bpy.data.objects[cam_name]
             # If at least one camera fails, visibility fails
-            if not self.test_single_camera_visibility(cam_obj):
+            if not self.test_camera_visibility(cam_obj):
                 return False
         return True
 
-
-    def test_single_camera_visibility(self, camera):
+    def test_camera_visibility(self, camera, locations: list = None):
         """Test whether given camera sees all target objects
-        and store visibility level/label for each target object"""
-        # TODO: can we distinguish among full visibility, partial visibility and complete occlusion?
-        any_not_visible_or_occluded = False
-        for obj in self.objs:
-            not_visible_or_occluded = abr_geom.test_occlusion(
-                bpy.context.scene,
-                bpy.context.scene.view_layers['View Layer'],
-                camera,
-                obj['bpy'],
-                bpy.context.scene.render.resolution_x,
-                bpy.context.scene.render.resolution_y,
-                require_all=False,
-                origin_offset=0.01)
-            
-            obj['visible'] = True
-
-            if not_visible_or_occluded:
-                self.logger.warn(f"object {obj} not visible or occluded")
-                obj['visible'] = False
-                if self.config.logging.debug:
-                    self.logger.info(f"saving blender file for debugging to /tmp/robottable.blend")
-                    bpy.ops.wm.save_as_mainfile(filepath="/tmp/robottable.blend")
+        and store visibility level/label for each target object
         
-            # keep trace if any obj was not visible or occluded
-            any_not_visible_or_occluded = any_not_visible_or_occluded or not_visible_or_occluded
+        Args:
+            camera(bpy.object.camera): selected camera
+            locations(list): list of locations to check. If None, check current camera location
+        """
+        if locations is None:
+            locations = [camera.location]
+        
+        for location in locations:
+            camera.location = location
 
-        if any_not_visible_or_occluded:
-            return False
+            any_not_visible_or_occluded = False
+            for obj in self.objs:
+                not_visible_or_occluded = abr_geom.test_occlusion(
+                    bpy.context.scene,
+                    bpy.context.scene.view_layers['View Layer'],
+                    camera,
+                    obj['bpy'],
+                    bpy.context.scene.render.resolution_x,
+                    bpy.context.scene.render.resolution_y,
+                    require_all=False,
+                    origin_offset=0.01)
+                # store object visibility info
+                obj['visible'] = not not_visible_or_occluded
+                if not_visible_or_occluded:
+                    self.logger.warn(f"object {obj} not visible or occluded")
+                    if self.config.logging.debug:
+                        self.logger.info(f"saving blender file for debugging to /tmp/robottable.blend")
+                        bpy.ops.wm.save_as_mainfile(filepath="/tmp/robottable.blend")
+            
+                # keep trace if any obj was not visible or occluded
+                any_not_visible_or_occluded = any_not_visible_or_occluded or not_visible_or_occluded
+
+            # if any_not_visibile_or_occluded --> at least one object is not visible from one locaiton: return False
+            if any_not_visible_or_occluded:
+                return False
+
+        # --> all objects are visible (from all locations): return True
         return True
-
 
     def postprocess_multiview_config(self):
         """
@@ -604,11 +600,10 @@ class PandaTable(interfaces.ABRScene):
             raise ValueError('[Multiview rendering] at least one camera must be selected.')
         for cam in self.config.scenario_setup.multiview.cameras:
             if cam not in self.config.scene_setup.cameras:
-                raise ValueError('[Multiview rendering] Selected camera {cam} not is list of available cameras')
+                raise ValueError('[Multiview rendering] Selected camera {cam} not in list of available cameras')
         # check view count
         if self.config.scenario_setup.multiview.view_count <= 0:
             self.config.scenario_setup.multiview.view_count = 1
-
 
     def generate_multiview_dataset(self):
         """This will generate a multiview dataset according to the configuration that
@@ -660,9 +655,21 @@ class PandaTable(interfaces.ABRScene):
                 bpy.context.evaluated_depsgraph_get().update()
 
             # generate views for current static scene
-            multiview_cam_locs, original_cam_locs, repeat_frame = self.generate_multiview_cameras_locations(
-                config=self.config.scenario_setup.multiview.mode_config
-            )
+            multiview_cam_locs, original_cam_locs = camera_utils.generate_multiview_cameras_locations(
+                num_locations=self.config.scenario_setup.multiview.view_count,
+                mode=self.config.scenario_setup.multiview.mode,
+                camera_names=self.config.scenario_setup.multiview.cameras,
+                config=self.config.scenario_setup.multiview.mode_config,
+                debug=self.config.logging.debug,
+                plot_axis=self.config.logging.plot_axis,
+                scatter=self.config.logging.scatter)
+            
+            # check visibility
+            repeat_frame = False
+            if not self.config.scenario_setup.multiview.allow_occlusions:
+                for cam_name, cam_locations in multiview_cam_locs.items():
+                    camera = bpy.context.scene.objects[cam_name]
+                    repeat_frame = not self.test_camera_visibility(camera, cam_locations)
 
             # if we need to repeat (change static scene) we skip one iteration
             # without increasing the counter
@@ -702,7 +709,7 @@ class PandaTable(interfaces.ABRScene):
                     # according to allow_occlusions config.
                     # Here, we re-run visibility to set object visibility level as well as to update
                     # the depsgraph needed to update translation and rotation info
-                    self.test_single_camera_visibility(camera)
+                    self.test_camera_visibility(camera)
 
                     # update path information in compositor
                     self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
@@ -743,12 +750,10 @@ class PandaTable(interfaces.ABRScene):
             pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
             dump_config(self.config, output_path)
 
-
     def teardown(self):
         """Tear down the scene"""
         # nothing to do
         pass
-
 
     def generate_dataset(self):
         """This will generate the dataset according to the configuration that
@@ -766,12 +771,12 @@ class PandaTable(interfaces.ABRScene):
             self.logger.info(f"Generating image {i+1} of {self.config.dataset.image_count}")
 
             # generate render filename
-            base_filename = "{:0{width}d}".format(i, width=format_width)
+            base_filename = "s{:0{width}d}_v0".format(i, width=format_width)
 
             # randomize scene: move objects at random locations, and forward
             # simulate physics
             self.randomize_environment_texture()
-            self.randomize_object_transforms()
+            self.randomize_object_transforms(self.objs + self.nt_objs)
             self.forward_simulate()
 
             # repeat if the cameras cannot see the objects
