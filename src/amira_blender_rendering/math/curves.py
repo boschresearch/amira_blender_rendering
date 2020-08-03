@@ -19,6 +19,74 @@
 import numpy as np
 
 
+def spherical_coordinate(x, y):
+    """
+    Converts a 2D spiral curve to a 3D spiral curve on a unit sphere
+
+    Args:
+        x: abscissa axis
+        y: ordinate axis
+    Returns:
+        theta: angle (around Z)
+        phi: angle (around X)
+        r: radius
+    """
+    theta = np.cos(x) * np.cos(y)
+    phi = np.sin(x) * np.cos(y)
+    r = np.sin(y)
+    return np.array([theta, phi, r])
+
+
+def generate_points_on_sphere(n):
+    """
+    creates a list of points approximately evenly spaced around a unit sphere
+
+    Args:
+        n: number of points you want to evenly spread on a sphere
+    Returns:
+        array of points (x,y,z) on a sphere
+    """
+    x = 0.1 + 1.2 * n
+    s0 = (-1 + 1 / (n - 1))
+    ds = (2 - 2 / (n - 1)) / (n - 1)
+    list_of_points = [
+        spherical_coordinate(
+            (s0 + i * ds) * x,
+            np.pi / 2. * np.copysign(1, (s0 + i * ds)) * (1. - np.sqrt(1. - abs((s0 + i * ds))))
+        ) for i in range(n)]
+    return np.array(list_of_points)
+
+
+def points_on_viewsphere(num_points=30, scale=1, bias=(0, 0, 1.5)):
+    """
+    Creates a list of XYZ locations in half a sphere around and over (0, 0, 0)
+
+    Args:
+        num_locations: number of required locations on the unit half sphere around (0, 0, 0)
+        scale, bias: scale and bias relative to unit sphere
+
+    Returns:
+        half_sphere_locations (np.ndarray): an array of locations
+    """
+    sphere_locations = generate_points_on_sphere(2 * num_points)
+
+    if isinstance(scale, (int, float)):
+        scale = [scale] * 3
+
+    if isinstance(scale, (int, float)):
+        bias = [bias] * 3
+
+    half_sphere_locations = []
+    for loc in sphere_locations:
+        if loc[-1] >= 0:
+            loc = [scale[i] * x + bias[i] for i, x in enumerate(loc)]
+            half_sphere_locations.append(tuple(loc))
+
+    assert (len(half_sphere_locations) == num_points)
+
+    return np.array(half_sphere_locations)
+
+
 def points_on_bezier(num_points: int, p0: np.array, p1: np.array, p2: np.array, start: float = 0, stop: float = 1):
     """Generate desired number of points on a 3rd order Bezier curve
     with given control points.
@@ -91,7 +159,12 @@ def points_on_wave(num_points, radius: float = 1, center: np.array = np.array([0
     return points
 
 
-def plot_points(points, camera=None, plot_axis: bool = False):
+def random_points(num_points, base_location, scale):
+    points = base_location + scale * np.random.randn(num_points, base_location.size)
+    return points
+
+
+def plot_points(points, camera=None, plot_axis: bool = False, scatter: bool = False):
     """
     3D plot of generated points
     """
@@ -100,7 +173,10 @@ def plot_points(points, camera=None, plot_axis: bool = False):
 
     fig = plt.figure()
     ax = fig.gca(projection='3d')
-    ax.plot(points[:, 0], points[:, 1], points[:, 2])
+    if scatter:
+        ax.scatter(points[:, 0], points[:, 1], points[:, 2])
+    else:
+        ax.plot(points[:, 0], points[:, 1], points[:, 2])
 
     # collect tranforms
     if camera is not None and plot_axis:
