@@ -38,7 +38,6 @@ import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 import amira_blender_rendering.utils.blender as blnd
 import amira_blender_rendering.interfaces as interfaces
-from amira_blender_rendering.math.curves import points_on_bezier, points_on_circle, points_on_wave, plot_points
 from amira_blender_rendering.datastructures import Configuration
 from amira_blender_rendering.utils.annotation import ObjectBookkeeper
 
@@ -395,120 +394,6 @@ class PandaTable(interfaces.ABRScene):
         camera = bpy.context.scene.camera
         return camera
 
-    # def generate_multiview_cameras_locations(self, **kw):
-
-    #     def get_array_from_str(cfg, name, default):
-    #         p = cfg.get(name, default)
-    #         if isinstance(p, str):
-    #             p = np.fromstring(p, sep=',')
-    #         return p
-
-    #     # init container
-    #     locations = {}
-    #     original_locations = {}
-
-    #     # additional configs to control specific mode
-    #     mode_cfg = kw.get('config', Configuration())
-
-    #     view_count = self.config.scenario_setup.multiview.view_count
-
-    #     # loop over cameras
-    #     for cam_name in self.config.scenario_setup.multiview.cameras:
-
-    #         # log
-    #         self.logger.info(f'Generating locations according to {self.config.scenario_setup.multiview.mode} mode')
-
-    #         # extract camera object
-    #         camera = bpy.context.scene.objects[cam_name]
-
-    #         # init camera location list and store original
-    #         locations[cam_name] = []
-    #         original_locations[cam_name] = np.asarray(camera.matrix_world.to_translation())
-                 
-    #         if self.config.scenario_setup.multiview.mode == 'random':
-
-    #             cam_loc0 = get_array_from_str(mode_cfg, 'start_location', original_locations[cam_name])
-    #             scale = float(mode_cfg.get('scale', 1))
-    #             vc = 0
-    #             while vc < view_count:
-    #                 p = cam_loc0 + scale * np.random.randn(cam_loc0.size)
-    #                 # check if occlusions are allowed
-    #                 if not self.config.scenario_setup.multiview.allow_occlusions:
-    #                     # if not, test for visibility
-    #                     if not self.test_multiview_visibility(camera, [p]):
-    #                         # if not visible, generate new p
-    #                         continue
-    #                 locations[cam_name].append(p)
-    #                 vc = vc + 1
-
-    #             # since either we checked all the positions or it does not matter,
-    #             # repeat frame is always False
-    #             repeat_frame = False
-
-    #             # for visual debug
-    #             if self.config.logging.debug:
-    #                 plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
-
-
-    #         elif self.config.scenario_setup.multiview.mode == 'bezier':
-    #             # Define control points for bezier curve
-    #             # here it is assumed to cameras have an aiming point to a empty in blender.
-    #             # Hence, by changing the location, the cameras should automatically
-    #             # adjust their orientation
-    #             start = float(mode_cfg.get('start', 0))
-    #             stop = float(mode_cfg.get('stop', 1))
-    #             p0 = get_array_from_str(mode_cfg, 'p0', original_locations[cam_name])
-    #             p1 = get_array_from_str(mode_cfg, 'p1', p0 + np.random.randn(p0.size))
-    #             p2 = get_array_from_str(mode_cfg, 'p2', p0 + np.random.randn(p0.size))
-                
-    #             locations[cam_name] = points_on_bezier(view_count, p0, p1, p2, start, stop)
-
-    #             # for visual debug
-    #             if self.config.logging.debug:
-    #                 plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
-                
-    #             repeat_frame = False
-    #             if not self.config.scenario_setup.multiview.allow_occlusions:
-    #                 repeat_frame = not self.test_multiview_visibility(camera, locations[cam_name])
-
-    #         elif self.config.scenario_setup.multiview.mode == 'circle':
-    #             # extract config
-    #             r = float(mode_cfg.get('radius', 1))
-    #             c = get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
-    #             locations[cam_name] = points_on_circle(view_count, r, c)
-
-    #             # for visual debug
-    #             if self.config.logging.debug:
-    #                 plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
-
-    #             repeat_frame = False
-    #             if not self.config.scenario_setup.multiview.allow_occlusions:
-    #                 repeat_frame = not self.test_multiview_visibility(camera, locations[cam_name])
-
-    #         elif self.config.scenario_setup.multiview.mode == 'wave':
-    #             r = float(mode_cfg.get('radius', 1))
-    #             c = get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
-    #             w = float(mode_cfg.get('frequency', 1))
-    #             A = float(mode_cfg.get('amplitude', 1))
-    #             locations[cam_name] = points_on_wave(view_count, r, c, w, A)
-
-    #             # for visual debug
-    #             if self.config.logging.debug:
-    #                 plot_points(np.array(locations[cam_name]), camera, plot_axis=self.config.logging.plot_axis)
-
-    #             repeat_frame = False
-    #             if not self.config.scenario_setup.multiview.allow_occlusions:
-    #                 repeat_frame = not self.test_multiview_visibility(camera, locations[cam_name])
-
-    #         elif self.config.scenario_setup.multiview.mode == 'viewsphere':
-    #             raise NotImplementedError
-
-    #         else:
-    #             raise ValueError('Selected mode {self.config.scenario_setup.multiview.mode} not supported for multiview locations')
-
-    #     return locations, original_locations, repeat_frame
-
-
     def set_camera_location(self, name, location):
         """
         Set locations for selected cameras
@@ -521,22 +406,6 @@ class PandaTable(interfaces.ABRScene):
         blnd.select_object(name)
         # set pose
         bpy.data.objects[name].location = location
-
-    # def test_multiview_visibility(self, camera, locations):
-    #     """Test visibility of target object from camera locations
-
-    #     Args:
-    #         camera(bpy.objects.camera): camera object
-    #         locations(list): list of locations for camera
-        
-    #     Returns:
-    #         True if target objects are visible. False otherwise.
-    #     """
-    #     for location in locations:
-    #         camera.location = location
-    #         if not self.test_single_camera_visibility(camera):
-    #             return False
-    #     return True
 
     def test_visibility(self):
         """Test visibility for target object from all fixed camera in the scene"""
