@@ -64,13 +64,11 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
                        'List of objects visible in the scene but of which infos are not stored')
         
         # multiview configuration (if implemented)
-        self.add_param('scenario_setup.multiview.cameras', [], 'Cameras to render in multiview setup')
-        self.add_param('scenario_setup.multiview.view_count', 0, 'Number of view points, i.e., camera locations')
-        self.add_param('scenario_setup.multiview.mode', '',
+        self.add_param('multiview_setup.cameras', [], 'Cameras to render in multiview setup')
+        self.add_param('multiview_setup.view_count', 0, 'Number of view points, i.e., camera locations')
+        self.add_param('multiview_setup.mode', '',
                        'Selected mode to generate view points, i.e., random, bezier, viewsphere')
-        self.add_param('scenario_setup.multiview.mode_config', Configuration(), 'Mode specific configuration')
-        self.add_param('scenario_setup.multiview.allow_occlusions', False,
-                       'If True, target objects visibility is not tested')
+        self.add_param('multiview_setup.mode_config', Configuration(), 'Mode specific configuration')
 
         self.add_param('logging.plot_axis', False, 'If True, in debug mode, plot camera coordinate systems')
         self.add_param('logging.scatter', False, 'If True, in debug mode, enable scatter plot')
@@ -462,17 +460,17 @@ class PandaTable(interfaces.ABRScene):
 
     def postprocess_multiview_config(self):
         """
-        Make sure the config for scenario_setup.multiview are correct
+        Make sure the config for multiview_setup are correct
         """
         # check cameras
-        if not self.config.scenario_setup.multiview.cameras:
+        if not self.config.multiview_setup.cameras:
             raise ValueError('[Multiview rendering] at least one camera must be selected.')
-        for cam in self.config.scenario_setup.multiview.cameras:
+        for cam in self.config.multiview_setup.cameras:
             if cam not in self.config.scene_setup.cameras:
                 raise ValueError('[Multiview rendering] Selected camera {cam} not in list of available cameras')
         # check view count
-        if self.config.scenario_setup.multiview.view_count <= 0:
-            self.config.scenario_setup.multiview.view_count = 1
+        if self.config.multiview_setup.view_count <= 0:
+            self.config.multiview_setup.view_count = 1
 
     def generate_multiview_dataset(self):
         """This will generate a multiview dataset according to the configuration that
@@ -517,7 +515,7 @@ class PandaTable(interfaces.ABRScene):
             # since multiview locations might be camera dependant,
             # restore original locations if we changed them during previous iteration
             if original_cam_locs is not None:
-                for cam_name in self.config.scenario_setup.multiview.cameras:
+                for cam_name in self.config.multiview_setup.cameras:
                     camera = bpy.context.scene.objects[cam_name]
                     camera.location = original_cam_locs[cam_name]
                 # update depsgraph
@@ -525,17 +523,17 @@ class PandaTable(interfaces.ABRScene):
 
             # generate views for current static scene
             multiview_cam_locs, original_cam_locs = camera_utils.generate_multiview_cameras_locations(
-                num_locations=self.config.scenario_setup.multiview.view_count,
-                mode=self.config.scenario_setup.multiview.mode,
-                camera_names=self.config.scenario_setup.multiview.cameras,
-                config=self.config.scenario_setup.multiview.mode_config,
+                num_locations=self.config.multiview_setup.view_count,
+                mode=self.config.multiview_setup.mode,
+                camera_names=self.config.multiview_setup.cameras,
+                config=self.config.multiview_setup.mode_config,
                 debug=self.config.logging.debug,
                 plot_axis=self.config.logging.plot_axis,
                 scatter=self.config.logging.scatter)
             
             # check visibility
             repeat_frame = False
-            if not self.config.scenario_setup.multiview.allow_occlusions:
+            if not self.config.render_setup.allow_occlusions:
                 for cam_name, cam_locations in multiview_cam_locs.items():
                     camera = bpy.context.scene.objects[cam_name]
                     repeat_frame = not self.test_camera_visibility(camera, cam_locations)
@@ -547,7 +545,7 @@ class PandaTable(interfaces.ABRScene):
                 continue
 
             # loop over cameras
-            for cam_name in self.config.scenario_setup.multiview.cameras:
+            for cam_name in self.config.multiview_setup.cameras:
                 # extract camera index
                 i_cam = self.config.scene_setup.cameras.index(cam_name)
                 
@@ -564,7 +562,7 @@ class PandaTable(interfaces.ABRScene):
                 for vc, cam_loc in enumerate(camera_locations):
 
                     self.logger.info(
-                        f"Generating image: scene {ic + 1}/{image_count}, view {vc + 1}/{self.config.scenario_setup.multiview.view_count}")
+                        f"Generating image: scene {ic + 1}/{image_count}, view {vc + 1}/{self.config.multiview_setup.view_count}")
 
                     # filename
                     base_filename = "s{:0{width}d}_v{:0{cam_width}d}".format(ic, vc,
