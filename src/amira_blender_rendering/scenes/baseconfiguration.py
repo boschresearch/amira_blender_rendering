@@ -18,6 +18,7 @@
 
 from amira_blender_rendering.datastructures import Configuration
 
+
 class BaseConfiguration(Configuration):
     """Basic configuration for any dataset."""
 
@@ -48,6 +49,7 @@ class BaseConfiguration(Configuration):
         self.add_param('render_setup.integrator', 'BRANCHED_PATH', 'Integrator used during path tracing. Either of PATH, BRANCHED_PATH')
         self.add_param('render_setup.denoising', True, 'Use denoising algorithms during rendering')
         self.add_param('render_setup.samples', 128, 'Samples to use during rendering')
+        self.add_param('render_setup.allow_occlusions', False, 'If True, allow objects to be occluded from camera')
 
         # logging
         self.add_param('logging.debug', False, 'If True, enable log for debugging')
