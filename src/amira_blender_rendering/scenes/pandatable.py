@@ -485,7 +485,7 @@ class PandaTable(interfaces.ABRScene):
         # per each configuration (if multiple are defined).
         # In addition the [multiview] config section defines specific configuration such as
         #
-        #   [multiview]
+        #   [multiview_setup]
         #   cameras(list): defines the cameras (subset of scene_setup.cameras) that are rendered in multiview
         #   view_count(int): defines the (minimum) number of camera locations (different views of a static scene)
         #   mode(str): how to generate camera locations for multiview. E.g., viewsphere, bezier, random
@@ -565,9 +565,7 @@ class PandaTable(interfaces.ABRScene):
                         f"Generating image: scene {ic + 1}/{image_count}, view {vc + 1}/{self.config.multiview_setup.view_count}")
 
                     # filename
-                    base_filename = "s{:0{width}d}_v{:0{cam_width}d}".format(ic, vc,
-                                                                             width=scn_format_width,
-                                                                             cam_width=view_format_width)
+                    base_filename = f"s{ic:0{scn_format_width}}_v{vc:0{view_format_width}}"
 
                     # set camera location
                     self.set_camera_location(cam_name, cam_loc)
