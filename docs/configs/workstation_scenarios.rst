@@ -83,6 +83,8 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     denoising = True
     # samples the ray-tracer uses per pixel
     samples = 64
+    # allow occlusions of target objects (true, false)
+    allow_occlusions = False
 
     [scene_setup]
     # specify the blender file from which to load the scene
@@ -218,3 +220,30 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     # .blend file in the 'Proto' collection. You can also specify parts that were
     # presented above using the syntax 'parts.partname:count'
     target_objects = parts.sterngriff:4, parts.wuerfelverbinder_40x40:3, parts.hammerschraube:7, parts.winkel_60x60:5
+    # Similarly to target objects, specify the list of ABC objects to load
+    abc_objects = []
+    # Specify number of random metallic materials to generate for ABC objects
+    abc_color_count = 3
+
+
+    [multiview_setup]
+    # List of cameras to use during multiview rendering
+    cameras = []
+    # number of views per camera
+    view_count = 0
+    # control how multiview camera locations are generated (bezier curve, circle, viewsphere etc.)
+    mode = 
+    # mode specific configuration
+    mode_config = 
+
+
+    # additional logging configs
+    [logging]
+    # if in debug mode (see baseconfiguration), plot coordinate axis system for camera
+    # poses in before multiview rendering
+    plot_axis = False
+    # if in debug mode (see baseconfiguration), toggle scatter plot of camera locations
+    # before multiview rendering 
+    scatter = False
+
+
