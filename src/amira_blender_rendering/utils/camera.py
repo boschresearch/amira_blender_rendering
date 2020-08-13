@@ -439,43 +439,45 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
     if mode not in _available_modes.keys():
         raise ValueError(f'Selected mode {mode} not supported for multiview locations')
 
-    # build dict with available config per each mode
-    mode_cfg = kw.get('config', Configuration())  # get user defined config (if any)
-    _modes_cfgs = {
-        'random': {
-            'base_location': get_array_from_str(mode_cfg, 'base_location', original_locations[cam_name]),
-            'scale': float(mode_cfg.get('scale', 1))
-        },
-        'bezier': {
-            'p0': get_array_from_str(mode_cfg, 'p0', original_locations[cam_name]),
-            'p1': get_array_from_str(mode_cfg, 'p1',
-                                     original_locations[cam_name] + np.random.randn(original_locations[cam_name].size)),
-            'p2': get_array_from_str(mode_cfg, 'p2',
-                                     original_locations[cam_name] + np.random.randn(original_locations[cam_name].size)),
-            'start': float(mode_cfg.get('start', 0)),
-            'stop': float(mode_cfg.get('stop', 1))
-        },
-        'circle': {
-            'radius': float(mode_cfg.get('radius', 1)),
-            'center': get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
-        },
-        'wave': {
-            'radius': float(mode_cfg.get('radius', 1)),
-            'center': get_array_from_str(mode_cfg, 'center', original_locations[cam_name]),
-            'frequency': float(mode_cfg.get('frequency', 1)),
-            'amplitude': float(mode_cfg.get('amplitude', 1))
-        },
-        'viewsphere': {
-            'scale': float(mode_cfg.get('scale', 1)),
-            'bias': tuple(get_array_from_str(mode_cfg, 'bias', [0, 0, 1.5]))
-        }
-    }
-
     # init container
     locations = {}
 
     # loop over cameras
     for cam_name in camera_names:
+
+        # build dict with available config per each mode
+        mode_cfg = kw.get('config', Configuration())  # get user defined config (if any)
+        _modes_cfgs = {
+            'random': {
+                'base_location': get_array_from_str(mode_cfg, 'base_location', original_locations[cam_name]),
+                'scale': float(mode_cfg.get('scale', 1))
+            },
+            'bezier': {
+                'p0': get_array_from_str(mode_cfg, 'p0', original_locations[cam_name]),
+                'p1': get_array_from_str(
+                    mode_cfg, 'p1',
+                    original_locations[cam_name] + np.random.randn(original_locations[cam_name].size)),
+                'p2': get_array_from_str(
+                    mode_cfg, 'p2',
+                    original_locations[cam_name] + np.random.randn(original_locations[cam_name].size)),
+                'start': float(mode_cfg.get('start', 0)),
+                'stop': float(mode_cfg.get('stop', 1))
+            },
+            'circle': {
+                'radius': float(mode_cfg.get('radius', 1)),
+                'center': get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
+            },
+            'wave': {
+                'radius': float(mode_cfg.get('radius', 1)),
+                'center': get_array_from_str(mode_cfg, 'center', original_locations[cam_name]),
+                'frequency': float(mode_cfg.get('frequency', 1)),
+                'amplitude': float(mode_cfg.get('amplitude', 1))
+            },
+            'viewsphere': {
+                'scale': float(mode_cfg.get('scale', 1)),
+                'bias': tuple(get_array_from_str(mode_cfg, 'bias', [0, 0, 1.5]))
+            }
+        }
 
         # log
         logger.info(f'Generating locations for {cam_name} according to {mode} mode')
