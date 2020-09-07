@@ -771,7 +771,7 @@ class PandaTable(interfaces.ABRScene):
             # randomize scene: move objects at random locations, and forward
             # simulate physics
             self.randomize_environment_texture()
-            self.randomize_object_transforms()
+            self.randomize_object_transforms(self.nt_objs + self.objs)
             self.forward_simulate()
 
             # repeat if the cameras cannot see the objects
