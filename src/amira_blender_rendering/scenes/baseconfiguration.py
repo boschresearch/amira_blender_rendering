@@ -26,7 +26,12 @@ class BaseConfiguration(Configuration):
         super(BaseConfiguration, self).__init__()
 
         # general dataset configuration.
-        self.add_param('dataset.image_count', 1, 'Number of images to generate')
+        # self.add_param('dataset.image_count', 1,
+        #                'Number of images to generate. Depending whether a multiview dataset generation is requested, \
+        #                    the final number of images might be controlled by image_count or by a combination of \
+        #                        scene_count and view_count')
+        self.add_param('dataset.scene_count', 1, 'Number of static scenes to generate')
+        self.add_param('dataset.view_count', 1, 'Number of camera views per scene to generate')
         self.add_param('dataset.base_path', '', 'Path to storage directory')
         self.add_param('dataset.scene_type', '', 'Scene type')
 
