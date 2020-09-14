@@ -448,7 +448,7 @@ def rotation_matrix(alpha, axis, homogeneous=False):
 
 
 # the two following method have been implemented in the amira_lfd pipeline
-def rotation_matrix_to_quaternion(rot_mat):
+def rotation_matrix_to_quaternion(rot_mat, isprecise=False):
     """
     Computes the quaternion (with convention WXYZ) out of a given rotation matrix
     Inverse funtion of quaternion_to_rotation_matrix
@@ -460,40 +460,68 @@ def rotation_matrix_to_quaternion(rot_mat):
     Returns
     -------
     :return q: np.array of shape (4,), quaternion (WXYZ) corresponding to the rotation matrix rot_mat
+    
+    NOTE: the implementation comes from a mixture of codes. Inspiration is taken from Wikipedia and
+        
+        Homogeneous Transformation Matrices and Quaternions library
+        :Author:
+            `Christoph Gohlke <http://www.lfd.uci.edu/~gohlke/>`_
     """
-    qs = min(np.sqrt(np.trace(rot_mat) + 1) / 2.0, 1.0)
-    kx = rot_mat[2, 1] - rot_mat[1, 2]  # Oz - Ay
-    ky = rot_mat[0, 2] - rot_mat[2, 0]  # Ax - Nz
-    kz = rot_mat[1, 0] - rot_mat[0, 1]  # Ny - Ox
-    if (rot_mat[0, 0] >= rot_mat[1, 1]) and (rot_mat[0, 0] >= rot_mat[2, 2]):
-        kx1 = rot_mat[0, 0] - rot_mat[1, 1] - rot_mat[2, 2] + 1  # Nx - Oy - Az + 1
-        ky1 = rot_mat[1, 0] + rot_mat[0, 1]  # Ny + Ox
-        kz1 = rot_mat[2, 0] + rot_mat[0, 2]  # Nz + Ax
-        add = (kx >= 0)
-    elif rot_mat[1, 1] >= rot_mat[2, 2]:
-        kx1 = rot_mat[1, 0] + rot_mat[0, 1]  # Ny + Ox
-        ky1 = rot_mat[1, 1] - rot_mat[0, 0] - rot_mat[2, 2] + 1  # Oy - Nx - Az + 1
-        kz1 = rot_mat[2, 1] + rot_mat[1, 2]  # Oz + Ay
-        add = (ky >= 0)
+    if isprecise:
+        trace = max(np.trace(rot_mat), -1.0)
+        qs = min(np.sqrt(trace + 1) / 2.0, 1.0)
+        kx = rot_mat[2, 1] - rot_mat[1, 2]  # Oz - Ay
+        ky = rot_mat[0, 2] - rot_mat[2, 0]  # Ax - Nz
+        kz = rot_mat[1, 0] - rot_mat[0, 1]  # Ny - Ox
+        if (rot_mat[0, 0] >= rot_mat[1, 1]) and (rot_mat[0, 0] >= rot_mat[2, 2]):
+            kx1 = rot_mat[0, 0] - rot_mat[1, 1] - rot_mat[2, 2] + 1  # Nx - Oy - Az + 1
+            ky1 = rot_mat[1, 0] + rot_mat[0, 1]  # Ny + Ox
+            kz1 = rot_mat[2, 0] + rot_mat[0, 2]  # Nz + Ax
+            add = (kx >= 0)
+        elif rot_mat[1, 1] >= rot_mat[2, 2]:
+            kx1 = rot_mat[1, 0] + rot_mat[0, 1]  # Ny + Ox
+            ky1 = rot_mat[1, 1] - rot_mat[0, 0] - rot_mat[2, 2] + 1  # Oy - Nx - Az + 1
+            kz1 = rot_mat[2, 1] + rot_mat[1, 2]  # Oz + Ay
+            add = (ky >= 0)
+        else:
+            kx1 = rot_mat[2, 0] + rot_mat[0, 2]  # Nz + Ax
+            ky1 = rot_mat[2, 1] + rot_mat[1, 2]  # Oz + Ay
+            kz1 = rot_mat[2, 2] - rot_mat[0, 0] - rot_mat[1, 1] + 1  # Az - Nx - Oy + 1
+            add = (kz >= 0)
+        if add:
+            kx = kx + kx1
+            ky = ky + ky1
+            kz = kz + kz1
+        else:
+            kx = kx - kx1
+            ky = ky - ky1
+            kz = kz - kz1
+        nm = np.linalg.norm(np.array([kx, ky, kz]))
+        if nm == 0:
+            q = np.array([1., 0., 0., 0.])
+        else:
+            s = np.sqrt(1 - qs**2) / nm
+            qv = s * np.array([kx, ky, kz])
+            q = np.append(qs, qv)
     else:
-        kx1 = rot_mat[2, 0] + rot_mat[0, 2]  # Nz + Ax
-        ky1 = rot_mat[2, 1] + rot_mat[1, 2]  # Oz + Ay
-        kz1 = rot_mat[2, 2] - rot_mat[0, 0] - rot_mat[1, 1] + 1  # Az - Nx - Oy + 1
-        add = (kz >= 0)
-    if add:
-        kx = kx + kx1
-        ky = ky + ky1
-        kz = kz + kz1
-    else:
-        kx = kx - kx1
-        ky = ky - ky1
-        kz = kz - kz1
-    nm = np.linalg.norm(np.array([kx, ky, kz]))
-    if nm == 0:
-        q = np.array([1., 0., 0., 0.])
-    else:
-        s = np.sqrt(1 - qs**2) / nm
-        qv = s * np.array([kx, ky, kz])
-        q = np.append(qs, qv)
-    return q
+        m00 = rot_mat[0, 0]
+        m01 = rot_mat[0, 1]
+        m02 = rot_mat[0, 2]
+        m10 = rot_mat[1, 0]
+        m11 = rot_mat[1, 1]
+        m12 = rot_mat[1, 2]
+        m20 = rot_mat[2, 0]
+        m21 = rot_mat[2, 1]
+        m22 = rot_mat[2, 2]
+        # symmetric matrix K
+        K = np.array([[m00 - m11 - m22, 0.0, 0.0, 0.0], [m01 + m10, m11 - m00 - m22, 0.0, 0.0],
+                      [m02 + m20, m12 + m21, m22 - m00 - m11, 0.0],
+                      [m21 - m12, m02 - m20, m10 - m01, m00 + m11 + m22]])
+        K /= 3.0
+        # quaternion is eigenvector of K that corresponds to largest eigenvalue
+        w, V = np.linalg.eigh(K)
+        q = V[[3, 0, 1, 2], np.argmax(w)]
 
+    if q[0] < 0.0:
+        np.negative(q, q)
+    return q
