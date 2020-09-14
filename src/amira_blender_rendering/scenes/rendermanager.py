@@ -192,10 +192,15 @@ class RenderManager(abr_scenes.BaseSceneManager):
         R_cam = np.asarray(camera.matrix_world.to_3x3().normalized())
 
         # compute bounding boxes
+        # TODO: temporary change until we do not find what causes ValueError in 2d bbox
         corners2d, corners3d, aabb, oobb = None, None, None, None
-        if obj['visible']:
-            corners2d = self.compute_2dbbox(obj['fname_mask'])
-            aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
+        try:
+            if obj['visible']:
+                corners2d = self.compute_2dbbox(obj['fname_mask'])
+                aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
+        except ValueError:
+            obj['visible'] = False
+            corners2d, corners3d, aabb, oobb = None, None, None, None
 
         render_result_gl = PoseRenderResult(
             object_class_name=obj['object_class_name'],
