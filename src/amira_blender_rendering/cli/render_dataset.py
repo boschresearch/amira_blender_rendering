@@ -114,10 +114,10 @@ def get_cmd_argparser():
         help='Path where amira_blender_rendering (abr) can be found')
 
     parser.add_argument(
-        '--multiview-dataset',
-        action='store_true',
-        help='Generate desired type of multiview (moving camera) dataset',
-        dest='multiview')
+        '--render-mode',
+        default='default',
+        help='Select render mode. Currently supported: default (ie single view), multiview (ie moving cameras) dataset',
+        dest='render_mode')
 
     parser.add_argument(
         '--list-scenes',
@@ -223,17 +223,14 @@ def main():
     #       to run the script twice, with two different configurations, to
     #       generate the split. This is significantly easier than internally
     #       maintaining split configurations.
-    scene = scene_types[scene_type_str.lower()][0](config=config, multiview=cmd_args.multiview)
+    scene = scene_types[scene_type_str.lower()][0](config=config, render_mode=cmd_args.render_mode)
     # save the config early. In case something goes wrong during rendering, we
     # at least have the config + potentially some images
     scene.dump_config()
 
     # generate the dataset
     success = False
-    if cmd_args.multiview:
-        success = scene.generate_multiview_dataset()
-    else:
-        success = scene.generate_dataset()
+    success = scene.generate_dataset()
     if not success:
         get_logger().error("Error while generating dataset")
 
