@@ -86,10 +86,13 @@ class PandaTable(interfaces.ABRScene):
         # extract configuration, then build and activate a split config
         self.config = kwargs.get('config', PandaTableConfiguration())
         if self.config.dataset.scene_type.lower() != 'PandaTable'.lower():
-            raise RuntimeError(f"Invalid configuration of scene type {self.config.dataset.scene_type} for class PandaTable")
-
+            raise RuntimeError(f"Invalid configuration of type {self.config.dataset.scene_type} for class PandaTable")
+        
+        # determine if we are rendering in multiview mode
+        multiview = kwargs.get('multiview', False)
+        
         # we might have to post-process the configuration
-        self.postprocess_config()
+        self.postprocess_config(multiview=multiview)
 
         # setup directory information for each camera
         self.setup_dirinfo()
@@ -121,12 +124,18 @@ class PandaTable(interfaces.ABRScene):
         # finally, setup the compositor
         self.setup_compositor()
 
-    def postprocess_config(self):
+    def postprocess_config(self, multiview: bool = False):
 
-        # determine number of images = scenes * view
-        self.config.dataset.scene_count = max(1, self.config.dataset.scene_count)
-        self.config.dataset.view_count = max(1, self.config.dataset.view_count)
-        self.config.dataset.image_count = self.config.dataset.scene_count * self.config.dataset.view_count
+        # depending on the rendering mode (standard or multiview), determine number of images
+        if multiview:
+            # in multiview mode: image_count = scene_count * view_count
+            self.config.dataset.scene_count = max(1, self.config.dataset.scene_count)
+            self.config.dataset.view_count = max(1, self.config.dataset.view_count)
+            self.config.dataset.image_count = self.config.dataset.scene_count * self.config.dataset.view_count
+        else:
+            # in standard mode, image_count control the number of images (hence scene) to render
+            self.config.dataset.view_count = 1
+            self.config.dataset.scene_count = self.config.dataset.image_count
 
         # convert all scaling factors from str to list of floats
         if 'ply_scale' not in self.config.parts:

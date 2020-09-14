@@ -223,7 +223,7 @@ def main():
     #       to run the script twice, with two different configurations, to
     #       generate the split. This is significantly easier than internally
     #       maintaining split configurations.
-    scene = scene_types[scene_type_str.lower()][0](config=config)
+    scene = scene_types[scene_type_str.lower()][0](config=config, multiview=cmd_args.multiview)
     # save the config early. In case something goes wrong during rendering, we
     # at least have the config + potentially some images
     scene.dump_config()
