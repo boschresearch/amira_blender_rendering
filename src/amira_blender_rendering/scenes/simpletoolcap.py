@@ -19,7 +19,6 @@
 # blender
 import bpy
 from mathutils import Vector, Matrix
-import os
 import pathlib
 from math import ceil, log
 import random
@@ -29,13 +28,11 @@ from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
 from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
-from amira_blender_rendering.datastructures import flatten
 import amira_blender_rendering.utils.blender as blnd
 import amira_blender_rendering.nodes as abr_nodes
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 import amira_blender_rendering.interfaces as interfaces
-
 
 
 class SimpleToolCapConfiguration(abr_scenes.BaseConfiguration):
@@ -45,7 +42,6 @@ class SimpleToolCapConfiguration(abr_scenes.BaseConfiguration):
         # scene specific configuration
         # let's be able to specify environment textures
         self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images', 'Path to background images / environment textures')
-
 
 
 class SimpleToolCap(interfaces.ABRScene):
@@ -61,6 +57,13 @@ class SimpleToolCap(interfaces.ABRScene):
 
         # get the configuration, if one was passed in
         self.config = kwargs.get('config', SimpleToolCapConfiguration())
+
+        # determine if we are rendering in multiview mode
+        self.render_mode = kwargs.get('render_mode', 'default')
+        if not self.render_mode == 'default':
+            self.logger.warn(f'SimpleToolCap scene supports only "default" render mode. Falling back to "default"')
+            self.render_mode = 'default'
+
         # we might have to post-process the configuration
         self.postprocess_config()
 
@@ -73,9 +76,9 @@ class SimpleToolCap(interfaces.ABRScene):
 
         # now that we have setup the scene, let's set up the render manager
         self.renderman.setup_renderer(
-                self.config.render_setup.integrator,
-                self.config.render_setup.denoising,
-                self.config.render_setup.samples)
+            self.config.render_setup.integrator,
+            self.config.render_setup.denoising,
+            self.config.render_setup.samples)
 
         # setup environment texture information
         self.setup_environment_textures()
@@ -92,8 +95,16 @@ class SimpleToolCap(interfaces.ABRScene):
         # finally, let's setup the compositor
         self.setup_compositor()
 
-
     def postprocess_config(self):
+        # in default mode (i.e., single view), image_count control the number of images (hence scene) to render
+        self.config.dataset.view_count = 1
+        self.config.dataset.scene_count = self.config.dataset.image_count
+
+        # log info
+        self.logger.info('The SimpleToolCap scene does not allow for occlusions --> Object always visible')
+        self.config.render_setup.allow_occlusions = False
+        self.logger.info('The SimpleToolCap scene does not support multiview rendering.')
+
         # convert all scaling factors from str to list of floats
         if 'ply_scale' not in self.config.parts:
             return
@@ -103,7 +114,6 @@ class SimpleToolCap(interfaces.ABRScene):
             vs = [v.strip() for v in vs.split(',')]
             vs = [float(v) for v in vs]
             self.config.parts.ply_scale[part] = vs
-
 
     def setup_render_output(self):
         # setup render output dimensions. This is not set for a specific camera,
@@ -125,12 +135,10 @@ class SimpleToolCap(interfaces.ABRScene):
             self.config.camera_info.original_intrinsic = ''
         self.config.camera_info.intrinsic = list(effective_intrinsic)
 
-
     def setup_dirinfo(self):
         """Setup directory information."""
         # For this simple scene, there is just one dirinfo required
         self.dirinfo = build_directory_info(self.config.dataset.base_path)
-
 
     def setup_scene(self):
         """Setup the scene. """
@@ -141,38 +149,34 @@ class SimpleToolCap(interfaces.ABRScene):
         # this simple scene
         self.lighting = abr_scenes.ThreePointLighting()
 
-
-    def setup_lighting(self):
-        # this scene uses classical three point lighting
-        self.setup_three_point_lighting()
-
-
     def setup_cameras(self):
         """Setup camera, and place at a default location"""
+        # get scene
+        scene = bpy.context.scene
 
         # add camera, update with calibration data, and make it active for the scene
         bpy.ops.object.add(type='CAMERA', location=(0.66, -0.66, 0.5))
         self.cam_obj = bpy.context.object
         self.cam = self.cam_obj.data
-        if self.config.camera_info.intrinsic is not None:
-            self.logger.info("Using camera calibration data")
-            if isinstance(self.config.camera_info.intrinsic, str):
-                intrinsics = np.fromstring(self.config.camera_info.intrinsic, sep=',', dtype=np.float32)
-            elif isinstance(self.config.camera_info.intrinsic, list):
-                intrinsics = np.asarray(self.config.camera_info.intrinsic, dtype=np.float32)
-            else:
-                raise RuntimeError("invalid value for camera_info.intrinsics")
-            self.cam = camera_utils.set_intrinsics(bpy.context.scene, self.cam,
-                    intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3])
+        camera_utils.set_camera_info(scene, self.cam, self.config.camera_info)
 
         # re-set camera and set rendering size
         bpy.context.scene.camera = self.cam_obj
-        bpy.context.scene.render.resolution_x = self.config.camera_info.width
-        bpy.context.scene.render.resolution_y = self.config.camera_info.height
+        if (self.config.camera_info.width > 0) and (self.config.camera_info.height > 0):
+            bpy.context.scene.render.resolution_x = self.config.camera_info.width
+            bpy.context.scene.render.resolution_y = self.config.camera_info.height
 
         # look at center
         blnd.look_at(self.cam_obj, Vector((0.0, 0.0, 0.0)))
 
+        # get effective extrinsics
+        effective_intrinsic = camera_utils.get_intrinsics(scene, self.cam)
+        # store in configuration (and backup original values)
+        if self.config.camera_info.intrinsic is not None:
+            self.config.camera_info.original_intrinsic = self.config.camera_info.intrinsic
+        else:
+            self.config.camera_info.original_intrinsic = ''
+        self.config.camera_info.intrinsic = list(effective_intrinsic)
 
     def setup_objects(self):
         # the order of what's done is important. first import and setup the
@@ -192,8 +196,8 @@ class SimpleToolCap(interfaces.ABRScene):
             'object_class_name': 'Tool.Cap',    # model name is hardcoded here
             'object_class_id': 0,               # we only have one model type, so id = 0
             'object_id': 0,                     # we only have this single instance, so id = 0
-            'bpy': self.obj})                   # also add reference to the blender object
-
+            'bpy': self.obj,                    # also add reference to the blender object
+            'visible': True})                   # visibility information
 
     def setup_compositor(self):
         # we let renderman handle the compositor. For this, we need to pass in a
@@ -204,10 +208,8 @@ class SimpleToolCap(interfaces.ABRScene):
         # get list of environment textures
         self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
 
-
     def _rescale_objects(self):
         self.obj.scale = Vector(self.config.parts.ply_scale.tool_cap)
-
 
     def _import_mesh(self):
         """Import the mesh of the cap from a ply file."""
@@ -215,7 +217,6 @@ class SimpleToolCap(interfaces.ABRScene):
         bpy.ops.import_mesh.ply(filepath=path)
         self.obj = bpy.context.object
         self.obj.name = 'Tool.Cap'
-
 
     def _setup_material(self):
         """Setup object material"""
@@ -232,7 +233,6 @@ class SimpleToolCap(interfaces.ABRScene):
         # it created automatically)
         self.cap_mat = blnd.add_default_material(self.obj)
         abr_nodes.material_metal_tool_cap.setup_material(self.cap_mat)
-
 
     def randomize_object_transforms(self):
         """Set an arbitrary location and rotation for the object"""
@@ -252,12 +252,10 @@ class SimpleToolCap(interfaces.ABRScene):
             # should lie outside the visible pixel-space
             ok = self._test_obj_visibility()
 
-
     def randomize_environment_texture(self):
         # set some environment texture, randomize, and render
         env_txt_filepath = expandpath(random.choice(self.environment_textures))
         self.renderman.set_environment_texture(env_txt_filepath)
-
 
     def set_pose(self, pose):
         """
@@ -291,24 +289,20 @@ class SimpleToolCap(interfaces.ABRScene):
         if not self._test_obj_visibility():
             raise ValueError('Given pose is lying outside the scene')
 
-
     def _test_obj_visibility(self):
         return abr_geom.test_visibility(
-                    self.obj,
-                    self.cam_obj,
-                    self.config.camera_info.width,
-                    self.config.camera_info.height)
-
+            self.obj,
+            self.cam_obj,
+            self.config.camera_info.width,
+            self.config.camera_info.height)
 
     def _update_scene(self):
         dg = bpy.context.evaluated_depsgraph_get()
         dg.update()
 
-
     def dump_config(self):
         pathlib.Path(self.dirinfo.base_path).mkdir(parents=True, exist_ok=True)
         dump_config(self.config, self.dirinfo.base_path)
-
 
     def generate_dataset(self):
         # filename setup
@@ -319,8 +313,8 @@ class SimpleToolCap(interfaces.ABRScene):
 
         i = 0
         while i < self.config.dataset.image_count:
-            # generate render filename
-            base_filename = "{:0{width}d}".format(i, width=format_width)
+            # generate render filename: adhere to naming convention
+            base_filename = f"s{i:0{format_width}}_v0"
 
             # randomize environment and object transform
             self.randomize_environment_texture()
@@ -335,20 +329,20 @@ class SimpleToolCap(interfaces.ABRScene):
             # try to postprocess. This might fail, in which case we should
             # attempt to re-render the scene with different randomization
             try:
-                self.renderman.postprocess(self.dirinfo, base_filename,
-                        bpy.context.scene.camera, self.objs,
-                        self.config.camera_info.zeroing)
+                self.renderman.postprocess(
+                    self.dirinfo,
+                    base_filename,
+                    bpy.context.scene.camera,
+                    self.objs,
+                    self.config.camera_info.zeroing,
+                    rectify_depth=self.config.postprocess.rectify_depth,
+                    overwrite=self.config.postprocess.overwrite)
             except ValueError:
                 self.logger.warn("ValueError during post-processing, re-generating image index {i}")
             else:
                 i = i + 1
 
         return True
-
-
-    def generate_viewsphere_dataset(self):
-        raise NotImplementedError()
-
 
     def teardown(self):
         pass
