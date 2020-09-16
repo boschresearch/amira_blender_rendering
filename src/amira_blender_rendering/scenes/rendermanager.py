@@ -23,7 +23,6 @@ import bpy
 from mathutils import Vector
 
 import os
-from abc import ABC, abstractmethod
 import numpy as np
 import imageio
 
@@ -42,8 +41,8 @@ from amira_blender_rendering.math.conversions import bu_to_mm
 # import things from AMIRA Perception Subsystem that are required
 from amira_blender_rendering.interfaces import PoseRenderResult, ResultsCollection
 from amira_blender_rendering.postprocessing import boundingbox_from_mask
-from amira_blender_rendering.utils.logging import get_logger
-from amira_blender_rendering.utils.converters import to_PASCAL_VOC
+# from amira_blender_rendering.utils.logging import get_logger
+# from amira_blender_rendering.utils.converters import to_PASCAL_VOC
 
 
 class RenderManager(abr_scenes.BaseSceneManager):
@@ -109,10 +108,15 @@ class RenderManager(abr_scenes.BaseSceneManager):
         results_cv = ResultsCollection()
         for obj in objs:
             render_result_gl, render_result_cv = self.build_render_result(obj, camera, zeroing)
+            if obj['visible']:
+                results_gl.add_result(render_result_gl)
+                results_cv.add_result(render_result_cv)
+        # if there's no visible object, add single instance results to have general scene information annotated
+        if len(results_gl) == 0:
             results_gl.add_result(render_result_gl)
+        if len(results_cv) == 0:
             results_cv.add_result(render_result_cv)
         self.save_annotations(dirinfo, base_filename, results_gl, results_cv)
-
 
     def setup_renderer(self, integrator, enable_denoising, samples):
         """Setup blender CUDA rendering, and specify number of samples per pixel to

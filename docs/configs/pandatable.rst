@@ -1,23 +1,21 @@
 .. highlight:: ini
 
-Workstation Scenarios
-=====================
+PandaTable Scenario
+===================
 
-The workstation scenarios have the following options that you can set in a
+The pandatable scenarion has the following options that you can set in a
 corresponding configuration file. For an example of configuration files that
-were used, have a look at `config/workstation_scenarios*.cfg`.
+were used, have a look at `config/pandatable_example.cfg`.
 
 .. code-block::
 
     [dataset]
     # Specify how many images should be rendered
     image_count = 5
-    # Specify the base path where data will be written to. Note that this is a base
-    # path, to which additional information will be added such as Scenario-Number
-    # and Camera-Name
-    base_path = $AMIRA_DATASETS/WorkstationScenarios-Train
+    # Specify the base path where data will be written to.
+    base_path = $AMIRA_DATASETS/PandaTable-Train
     # specify the scene type
-    scene_type = WorkstationScenarios
+    scene_type = PandaTable
 
     [camera_info]
     # In this section you specify the camera information, which will have a direct
@@ -88,7 +86,7 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
 
     [scene_setup]
     # specify the blender file from which to load the scene
-    blend_file = $AMIRA_DATA_GFX/modeling/workstation_scenarios.blend
+    blend_file = $AMIRA_DATA_GFX/modeling/robottable_empty.blend
     # specify where background / environment images will be taken from during
     # rendering. This can be a single file, or a directory containing images
     environment_texture = $AMIRA_DATASETS/OpenImagesV4/Images
@@ -211,20 +209,13 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     # ply_scale.tool_cap = 0.010, 0.010, 0.010
 
     [scenario_setup]
-    # At the moment, the 6 different scenarios in workstation_scenarios.blend are
-    # simply enumerated. Have a look at the .blend file for the order in which they
-    # appear, e.g. identifiable by the numbering of the cameras
-    scenario = 1
     # Specify all target objects that shall be dropped at random locations into the
     # environment. Target objects are all those objects that are already in the
     # .blend file in the 'Proto' collection. You can also specify parts that were
     # presented above using the syntax 'parts.partname:count'
     target_objects = parts.sterngriff:4, parts.wuerfelverbinder_40x40:3, parts.hammerschraube:7, parts.winkel_60x60:5
-    # Similarly to target objects, specify the list of ABC objects to load
-    abc_objects = []
-    # Specify number of random metallic materials to generate for ABC objects
-    abc_color_count = 3
-
+    # Select additional objects to render in the scene but of which no information are saved
+    non_target_objects = []
 
     [multiview_setup]
     # List of cameras to use during multiview rendering
@@ -236,7 +227,6 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     # mode specific configuration
     mode_config = 
 
-
     # additional logging configs
     [logging]
     # if in debug mode (see baseconfiguration), plot coordinate axis system for camera
@@ -245,5 +235,3 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     # if in debug mode (see baseconfiguration), toggle scatter plot of camera locations
     # before multiview rendering 
     scatter = False
-
-

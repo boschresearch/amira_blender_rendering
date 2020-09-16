@@ -18,11 +18,18 @@
 
 import numpy as np
 
+
 def boundingbox_from_mask(mask):
     """Compute the 2D bounding box from an object stencil mask.
 
     Args:
         mask: MxN mask with 0 everywhere except the object of interest.
+    
+    Returns:
+        array(2,2): array with 2d bbox corners [[left, top], [right, bottom]]
+    
+    Raises:
+        ValueError: given mask is not valid, i.e., empty (aka all zero valued)
     """
     assert len(mask.shape) == 2
 
@@ -31,9 +38,10 @@ def boundingbox_from_mask(mask):
     ys = np.sum(mask, axis=1)
     xs = np.nonzero(xs)
     ys = np.nonzero(ys)
+    # raise error if non valid, i.e., empty mask, given
+    if (xs[0].shape[0] == 0) or (ys[0].shape[0] == 0):
+        raise ValueError('Invalid mask given')
     x = (np.min(xs), np.max(xs))
     y = (np.min(ys), np.max(ys))
-
     return np.array([[x[0], y[0]],
                      [x[1], y[1]]])
-
