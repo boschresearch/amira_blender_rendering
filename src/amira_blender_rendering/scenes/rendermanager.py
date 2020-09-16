@@ -108,7 +108,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         results_cv = ResultsCollection()
         for obj in objs:
             render_result_gl, render_result_cv = self.build_render_result(obj, camera, zeroing)
-            if obj['visible']:
+            if obj['visible'] or obj['visible'] is None:
                 results_gl.add_result(render_result_gl)
                 results_cv.add_result(render_result_cv)
         # if there's no visible object, add single instance results to have general scene information annotated
