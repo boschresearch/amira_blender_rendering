@@ -582,12 +582,14 @@ view {view_counter + 1}/{self.config.dataset.view_count}")
                             self.config.camera_info.zeroing,
                             rectify_depth=self.config.postprocess.rectify_depth,
                             overwrite=self.config.postprocess.overwrite)
-                        
+
+                        debug_filepath = os.path.join(self.dirinfos[i_cam].base_path,
+                                                      f'robottable_debug_v{view_counter}.blend')
+                        bpy.ops.wm.save_as_mainfile(filepath=debug_filepath)
                         for obj in self.objs:
                             if obj['visible'] is None:
-                                self.logger.info(f"saving blender file for debugging to /tmp/robottable.blend")
-                                bpy.ops.wm.save_as_mainfile(filepath="~/robottable_debug.blend")
                                 return True
+
                     except ValueError:
                         self.logger.error(f"\033[1;31mValueError during post-processing. \
 Re-generating image {scn_counter + 1}/{self.config.dataset.scene_count}\033[0;37m")
