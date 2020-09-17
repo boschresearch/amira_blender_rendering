@@ -203,7 +203,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
                 corners2d = self.compute_2dbbox(obj['fname_mask'])
                 aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
         except ValueError:
-            obj['visible'] = False
+            obj['visible'] = None
             corners2d, corners3d, aabb, oobb = None, None, None, None
 
         render_result_gl = PoseRenderResult(
