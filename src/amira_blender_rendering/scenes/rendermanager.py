@@ -108,7 +108,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         results_cv = ResultsCollection()
         for obj in objs:
             render_result_gl, render_result_cv = self.build_render_result(obj, camera, zeroing)
-            if obj['visible'] or obj['visible'] is None:
+            if obj['visible']:
                 results_gl.add_result(render_result_gl)
                 results_cv.add_result(render_result_cv)
         # if there's no visible object, add single instance results to have general scene information annotated
@@ -196,15 +196,11 @@ class RenderManager(abr_scenes.BaseSceneManager):
         R_cam = np.asarray(camera.matrix_world.to_3x3().normalized())
 
         # compute bounding boxes
-        # TODO: temporary change until we do not find what causes ValueError in 2d bbox
         corners2d, corners3d, aabb, oobb = None, None, None, None
-        try:
-            if obj['visible']:
-                corners2d = self.compute_2dbbox(obj['fname_mask'])
-                aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
-        except ValueError:
-            obj['visible'] = None
-            corners2d, corners3d, aabb, oobb = None, None, None, None
+        if obj['visible']:
+            # this rises a ValueError if mask info is not correct
+            corners2d = self.compute_2dbbox(obj['fname_mask'])
+            aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
 
         render_result_gl = PoseRenderResult(
             object_class_name=obj['object_class_name'],
@@ -299,8 +295,14 @@ class RenderManager(abr_scenes.BaseSceneManager):
         viewer nodes. That is, using a viewer node attached to ID Mask nodes
         will store an image only to bpy.data.Images['Viewer Node'], depending on
         which node is currently selected in the node editor... I have yet to find a
-        programmatic way that circumvents re-loading the file from disk"""
+        programmatic way that circumvents re-loading the file from disk
 
+        Args:
+            fname_mask(str): mask filename
+
+        Raises:
+            ValueError if an empty mask is given
+        """
         # this is a HxWx3 tensor (RGBA or RGB data)
         mask = imageio.imread(fname_mask)
         mask = np.sum(mask, axis=2)
