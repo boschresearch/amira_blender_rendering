@@ -398,8 +398,7 @@ class PandaTable(interfaces.ABRScene):
                 obj['bpy'].location.z = drop_location.z + 2 * (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
             obj['bpy'].rotation_euler = Vector((rnd_rot[i, :] * np.pi))
 
-            self.logger.info(f"Object {obj['object_class_name']}: {obj['bpy'].location}, \
-{obj['bpy'].rotation_euler}")
+            self.logger.info(f"Object {obj['object_class_name']}: {obj['bpy'].location}, {obj['bpy'].rotation_euler}")
 
         # update the scene. unfortunately it doesn't always work to just set
         # the location of the object without recomputing the dependency
@@ -551,8 +550,8 @@ class PandaTable(interfaces.ABRScene):
             # if we need to repeat (change static scene) we skip one iteration
             # without increasing the counter
             if repeat_frame:
-                self.logger.warn(f'Something wrong. \
-Re-randomizing scene {scn_counter + 1}/{self.config.dataset.scene_count}')
+                self.logger.warn(f'Something wrong. '
+                                 f'Re-randomizing scene {scn_counter + 1}/{self.config.dataset.scene_count}')
                 continue
 
             # loop over cameras
@@ -575,10 +574,9 @@ Re-randomizing scene {scn_counter + 1}/{self.config.dataset.scene_count}')
                 # loop over locations
                 for view_counter, cam_loc in enumerate(cam_locations):
 
-                    self.logger.info(
-                        f"Generating image for camera {cam_name}: \
-scene {scn_counter + 1}/{self.config.dataset.scene_count}, \
-view {view_counter + 1}/{self.config.dataset.view_count}")
+                    self.logger.info(f"Generating image for camera {cam_name}: "
+                                     f"scene {scn_counter + 1}/{self.config.dataset.scene_count}, "
+                                     f"view {view_counter + 1}/{self.config.dataset.view_count}")
 
                     # filename
                     base_filename = f"s{scn_counter:0{scn_format_width}}_v{view_counter:0{view_format_width}}"
@@ -613,17 +611,19 @@ view {view_counter + 1}/{self.config.dataset.view_count}")
                             self.objs,
                             self.config.camera_info.zeroing,
                             rectify_depth=self.config.postprocess.rectify_depth,
-                            overwrite=self.config.postprocess.overwrite)
+                            overwrite=self.config.postprocess.overwrite,
+                            visibility_from_mask=self.config.postprocess.visibility_from_mask)
 
                     except ValueError:
-                        self.logger.error(f"\033[1;31mValueError during post-processing. \
-Re-generating image {scn_counter + 1}/{self.config.dataset.scene_count}\033[0;37m")
+                        self.logger.error(
+                            f"\033[1;31mValueError during post-processing. "
+                            f"Re-generating image {scn_counter + 1}/{self.config.dataset.scene_count}\033[0;37m")
                         repeat_frame = True
 
                         # if requested save to blend files for debugging
                         if self.config.logging.debug and self.config.logging.save_to_blend:
-                            self.logger.error('There might be a discrepancy between generated mask and \
-object visibility data. Saving debug info to .blend')
+                            self.logger.error('There might be a discrepancy between generated mask and '
+                                              'object visibility data. Saving debug info to .blend')
                             self._save_to_blend(i_cam, scene_index=scn_counter, view_index=view_counter, on_error=True)
 
                         break

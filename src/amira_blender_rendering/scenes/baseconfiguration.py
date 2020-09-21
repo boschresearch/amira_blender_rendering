@@ -62,3 +62,6 @@ class BaseConfiguration(Configuration):
         # postprocess
         self.add_param('postprocess.rectify_depth', False, 'If True, from pinhole depth map, compute rectilinear map')
         self.add_param('postprocess.overwrite', False, 'It True (when computing rectified depth) overwrite depth map')
+        self.add_param('postprocess.visibility_from_mask', False,
+                       'If True, if an invalid (empty) mask is found during postprocessing, \
+                           object visibility info are overwritten to false')
