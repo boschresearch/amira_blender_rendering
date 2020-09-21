@@ -123,8 +123,9 @@ class PandaTable(interfaces.ABRScene):
         self.setup_render_output()
 
         # populate the scene with objects (target and non)
-        self.objs = self.setup_objects(self.config.scenario_setup.target_objects, are_targets=True)
-        self.nt_objs = self.setup_objects(self.config.scenario_setup.non_target_objects, are_targets=False)
+        self.objs = self.setup_objects(self.config.scenario_setup.target_objects, bpy_collection='TargetObjects')
+        self.nt_objs = self.setup_objects(self.config.scenario_setup.non_target_objects,
+                                          bpy_collection='NonTargetObjects')
 
         # finally, setup the compositor
         self.setup_compositor()
@@ -239,7 +240,7 @@ class PandaTable(interfaces.ABRScene):
             # set the calibration matrix
             camera_utils.set_camera_info(scene, blender_camera, self.config.camera_info)
 
-    def setup_objects(self, objects: list, are_targets: bool = True):
+    def setup_objects(self, objects: list, bpy_collection: str = 'TargetObjects'):
         """This method populates the scene with objects.
 
         Object types and number of objects will be taken from the configuration.
@@ -251,10 +252,10 @@ class PandaTable(interfaces.ABRScene):
         
         Args:
             objects(list): list of ObjectType:Number to setup
-            are_targets(bool): if True, objects are add to the TargetObjects collection
-                in the blend file for debug purposes. In general, non-target objects
-                information are not stored. That is, they populate the environment
-                but annotations are not saved.
+            bpy_collection(str): Name of bpy collection the given objects are
+                linked to in the .blend file. Default: TargetObjects
+                If the given objects are non-target (i.e., they populate the scene but
+                no information regarding them are stored) use a different collection.
 
         Returns:
             objs(list): list of dict to handle desired objects
@@ -321,13 +322,10 @@ class PandaTable(interfaces.ABRScene):
                         new_obj.name = f'{class_name}.{j:03d}'
 
                 # move object to collection
-                collection_name = 'TargetObjects'
-                if not are_targets:
-                    collection_name = 'NonTargetObjects'
                 try:
-                    collection = bpy.data.collections[collection_name]
+                    collection = bpy.data.collections[bpy_collection]
                 except KeyError:
-                    collection = bpy.data.collections.new(collection_name)
+                    collection = bpy.data.collections.new(bpy_collection)
                     bpy.context.scene.collection.children.link(collection)
 
                 if new_obj.name not in collection.objects:
@@ -362,12 +360,15 @@ class PandaTable(interfaces.ABRScene):
         # get list of environment textures
         self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
 
-    def randomize_object_transforms(self, objs: list, are_targets: bool = False):
+    def randomize_object_transforms(self, objs: list, are_target_objects: bool = False):
         """move all objects to random locations within their scenario dropzone,
         and rotate them.
         
         Args:
             objs(list): list of objects whose pose is randomized.
+        
+        Opt Args:
+            are_target_objects(bool): If True, the position is randomized a slightly differently
 
         NB: the list of objects must be mutable since the method does not return but directly modify them!
         """
@@ -393,7 +394,7 @@ class PandaTable(interfaces.ABRScene):
             obj['bpy'].location.x = drop_location.x + (rnd[i, 0] - .5) * 2.0 * drop_scale[0]
             obj['bpy'].location.y = drop_location.y + (rnd[i, 1] - .5) * 2.0 * drop_scale[1]
             obj['bpy'].location.z = drop_location.z + (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
-            if are_targets:
+            if are_target_objects:
                 obj['bpy'].location.z = drop_location.z + 2 * (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
             obj['bpy'].rotation_euler = Vector((rnd_rot[i, :] * np.pi))
 
