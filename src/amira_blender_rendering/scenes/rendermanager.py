@@ -198,6 +198,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         # compute bounding boxes
         corners2d, corners3d, aabb, oobb = None, None, None, None
         if obj['visible']:
+            # this rises a ValueError if mask info is not correct
             corners2d = self.compute_2dbbox(obj['fname_mask'])
             aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
 
@@ -294,8 +295,14 @@ class RenderManager(abr_scenes.BaseSceneManager):
         viewer nodes. That is, using a viewer node attached to ID Mask nodes
         will store an image only to bpy.data.Images['Viewer Node'], depending on
         which node is currently selected in the node editor... I have yet to find a
-        programmatic way that circumvents re-loading the file from disk"""
+        programmatic way that circumvents re-loading the file from disk
 
+        Args:
+            fname_mask(str): mask filename
+
+        Raises:
+            ValueError if an empty mask is given
+        """
         # this is a HxWx3 tensor (RGBA or RGB data)
         mask = imageio.imread(fname_mask)
         mask = np.sum(mask, axis=2)
