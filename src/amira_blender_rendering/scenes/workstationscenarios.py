@@ -624,7 +624,8 @@ view {view_counter + 1}/{self.config.dataset.view_count}")
                             self.objs,
                             self.config.camera_info.zeroing,
                             rectify_depth=self.config.postprocess.rectify_depth,
-                            overwrite=self.config.postprocess.overwrite)
+                            overwrite=self.config.postprocess.overwrite,
+                            visibility_from_mask=self.config.postprocess.visibility_from_mask)
                     except ValueError:
                         self.logger.error(f"\033[1;31mValueError during post-processing. \
 Re-generating image {scn_counter + 1}/{self.config.dataset.scene_count}\033[0;37m")
