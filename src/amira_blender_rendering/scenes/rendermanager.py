@@ -213,8 +213,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
             if corners2d is not None:
                 aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
             elif visibility_from_mask:
-                logger.warn(f'Given mask found empty. \
-Overwriting visibility information for obj {obj["object_class_name"]}:{obj["object_id"]}')
+                logger.warn(f'Given mask found empty. '
+                            f'Overwriting visibility information for obj {obj["object_class_name"]}:{obj["object_id"]}')
                 obj['visible'] = False
             else:
                 raise ValueError('Invalid mask given')

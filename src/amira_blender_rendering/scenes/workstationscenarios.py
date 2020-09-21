@@ -565,8 +565,8 @@ class WorkstationScenarios(interfaces.ABRScene):
             # if we need to repeat (change static scene) we skip one iteration
             # without increasing the counter
             if repeat_frame:
-                self.logger.warn(f'Something wrong. \
-Re-randomizing scene {scn_counter + 1}/{self.config.dataset.scene_count}')
+                self.logger.warn(f'Something wrong. '
+                                 f'Re-randomizing scene {scn_counter + 1}/{self.config.dataset.scene_count}')
                 continue
 
             # loop over cameras
@@ -592,9 +592,9 @@ Re-randomizing scene {scn_counter + 1}/{self.config.dataset.scene_count}')
                 for view_counter, cam_loc in enumerate(cam_locations):
 
                     self.logger.info(
-                        f"Generating image for camera {cam_str}: \
-scene {scn_counter + 1}/{self.config.dataset.scene_count}, \
-view {view_counter + 1}/{self.config.dataset.view_count}")
+                        f"Generating image for camera {cam_str}: "
+                        f"scene {scn_counter + 1}/{self.config.dataset.scene_count}, "
+                        f"view {view_counter + 1}/{self.config.dataset.view_count}")
 
                     # filename
                     base_filename = f"s{scn_counter:0{scn_format_width}}_v{view_counter:0{view_format_width}}"
@@ -627,8 +627,9 @@ view {view_counter + 1}/{self.config.dataset.view_count}")
                             overwrite=self.config.postprocess.overwrite,
                             visibility_from_mask=self.config.postprocess.visibility_from_mask)
                     except ValueError:
-                        self.logger.error(f"\033[1;31mValueError during post-processing. \
-Re-generating image {scn_counter + 1}/{self.config.dataset.scene_count}\033[0;37m")
+                        self.logger.error(
+                            f"\033[1;31mValueError during post-processing. "
+                            f"Re-generating image {scn_counter + 1}/{self.config.dataset.scene_count}\033[0;37m")
                         repeat_frame = True
                         break
 
