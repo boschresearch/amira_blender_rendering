@@ -75,8 +75,11 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('multiview_setup.mode_config', Configuration(), 'Mode specific configuration')
 
         # some extra logging config
-        self.add_param('logging.plot_axis', False, 'If True, in debug mode, plot camera coordinate systems')
-        self.add_param('logging.scatter', False, 'If True, in debug mode, enable scatter plot')
+        self.add_param('logging.plot', False, 'If True, in debug mode, enable simple visual debug')
+        self.add_param('logging.plot_axis', False, 'If True, in debug-plot mode, plot camera coordinate systems')
+        self.add_param('logging.scatter', False, 'If True, in debug mode-plot, enable scatter plot')
+        # TODO: not implemeneted yet
+        # self.add_param('logging.save_to_blend', False, 'If True, in debug mode, log to .blend files')
         # HINT: these object lists above are parsed as strings, later on split with "," separator
 
 
@@ -517,19 +520,32 @@ class WorkstationScenarios(interfaces.ABRScene):
         
         # extract actual bpy object camera names and generate locations
         camera_names = [self.get_camera_name(cam_str) for cam_str in self.config.scene_setup.cameras]
-        cameras_locations, original_cameras_locations = camera_utils.generate_multiview_cameras_locations(
-            num_locations=self.config.dataset.view_count,
-            mode=self.config.multiview_setup.mode,
-            camera_names=camera_names,
-            config=self.config.multiview_setup.mode_config,
-            debug=self.config.logging.debug,
-            plot_axis=self.config.logging.plot_axis,
-            scatter=self.config.logging.scatter)
-
         if self.render_mode == 'default':
-            # reset camera locations to original and put them in the correct shape
-            for cam_name, cam_location in original_cameras_locations.items():
+            cameras_locations = camera_utils.get_current_cameras_locations(camera_names)
+            for cam_name, cam_location in cameras_locations.items():
                 cameras_locations[cam_name] = np.reshape(cam_location, (1, 3))
+        
+        elif self.render_mode == 'multiview':
+            cameras_locations, _ = camera_utils.generate_multiview_cameras_locations(
+                num_locations=self.config.dataset.view_count,
+                mode=self.config.multiview_setup.mode,
+                camera_names=camera_names,
+                config=self.config.multiview_setup.mode_config)
+        
+        else:
+            raise ValueError(f'Selected render mode {self.render_mode} not currently supported')
+        
+        # some debug/logging options
+        if self.config.logging.debug:
+            # simple plot of generated camera locations
+            if self.config.logging.plot:
+                from amira_blender_rendering.math.curves import plot_points
+
+                for cam_name in self.config.scene_setup.cameras:
+                    plot_points(np.array(cameras_locations[cam_name]),
+                                bpy.context.scene.objects[cam_name],
+                                plot_axis=self.config.logging.plot_axis,
+                                scatter=self.config.logging.scatter)
 
         # control loop for the number of static scenes to render
         scn_counter = 0
@@ -620,6 +636,7 @@ Re-generating image {scn_counter + 1}/{self.config.dataset.scene_count}\033[0;37
                 scn_counter = scn_counter + 1
 
         return True
+
     def dump_config(self):
         """Dump configuration to a file in the output folder(s)."""
         # dump config to each of the dir-info base locations, i.e. for each
