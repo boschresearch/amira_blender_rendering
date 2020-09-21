@@ -377,6 +377,14 @@ def project_pinhole_depth_to_rectilinear(filepath: str, outfilepath: str,
     logger.info(f'Saved rectified depth map at {outfilepath}')
 
 
+def get_current_cameras_locations(camera_names: list):
+    locations = {}
+    for cam_name in camera_names:
+        camera = bpy.context.scene.objects[cam_name]
+        locations[cam_name] = np.asarray(camera.matrix_world.to_translation())
+    return locations
+
+
 def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_names: list, **kw):
     """
     Generate multiple locations for multiple cameras according to selected mode
@@ -414,11 +422,7 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
     # get logger
     logger = get_logger()
 
-    # save original camera locations
-    original_locations = {}
-    for cam_name in camera_names:
-        camera = bpy.context.scene.objects[cam_name]
-        original_locations[cam_name] = np.asarray(camera.matrix_world.to_translation())
+    original_locations = get_current_cameras_locations(camera_names)
 
     # define supported modes
     _available_modes = {
