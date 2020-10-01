@@ -64,14 +64,14 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
                        'List of objects visible in the scene but of which infos are not stored')
         
         # multiview configuration (if implemented)
-        self.add_param('multiview_setup.cameras', [], 'Cameras to render in multiview setup')
-        self.add_param('multiview_setup.view_count', 0, 'Number of view points, i.e., camera locations')
         self.add_param('multiview_setup.mode', '',
                        'Selected mode to generate view points, i.e., random, bezier, viewsphere')
         self.add_param('multiview_setup.mode_config', Configuration(), 'Mode specific configuration')
 
-        self.add_param('logging.plot_axis', False, 'If True, in debug mode, plot camera coordinate systems')
-        self.add_param('logging.scatter', False, 'If True, in debug mode, enable scatter plot')
+        self.add_param('logging.plot', False, 'If True, in debug mode, enable simple visual debug')
+        self.add_param('logging.plot_axis', False, 'If True, in debug-plot mode, plot camera coordinate systems')
+        self.add_param('logging.scatter', False, 'If True, in debug mode-plot, enable scatter plot')
+        self.add_param('logging.save_to_blend', False, 'If True, in debug mode, log to .blend files')
 
 
 class PandaTable(interfaces.ABRScene):
@@ -88,8 +88,14 @@ class PandaTable(interfaces.ABRScene):
         # extract configuration, then build and activate a split config
         self.config = kwargs.get('config', PandaTableConfiguration())
         if self.config.dataset.scene_type.lower() != 'PandaTable'.lower():
-            raise RuntimeError(f"Invalid configuration of scene type {self.config.dataset.scene_type} for class PandaTable")
-
+            raise RuntimeError(f"Invalid configuration of type {self.config.dataset.scene_type} for class PandaTable")
+        
+        # determine if we are rendering in multiview mode
+        self.render_mode = kwargs.get('render_mode', 'default')
+        if self.render_mode not in ['default', 'multiview']:
+            self.logger.warn(f'render mode "{self.render_mode}" not supported. Falling back to "default"')
+            self.render_mode = 'default'
+        
         # we might have to post-process the configuration
         self.postprocess_config()
 
@@ -117,13 +123,29 @@ class PandaTable(interfaces.ABRScene):
         self.setup_render_output()
 
         # populate the scene with objects (target and non)
-        self.objs = self.setup_objects(self.config.scenario_setup.target_objects)
-        self.nt_objs = self.setup_objects(self.config.scenario_setup.non_target_objects)
+        self.objs = self.setup_objects(self.config.scenario_setup.target_objects, bpy_collection='TargetObjects')
+        self.nt_objs = self.setup_objects(self.config.scenario_setup.non_target_objects,
+                                          bpy_collection='NonTargetObjects')
 
         # finally, setup the compositor
         self.setup_compositor()
 
     def postprocess_config(self):
+
+        # depending on the rendering mode (standard or multiview), determine number of images
+        if self.render_mode == 'default':
+            # in default mode (i.e., single view), image_count control the number of images (hence scene) to render
+            self.config.dataset.view_count = 1
+            self.config.dataset.scene_count = self.config.dataset.image_count
+        elif self.render_mode == 'multiview':
+            # in multiview mode: image_count = scene_count * view_count
+            self.config.dataset.scene_count = max(1, self.config.dataset.scene_count)
+            self.config.dataset.view_count = max(1, self.config.dataset.view_count)
+            self.config.dataset.image_count = self.config.dataset.scene_count * self.config.dataset.view_count
+        else:
+            self.logger.error(f'render mode {self.render_mode} currently not supported')
+            raise ValueError(f'render mode {self.render_mode} currently not supported')
+
         # convert all scaling factors from str to list of floats
         if 'ply_scale' not in self.config.parts:
             return
@@ -218,7 +240,7 @@ class PandaTable(interfaces.ABRScene):
             # set the calibration matrix
             camera_utils.set_camera_info(scene, blender_camera, self.config.camera_info)
 
-    def setup_objects(self, target_objects):
+    def setup_objects(self, objects: list, bpy_collection: str = 'TargetObjects'):
         """This method populates the scene with objects.
 
         Object types and number of objects will be taken from the configuration.
@@ -229,7 +251,11 @@ class PandaTable(interfaces.ABRScene):
         duplicated.
         
         Args:
-            target_objects(list): list of ObjectType:Number to setup
+            objects(list): list of ObjectType:Number to setup
+            bpy_collection(str): Name of bpy collection the given objects are
+                linked to in the .blend file. Default: TargetObjects
+                If the given objects are non-target (i.e., they populate the scene but
+                no information regarding them are stored) use a different collection.
 
         Returns:
             objs(list): list of dict to handle desired objects
@@ -252,7 +278,7 @@ class PandaTable(interfaces.ABRScene):
         #       object_class_id     model type ID (simply incremental numbers)
         #       object_id   instance ID of the object
         #       bpy         blender object reference
-        for class_id, obj_spec in enumerate(target_objects):
+        for class_id, obj_spec in enumerate(objects):
             class_name, obj_count = obj_spec.split(':')
 
             # here we distinguish if we copy a part from the proto objects
@@ -296,7 +322,12 @@ class PandaTable(interfaces.ABRScene):
                         new_obj.name = f'{class_name}.{j:03d}'
 
                 # move object to collection
-                collection = bpy.data.collections['TargetObjects']
+                try:
+                    collection = bpy.data.collections[bpy_collection]
+                except KeyError:
+                    collection = bpy.data.collections.new(bpy_collection)
+                    bpy.context.scene.collection.children.link(collection)
+
                 if new_obj.name not in collection.objects:
                     collection.objects.link(new_obj)
 
@@ -314,9 +345,9 @@ class PandaTable(interfaces.ABRScene):
 
         # build masks id for compositor of the format _N_M, where N is the model
         # id, and M is the object id
-        w_class = ceil(log(len(obk))) if len(obk) else 0  # format width for number of model types
+        w_class = ceil(log(len(obk), 10)) if len(obk) else 0  # format width for number of model types
         for i, obj in enumerate(objs):
-            w_obj = ceil(log(obk[obj['object_class_name']]['instances']))   # format width for num of objs of same model
+            w_obj = ceil(log(obk[obj['object_class_name']]['instances'], 10))  # format width for objs with same model
             id_mask = f"_{obj['object_class_id']:0{w_class}}_{obj['object_id']:0{w_obj}}"
             obj['id_mask'] = id_mask
         
@@ -329,12 +360,15 @@ class PandaTable(interfaces.ABRScene):
         # get list of environment textures
         self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
 
-    def randomize_object_transforms(self, objs: list, are_targets: bool = False):
+    def randomize_object_transforms(self, objs: list, are_target_objects: bool = False):
         """move all objects to random locations within their scenario dropzone,
         and rotate them.
         
         Args:
             objs(list): list of objects whose pose is randomized.
+        
+        Opt Args:
+            are_target_objects(bool): If True, the position is randomized a slightly differently
 
         NB: the list of objects must be mutable since the method does not return but directly modify them!
         """
@@ -360,7 +394,7 @@ class PandaTable(interfaces.ABRScene):
             obj['bpy'].location.x = drop_location.x + (rnd[i, 0] - .5) * 2.0 * drop_scale[0]
             obj['bpy'].location.y = drop_location.y + (rnd[i, 1] - .5) * 2.0 * drop_scale[1]
             obj['bpy'].location.z = drop_location.z + (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
-            if are_targets:
+            if are_target_objects:
                 obj['bpy'].location.z = drop_location.z + 2 * (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
             obj['bpy'].rotation_euler = Vector((rnd_rot[i, :] * np.pi))
 
@@ -383,14 +417,9 @@ class PandaTable(interfaces.ABRScene):
         for i in range(self.config.scene_setup.forward_frames):
             scene.frame_set(i + 1)
 
-    def activate_camera(self, cam: str):
+    def activate_camera(self, cam_name: str):
         # first get the camera name. this depends on the scene (blend file)
-        # and is of the format CameraName.XXX, where XXX is a number with
-        # leading zeros
-        cam_name = f"{cam}"
-        bpy.context.scene.camera = bpy.context.scene.objects[cam_name]
-        camera = bpy.context.scene.camera
-        return camera
+        bpy.context.scene.camera = bpy.context.scene.objects[f"{cam_name}"]
 
     def set_camera_location(self, name, location):
         """
@@ -405,28 +434,24 @@ class PandaTable(interfaces.ABRScene):
         # set pose
         bpy.data.objects[name].location = location
 
-    def test_visibility(self):
-        """Test visibility for target object from all fixed camera in the scene"""
-        for i_cam, cam in enumerate(self.config.scene_setup.cameras):
-            cam_name = f"{cam}"
-            cam_obj = bpy.data.objects[cam_name]
-            # If at least one camera fails, visibility fails
-            if not self.test_camera_visibility(cam_obj):
-                return False
-        return True
-
-    def test_camera_visibility(self, camera, locations: list = None):
+    def test_visibility(self, camera_name: str, locations: np.array):
         """Test whether given camera sees all target objects
         and store visibility level/label for each target object
         
         Args:
-            camera(bpy.object.camera): selected camera
+            camera(str): selected camera name
             locations(list): list of locations to check. If None, check current camera location
         """
-        if locations is None:
-            locations = [camera.location]
+
+        # grep camera object from name
+        camera = bpy.context.scene.objects[camera_name]
+
+        # make sure to work with multi-dim array
+        if locations.shape == (3,):
+            locations = np.reshape(locations, (1, 3))
         
-        for location in locations:
+        # loop over locations
+        for i_loc, location in enumerate(locations):
             camera.location = location
 
             any_not_visible_or_occluded = False
@@ -444,128 +469,117 @@ class PandaTable(interfaces.ABRScene):
                 obj['visible'] = not not_visible_or_occluded
                 if not_visible_or_occluded:
                     self.logger.warn(f"object {obj} not visible or occluded")
-                    if self.config.logging.debug:
-                        self.logger.info(f"saving blender file for debugging to /tmp/robottable.blend")
-                        bpy.ops.wm.save_as_mainfile(filepath="/tmp/robottable.blend")
             
                 # keep trace if any obj was not visible or occluded
                 any_not_visible_or_occluded = any_not_visible_or_occluded or not_visible_or_occluded
 
-            # if any_not_visibile_or_occluded --> at least one object is not visible from one locaiton: return False
+            # if any_not_visibile_or_occluded --> at least one object is not visible from one location: return False
             if any_not_visible_or_occluded:
                 return False
 
         # --> all objects are visible (from all locations): return True
         return True
 
-    def postprocess_multiview_config(self):
-        """
-        Make sure the config for multiview_setup are correct
-        """
-        # check cameras
-        if not self.config.multiview_setup.cameras:
-            raise ValueError('[Multiview rendering] at least one camera must be selected.')
-        for cam in self.config.multiview_setup.cameras:
-            if cam not in self.config.scene_setup.cameras:
-                raise ValueError('[Multiview rendering] Selected camera {cam} not in list of available cameras')
-        # check view count
-        if self.config.multiview_setup.view_count <= 0:
-            self.config.multiview_setup.view_count = 1
-
-    def generate_multiview_dataset(self):
+    def generate_dataset(self):
         """This will generate a multiview dataset according to the configuration that
         was passed in the constructor.
         """
-        # The multiview dataset is controlled by multiple options
-        # As for standard dataset
+        # The number of images in the dataset is controlled differently in case of default (singleview) vs multiview
+        # rendering mode.
+        # In default mode
+        #   dataset.image_count controls the number of images
         #
-        #   dataset.image_count
+        # In multiview mode
+        #   dataset.image_count = dataset.scene_count * dataset.view_count
         #
-        # controls the number of scenes that are rendered (objects in different poses)
-        # per each configuration (if multiple are defined).
         # In addition the [multiview] config section defines specific configuration such as
         #
         #   [multiview_setup]
-        #   cameras(list): defines the cameras (subset of scene_setup.cameras) that are rendered in multiview
-        #   view_count(int): defines the (minimum) number of camera locations (different views of a static scene)
         #   mode(str): how to generate camera locations for multiview. E.g., viewsphere, bezier, random
-
-        # check basic multiview config
-        self.postprocess_multiview_config()
+        #   mode_cfg(dict-like/config): additional mode specific configs
 
         # filename setup
-        image_count = self.config.dataset.image_count
-        if image_count <= 0:
+        if self.config.dataset.image_count <= 0:
             return False
-        scn_format_width = int(ceil(log(image_count, 10)))
+        scn_format_width = int(ceil(log(self.config.dataset.scene_count, 10)))
         
+        cameras_locations, original_cameras_locations = camera_utils.generate_multiview_cameras_locations(
+            num_locations=self.config.dataset.view_count,
+            mode=self.config.multiview_setup.mode,
+            camera_names=self.config.scene_setup.cameras,
+            config=self.config.multiview_setup.mode_config)
+
+        # some debug/logging options
+        if self.config.logging.debug:
+            # simple plot of generated camera locations
+            if self.config.logging.plot:
+                from amira_blender_rendering.math.curves import plot_points
+
+                for cam_name in self.config.scene_setup.cameras:
+                    plot_points(np.array(cameras_locations[cam_name]),
+                                bpy.context.scene.objects[cam_name],
+                                plot_axis=self.config.logging.plot_axis,
+                                scatter=self.config.logging.scatter)
+
+            # save all generated camera locations to .blend for later debug
+            if self.config.logging.save_to_blend:
+                for i_cam, cam_name in enumerate(self.config.scene_setup.cameras):
+                    self.logger.info('For debugging purposes, saving all cameras locations to .blend')
+                    self._save_to_blend(i_cam, camera_locations=cameras_locations[cam_name])
+     
+        if self.render_mode == 'default':
+            # reset camera locations to original and put them in the correct shape
+            for cam_name, cam_location in original_cameras_locations.items():
+                cameras_locations[cam_name] = np.reshape(cam_location, (1, 3))
+
         # control loop for the number of static scenes to render
-        ic = 0
-        original_cam_locs = None
-        while ic < image_count:
+        scn_counter = 0
+        while scn_counter < self.config.dataset.scene_count:
 
             # randomize scene: move objects at random locations, and forward simulate physics
             self.randomize_environment_texture()
-            # first drop non target objects which are visible in the scene
-            self.randomize_object_transforms(self.nt_objs)
-            # set target
-            self.randomize_object_transforms(self.objs, are_targets=True)
+            self.randomize_object_transforms(self.objs + self.nt_objs)
             self.forward_simulate()
-
-            # since multiview locations might be camera dependant,
-            # restore original locations if we changed them during previous iteration
-            if original_cam_locs is not None:
-                for cam_name in self.config.multiview_setup.cameras:
-                    camera = bpy.context.scene.objects[cam_name]
-                    camera.location = original_cam_locs[cam_name]
-                # update depsgraph
-                bpy.context.evaluated_depsgraph_get().update()
-
-            # generate views for current static scene
-            multiview_cam_locs, original_cam_locs = camera_utils.generate_multiview_cameras_locations(
-                num_locations=self.config.multiview_setup.view_count,
-                mode=self.config.multiview_setup.mode,
-                camera_names=self.config.multiview_setup.cameras,
-                config=self.config.multiview_setup.mode_config,
-                debug=self.config.logging.debug,
-                plot_axis=self.config.logging.plot_axis,
-                scatter=self.config.logging.scatter)
             
             # check visibility
             repeat_frame = False
             if not self.config.render_setup.allow_occlusions:
-                for cam_name, cam_locations in multiview_cam_locs.items():
-                    camera = bpy.context.scene.objects[cam_name]
-                    repeat_frame = not self.test_camera_visibility(camera, cam_locations)
+                for cam_name, cam_locations in cameras_locations.items():
+                    repeat_frame = not self.test_visibility(cam_name, cam_locations)
 
             # if we need to repeat (change static scene) we skip one iteration
             # without increasing the counter
             if repeat_frame:
-                self.logger.warn(f'Something wrong. Re-randomizing scene {ic + 1}/{image_count}')
+                self.logger.warn(f'Something wrong. '
+                                 f'Re-randomizing scene {scn_counter + 1}/{self.config.dataset.scene_count}')
                 continue
 
             # loop over cameras
-            for cam_name in self.config.multiview_setup.cameras:
-                # extract camera index
-                i_cam = self.config.scene_setup.cameras.index(cam_name)
+            for i_cam, cam_name in enumerate(self.config.scene_setup.cameras):
+
+                # check whether we broke the for-loop responsible for image generation for
+                # multiple camera views and repeat the frame by re-generating the static scene
+                if repeat_frame:
+                    break
                 
                 # extract camera locations
-                camera_locations = multiview_cam_locs[cam_name]
+                cam_locations = cameras_locations[cam_name]
                 
                 # compute format width
-                view_format_width = int(ceil(log(len(camera_locations), 10)))
+                view_format_width = int(ceil(log(len(cam_locations), 10)))
                 
                 # activate camera
-                camera = self.activate_camera(cam_name)
+                self.activate_camera(cam_name)
 
                 # loop over locations
-                for vc, cam_loc in enumerate(camera_locations):
+                for view_counter, cam_loc in enumerate(cam_locations):
 
-                    self.logger.info(
-                        f"Generating image: scene {ic + 1}/{image_count}, view {vc + 1}/{self.config.multiview_setup.view_count}")
+                    self.logger.info(f"Generating image for camera {cam_name}: "
+                                     f"scene {scn_counter + 1}/{self.config.dataset.scene_count}, "
+                                     f"view {view_counter + 1}/{self.config.dataset.view_count}")
 
                     # filename
-                    base_filename = f"s{ic:0{scn_format_width}}_v{vc:0{view_format_width}}"
+                    base_filename = f"s{scn_counter:0{scn_format_width}}_v{view_counter:0{view_format_width}}"
 
                     # set camera location
                     self.set_camera_location(cam_name, cam_loc)
@@ -574,7 +588,12 @@ class PandaTable(interfaces.ABRScene):
                     # according to allow_occlusions config.
                     # Here, we re-run visibility to set object visibility level as well as to update
                     # the depsgraph needed to update translation and rotation info
-                    self.test_camera_visibility(camera)
+                    all_visible = self.test_visibility(cam_name, cam_loc)
+
+                    if not all_visible:
+                        if self.config.logging.debug and self.config.logging.save_to_blend:
+                            self.logger.info('One or more objects are not visible. Saving debug data to .blend')
+                            self._save_to_blend(i_cam, scene_index=scn_counter, view_index=view_counter)
 
                     # update path information in compositor
                     self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
@@ -584,8 +603,6 @@ class PandaTable(interfaces.ABRScene):
 
                     # postprocess. this will take care of creating additional
                     # information, as well as fix filenames
-                    # try-catch similar to generate_dataset (see below)
-                    # TODO: the try catch should not be necessary anymore
                     try:
                         self.renderman.postprocess(
                             self.dirinfos[i_cam],
@@ -594,15 +611,26 @@ class PandaTable(interfaces.ABRScene):
                             self.objs,
                             self.config.camera_info.zeroing,
                             rectify_depth=self.config.postprocess.rectify_depth,
-                            overwrite=self.config.postprocess.overwrite)
+                            overwrite=self.config.postprocess.overwrite,
+                            visibility_from_mask=self.config.postprocess.visibility_from_mask)
+
                     except ValueError:
-                        self.logger.error(f"\033[1;31mValueError during post-processing, re-generating image {ic + 1}/{image_count}\033[0;37m")
+                        self.logger.error(
+                            f"\033[1;31mValueError during post-processing. "
+                            f"Re-generating image {scn_counter + 1}/{self.config.dataset.scene_count}\033[0;37m")
                         repeat_frame = True
+
+                        # if requested save to blend files for debugging
+                        if self.config.logging.debug and self.config.logging.save_to_blend:
+                            self.logger.error('There might be a discrepancy between generated mask and '
+                                              'object visibility data. Saving debug info to .blend')
+                            self._save_to_blend(i_cam, scene_index=scn_counter, view_index=view_counter, on_error=True)
+
                         break
 
             # update scene counter
             if not repeat_frame:
-                ic = ic + 1
+                scn_counter = scn_counter + 1
 
         return True
 
@@ -620,67 +648,97 @@ class PandaTable(interfaces.ABRScene):
         # nothing to do
         pass
 
-    def generate_dataset(self):
-        """This will generate the dataset according to the configuration that
-        was passed in the constructor.
+    def _save_to_blend(self, camera_index: int, **kw):
+        # TODO: move to basescenemanager?
         """
+        Save log data to .blend files
 
-        # filename setup
-        image_count = self.config.dataset.image_count
-        if image_count <= 0:
-            return False
-        format_width = int(ceil(log(image_count, 10)))
+        The behavior of the method depends on its keywords input arguments. 
+        In particular:
+            - with no optional args: it logs the current active scene to .blend in ActiveCamera/Logs
+                                    where CurrentCamera identify the directory where data, i.e.,
+                                    Images and Annotations, for the active camera are dumped
+            - with camera_locations: the active camera is duplicated and move in all given locations.
+                                    Use this behavior to check whether generated locations are valid.
+            - with view_index and scene_index: the current active scene is logged to .blend with
+                                                following our base filenaming convention
+                - if additionally on_error == True: data are logged to a separate timestamped subdirectory
+                                                    (together with additional data) to avoid data overwrite
 
-        i = 0
-        while i < self.config.dataset.image_count:
-            self.logger.info(f"Generating image {i+1} of {self.config.dataset.image_count}")
+        Args:
+            camera_index(int): active camera index as in self.config.scene_setup.cameras
+        
+        Kwargs Args:
+            camera_locations(list): list containing multiple camera locations
+            scene_index(int): index of static scene being rendered
+            view_index(int): index of current view being rendered
+            on_error(bool): if True, assume an error has been raised and additional data are logged
+        """
+        # extract and check args
+        camera_locations = kw.get('camera_locations', None)
+        scn_idx = kw.get('scene_index', None)
+        view_idx = kw.get('view_index', None)
+        on_error = kw.get('on_error', False)
 
-            # generate render filename
-            base_filename = "s{:0{width}d}_v0".format(i, width=format_width)
+        if camera_locations is not None and (scn_idx is not None or view_idx is not None or on_error):
+            raise ValueError('Given arguments are mutually exclusive')
 
-            # randomize scene: move objects at random locations, and forward
-            # simulate physics
-            self.randomize_environment_texture()
-            self.randomize_object_transforms(self.objs + self.nt_objs)
-            self.forward_simulate()
+        # extract and create (if necessary) log directory (for each camera)
+        logpath = os.path.join(self.dirinfos[camera_index].base_path, 'Logs')
+        if on_error:
+            from datetime import datetime
+            from shutil import copyfile
+            now = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+            logpath = os.path.join(logpath, now)
+        pathlib.Path(logpath).mkdir(parents=True, exist_ok=True)
 
-            # repeat if the cameras cannot see the objects
-            repeat_frame = False
-            if not self.test_visibility():
-                self.logger.warn(f"\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
-                repeat_frame = True
-            else:
-                # loop through all cameras
-                for i_cam, cam in enumerate(self.config.scene_setup.cameras):
-                    # activate camera
-                    self.activate_camera(cam)
-                    # update path information in compositor
-                    self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
-                    # finally, render
-                    self.renderman.render()
+        # file specs
+        scn_frmt_w = int(ceil(log(self.config.dataset.scene_count, 10)))
+        view_frmt_w = int(ceil(log(self.config.dataset.view_count, 10)))
+        scn_str = '' if scn_idx is None else f'_s{scn_idx:0{scn_frmt_w}}'
+        view_str = '' if view_idx is None else f'_v{view_idx:0{view_frmt_w}}'
 
-                    # postprocess. this will take care of creating additional
-                    # information, as well as fix filenames
-                    try:
-                        self.renderman.postprocess(
-                            self.dirinfos[i_cam],
-                            base_filename,
-                            bpy.context.scene.camera, self.objs,
-                            self.config.camera_info.zeroing,
-                            rectify_depth=self.config.postprocess.rectify_depth,
-                            overwrite=self.config.postprocess.overwrite)
-                    except ValueError:
-                        # This issue happens every now and then. The reason might be (not
-                        # yet verified) that the target-object is occluded. In turn, this
-                        # leads to a zero size 2D bounding box...
-                        self.logger.error(f"\033[1;31mValueError during post-processing, re-generating image index {i}\033[0;37m")
-                        repeat_frame = True
+        filename = f'robottable' + scn_str + view_str + f'.blend'
+        filepath = os.path.join(logpath, filename)
+   
+        # create and link temporary collection
+        if camera_locations is not None:
+            cam_name = self.config.scene_setup.cameras[camera_index]
+            tmp_cam_coll = bpy.data.collections.new('TemporaryCameras')
+            bpy.context.scene.collection.children.link(tmp_cam_coll)
 
-                        # no need to continue with other cameras
-                        break
+            tmp_cameras = []
+            for location in camera_locations:
+                blnd.select_object(cam_name)
+                bpy.ops.object.duplicate()
+                # TODO: remove from original collection to avoid name clutter in .blend
+                tmp_cam_obj = bpy.context.object
+                tmp_cam_obj.location = location
+                tmp_cam_coll.objects.link(tmp_cam_obj)
+                tmp_cameras.append(tmp_cam_obj)
+            bpy.context.evaluated_depsgraph_get().update()
+   
+        self.logger.info(f"Saving blender file for debugging to {filepath}")
+        bpy.ops.wm.save_as_mainfile(filepath=filepath)
 
-            # if we need to repeat this frame, then do not increment the counter
-            if not repeat_frame:
-                i = i + 1
-
-        return True
+        # clear objects and collection
+        if camera_locations is not None:
+            bpy.ops.object.select_all(action='DESELECT')
+            for tmp_cam in tmp_cameras:
+                bpy.data.objects.remove(tmp_cam)
+            bpy.data.collections.remove(tmp_cam_coll)
+            
+        # on error we save additional files
+        if on_error:
+            self.logger.error('Saving to .blend on error. Logging additional data')
+            # copy rgb
+            rgbname = scn_str[1:] + view_str + f'.png'
+            srcpath = os.path.join(self.dirinfos[camera_index].images.const, rgbname)
+            dstpath = os.path.join(logpath, rgbname)
+            copyfile(srcpath, dstpath)
+            # copy masks
+            for obj in self.objs:
+                maskname = scn_str[1:] + view_str + f'{obj["id_mask"]}.png'
+                srcpath = os.path.join(self.dirinfos[camera_index].images.mask, maskname)
+                dstpath = os.path.join(logpath, maskname)
+                copyfile(srcpath, dstpath)

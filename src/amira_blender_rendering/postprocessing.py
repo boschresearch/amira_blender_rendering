@@ -26,10 +26,8 @@ def boundingbox_from_mask(mask):
         mask: MxN mask with 0 everywhere except the object of interest.
     
     Returns:
-        array(2,2): array with 2d bbox corners [[left, top], [right, bottom]]
+        array(2,2): array with 2d bbox corners [[left, top], [right, bottom]] or None if an empty mask is found
     
-    Raises:
-        ValueError: given mask is not valid, i.e., empty (aka all zero valued)
     """
     assert len(mask.shape) == 2
 
@@ -40,7 +38,7 @@ def boundingbox_from_mask(mask):
     ys = np.nonzero(ys)
     # raise error if non valid, i.e., empty mask, given
     if (xs[0].shape[0] == 0) or (ys[0].shape[0] == 0):
-        raise ValueError('Invalid mask given')
+        return None
     x = (np.min(xs), np.max(xs))
     y = (np.min(ys), np.max(ys))
     return np.array([[x[0], y[0]],
