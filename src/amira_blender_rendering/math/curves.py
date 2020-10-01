@@ -82,6 +82,9 @@ def points_on_viewsphere(num_points=30, scale=1, bias=(0, 0, 1.5)):
             loc = [scale[i] * x + bias[i] for i, x in enumerate(loc)]
             half_sphere_locations.append(tuple(loc))
 
+    # corner case with 2 points --> locations are coincident
+    if num_points == 1:
+        half_sphere_locations.pop(-1)
     assert (len(half_sphere_locations) == num_points)
 
     return np.array(half_sphere_locations)

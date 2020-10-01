@@ -23,7 +23,7 @@ import numpy as np
 
 from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.math.curves import points_on_viewsphere, points_on_bezier, points_on_circle, \
-    points_on_wave, plot_points, random_points
+    points_on_wave, random_points
 from amira_blender_rendering.datastructures import Configuration
 
 
@@ -377,6 +377,14 @@ def project_pinhole_depth_to_rectilinear(filepath: str, outfilepath: str,
     logger.info(f'Saved rectified depth map at {outfilepath}')
 
 
+def get_current_cameras_locations(camera_names: list):
+    locations = {}
+    for cam_name in camera_names:
+        camera = bpy.context.scene.objects[cam_name]
+        locations[cam_name] = np.asarray(camera.matrix_world.to_translation())
+    return locations
+
+
 def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_names: list, **kw):
     """
     Generate multiple locations for multiple cameras according to selected mode
@@ -384,13 +392,10 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
     Args:
         num_locations(int): number of locations to generate
         mode(str): mode used to generate locations
-        camera_names(list(str)): list of string with camera names
+        camera_names(list(str)): list of string with bpy objects camera names
     
     Keywords Args:
         config(Configuration/dict-like)
-        debug(bool): it True, plot 3D generated locations for visual debug
-        plot_axis(bool): if debug, plot camera coordinate systems on 3D locations
-        scatter(bool): if debug, if True, enable scatter plot
 
     Returns:
         locations(dict(array)): dictionary with list of locations for each camera
@@ -416,15 +421,8 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
 
     # get logger
     logger = get_logger()
-    debug = kw.get('debug', False)
-    plot_axis = kw.get('plot_axis', False)
-    scatter = kw.get('scatter', False)
 
-    # save original camera locations
-    original_locations = {}
-    for cam_name in camera_names:
-        camera = bpy.context.scene.objects[cam_name]
-        original_locations[cam_name] = np.asarray(camera.matrix_world.to_translation())
+    original_locations = get_current_cameras_locations(camera_names)
 
     # define supported modes
     _available_modes = {
@@ -487,9 +485,5 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
         
         # get location
         locations[cam_name] = _available_modes[mode](num_locations, **_modes_cfgs[mode])
-
-        # for visual debug
-        if debug:
-            plot_points(np.array(locations[cam_name]), camera, plot_axis=plot_axis, scatter=scatter)
 
     return locations, original_locations

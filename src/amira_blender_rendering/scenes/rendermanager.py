@@ -41,8 +41,10 @@ from amira_blender_rendering.math.conversions import bu_to_mm
 # import things from AMIRA Perception Subsystem that are required
 from amira_blender_rendering.interfaces import PoseRenderResult, ResultsCollection
 from amira_blender_rendering.postprocessing import boundingbox_from_mask
-# from amira_blender_rendering.utils.logging import get_logger
+from amira_blender_rendering.utils.logging import get_logger
 # from amira_blender_rendering.utils.converters import to_PASCAL_VOC
+
+logger = get_logger()
 
 
 class RenderManager(abr_scenes.BaseSceneManager):
@@ -56,7 +58,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         self.unit_conversion = unit_conversion
 
     def postprocess(self, dirinfo, base_filename, camera, objs, zeroing,
-                    rectify_depth: bool = False, overwrite: bool = False):
+                    rectify_depth: bool = False, overwrite: bool = False, visibility_from_mask: bool = False):
         """Postprocessing the scene.
 
         This step will compute all the data that is relevant for
@@ -73,6 +75,9 @@ class RenderManager(abr_scenes.BaseSceneManager):
         Optional Args:
             rectify_depth(bool): if True, compute rectilinear depth map from pinhole map
             overwrite(bool): if True, overwrite non-rectified depth map with rectified
+            visibility_from_mask(bool): if True, if mask is found empty even if object
+                                        is visible, visibility info are overwritten and
+                                        set to false
         """
 
         # first we update the view-layer to get the updated values in
@@ -107,7 +112,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         results_gl = ResultsCollection()
         results_cv = ResultsCollection()
         for obj in objs:
-            render_result_gl, render_result_cv = self.build_render_result(obj, camera, zeroing)
+            render_result_gl, render_result_cv = self.build_render_result(obj, camera, zeroing, visibility_from_mask)
             if obj['visible']:
                 results_gl.add_result(render_result_gl)
                 results_cv.add_result(render_result_cv)
@@ -174,12 +179,17 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         return result
 
-    def build_render_result(self, obj, camera, zeroing):
+    def build_render_result(self, obj, camera, zeroing, visibility_from_mask: bool = False):
         """Create render result.
 
         Args:
             obj(dict): object dictionary to operate on
             camera: blender camera object
+
+        Opt Args:
+            visibility_from_mask(bool): if True, if mask is found empty even if object
+                            is visible, visibility info are overwritten and
+                            set to false
 
         Returns:
             PoseRenderResult
@@ -198,8 +208,16 @@ class RenderManager(abr_scenes.BaseSceneManager):
         # compute bounding boxes
         corners2d, corners3d, aabb, oobb = None, None, None, None
         if obj['visible']:
+            # this rises a ValueError if mask info is not correct
             corners2d = self.compute_2dbbox(obj['fname_mask'])
-            aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
+            if corners2d is not None:
+                aabb, oobb, corners3d = self.compute_3dbbox(obj['bpy'])
+            elif visibility_from_mask:
+                logger.warn(f'Given mask found empty. '
+                            f'Overwriting visibility information for obj {obj["object_class_name"]}:{obj["object_id"]}')
+                obj['visible'] = False
+            else:
+                raise ValueError('Invalid mask given')
 
         render_result_gl = PoseRenderResult(
             object_class_name=obj['object_class_name'],
@@ -294,8 +312,14 @@ class RenderManager(abr_scenes.BaseSceneManager):
         viewer nodes. That is, using a viewer node attached to ID Mask nodes
         will store an image only to bpy.data.Images['Viewer Node'], depending on
         which node is currently selected in the node editor... I have yet to find a
-        programmatic way that circumvents re-loading the file from disk"""
+        programmatic way that circumvents re-loading the file from disk
 
+        Args:
+            fname_mask(str): mask filename
+
+        Raises:
+            ValueError if an empty mask is given
+        """
         # this is a HxWx3 tensor (RGBA or RGB data)
         mask = imageio.imread(fname_mask)
         mask = np.sum(mask, axis=2)

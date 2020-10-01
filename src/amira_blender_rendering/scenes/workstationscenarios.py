@@ -70,15 +70,16 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scenario_setup.abc_color_count', 3, 'Number of random metallic materials to generate')
     
         # multiview configuration (if implemented)
-        self.add_param('multiview_setup.cameras', [], 'Cameras to render in multiview setup')
-        self.add_param('multiview_setup.view_count', 0, 'Number of view points, i.e., camera locations')
         self.add_param('multiview_setup.mode', '',
                        'Selected mode to generate view points, i.e., random, bezier, viewsphere')
         self.add_param('multiview_setup.mode_config', Configuration(), 'Mode specific configuration')
 
         # some extra logging config
-        self.add_param('logging.plot_axis', False, 'If True, in debug mode, plot camera coordinate systems')
-        self.add_param('logging.scatter', False, 'If True, in debug mode, enable scatter plot')
+        self.add_param('logging.plot', False, 'If True, in debug mode, enable simple visual debug')
+        self.add_param('logging.plot_axis', False, 'If True, in debug-plot mode, plot camera coordinate systems')
+        self.add_param('logging.scatter', False, 'If True, in debug mode-plot, enable scatter plot')
+        # TODO: not implemeneted yet
+        # self.add_param('logging.save_to_blend', False, 'If True, in debug mode, log to .blend files')
         # HINT: these object lists above are parsed as strings, later on split with "," separator
 
 
@@ -99,6 +100,13 @@ class WorkstationScenarios(interfaces.ABRScene):
         if self.config.dataset.scene_type.lower() != 'WorkstationScenarios'.lower():
             raise RuntimeError(
                 f"Invalid configuration of scene type {self.config.dataset.scene_type} for class WorkstationScenarios")
+        
+        # determine if we are rendering in multiview mode
+        self.render_mode = kwargs.get('render_mode', 'default')
+        if self.render_mode not in ['default', 'multiview']:
+            self.logger.warn(f'render mode "{self.render_mode}" not supported. Falling back to "default"')
+            self.render_mode = 'default'
+        
         # we might have to post-process the configuration
         self.postprocess_config()
 
@@ -132,6 +140,20 @@ class WorkstationScenarios(interfaces.ABRScene):
         self.setup_compositor()
 
     def postprocess_config(self):
+        # depending on the rendering mode (standard or multiview), determine number of images
+        if self.render_mode == 'default':
+            # in default mode (i.e., single view), image_count control the number of images (hence scene) to render
+            self.config.dataset.view_count = 1
+            self.config.dataset.scene_count = self.config.dataset.image_count
+        elif self.render_mode == 'multiview':
+            # in multiview mode: image_count = scene_count * view_count
+            self.config.dataset.scene_count = max(1, self.config.dataset.scene_count)
+            self.config.dataset.view_count = max(1, self.config.dataset.view_count)
+            self.config.dataset.image_count = self.config.dataset.scene_count * self.config.dataset.view_count
+        else:
+            self.logger.error(f'render mode {self.render_mode} currently not supported')
+            raise ValueError(f'render mode {self.render_mode} currently not supported')
+
         # convert all scaling factors from str to list of floats
         if 'ply_scale' not in self.config.parts:
             return
@@ -339,11 +361,10 @@ class WorkstationScenarios(interfaces.ABRScene):
 
         # build masks id for compositor of the format _N_M, where N is the model
         # id, and M is the object id
-        w_class = ceil(log(len(self._obk))) if len(self._obk) else 0  # format width for number of model types
+        w_class = ceil(log(len(self._obk), 10)) if len(self._obk) else 0  # format width for number of model types
         for i, obj in enumerate(self.objs):
-            obj_id, class_id, class_name = obj["object_id"], obj['object_class_id'], obj["object_class_name"]
-            w_obj = ceil(log(self._obk[class_name]["instances"]))  # format width for number of objects of same model
-            id_mask = f"_{class_id:0{w_class}}_{obj_id:0{w_obj}}"
+            w_obj = ceil(log(self._obk[obj['object_class_name']]['instances'], 10))  # format width for same model
+            id_mask = f"_{obj['object_class_id']:0{w_class}}_{obj['object_id']:0{w_obj}}"
             obj['id_mask'] = id_mask
 
     def setup_compositor(self):
@@ -399,28 +420,59 @@ class WorkstationScenarios(interfaces.ABRScene):
         for i in range(self.config.scene_setup.forward_frames):
             scene.frame_set(i + 1)
 
-    def activate_camera(self, cam: str):
-        # first get the camera name. this depends on the scene (blend file)
-        # and is of the format CameraName.XXX, where XXX is a number with
-        # leading zeros
-        cam_name = self.get_camera_name(cam)
+    def activate_camera(self, cam_name: str):
+        """Activate selected camera:
+        
+        Args:
+            cam_name(str): actual name of selected bpy camera object
+        """
         bpy.context.scene.camera = bpy.context.scene.objects[cam_name]
 
-    def test_visibility(self, cameras: list):
-        """Test visibility of objects from given cameras"""
-        # convert to list
-        cameras = cameras if isinstance(cameras, list) else [cameras]
+    def set_camera_location(self, cam_name: str, location):
+        """
+        Set location of selected camera
+        
+        Args:
+            cam_name(str): actual name of selected bpy camera object
+            location(array): camera location
+        """
+        # select the camera. Blender often operates on the active object, to
+        # make sure that this happens here, we select it
+        blnd.select_object(cam_name)
+        # set camera location
+        bpy.data.objects[cam_name].location = location
 
-        for i_cam, cam in enumerate(cameras):
-            cam_name = self.get_camera_name(cam)
-            cam_obj = bpy.data.objects[cam_name]
+    def get_camera_name(self, cam_str):
+        """Get camera name from suffix string and scenarion number"""
+        return f"{cam_str}.{self.config.scenario_setup.scenario:03}"
+
+    def test_visibility(self, camera_name: str, locations: np.array):
+        """Test whether given camera sees all target objects
+        and store visibility level/label for each target object
+        
+        Args:
+            camera(str): name of bpy selected camera object
+            locations(list): list of locations to check. If None, check current camera location
+        """
+        # # convert to list
+        # cameras = cameras if isinstance(cameras, list) else [cameras]
+
+        camera = bpy.context.scene.objects[camera_name]
+
+        # make sure to work with multi-dim array
+        if locations.shape == (3,):
+            locations = np.reshape(locations, (1, 3))
+        
+        # loop over locations
+        for location in locations:
+            camera.location = location
             
             any_not_visible_or_occluded = False
             for obj in self.objs:
                 not_visible_or_occluded = abr_geom.test_occlusion(
                     bpy.context.scene,
                     bpy.context.scene.view_layers['View Layer'],
-                    cam_obj,
+                    camera,
                     obj['bpy'],
                     bpy.context.scene.render.resolution_x,
                     bpy.context.scene.render.resolution_y,
@@ -442,171 +494,150 @@ class WorkstationScenarios(interfaces.ABRScene):
 
         # --> all objects are visible (from all locations): return True
         return True
-
+    
     def generate_dataset(self):
-        """This will generate the dataset according to the configuration that
+        """This will generate a multiview dataset according to the configuration that
         was passed in the constructor.
         """
+        # The number of images in the dataset is controlled differently in case of default (singleview) vs multiview
+        # rendering mode.
+        # In default mode
+        #   dataset.image_count controls the number of images
+        #
+        # In multiview mode
+        #   dataset.image_count = dataset.scene_count * dataset.view_count
+        #
+        # In addition the [multiview] config section defines specific configuration such as
+        #
+        #   [multiview_setup]
+        #   mode(str): how to generate camera locations for multiview. E.g., viewsphere, bezier, random
+        #   mode_cfg(dict-like/config): additional mode specific configs
 
         # filename setup
-        image_count = self.config.dataset.image_count
-        if image_count <= 0:
+        if self.config.dataset.image_count <= 0:
             return False
-        format_width = int(ceil(log(image_count, 10)))
+        scn_format_width = int(ceil(log(self.config.dataset.scene_count, 10)))
+        
+        # extract actual bpy object camera names and generate locations
+        camera_names = [self.get_camera_name(cam_str) for cam_str in self.config.scene_setup.cameras]
+        if self.render_mode == 'default':
+            cameras_locations = camera_utils.get_current_cameras_locations(camera_names)
+            for cam_name, cam_location in cameras_locations.items():
+                cameras_locations[cam_name] = np.reshape(cam_location, (1, 3))
+        
+        elif self.render_mode == 'multiview':
+            cameras_locations, _ = camera_utils.generate_multiview_cameras_locations(
+                num_locations=self.config.dataset.view_count,
+                mode=self.config.multiview_setup.mode,
+                camera_names=camera_names,
+                config=self.config.multiview_setup.mode_config)
+        
+        else:
+            raise ValueError(f'Selected render mode {self.render_mode} not currently supported')
+        
+        # some debug/logging options
+        if self.config.logging.debug:
+            # simple plot of generated camera locations
+            if self.config.logging.plot:
+                from amira_blender_rendering.math.curves import plot_points
 
-        i = 0
-        while i < self.config.dataset.image_count:
-            self.logger.info(f"Generating image {i + 1} of {self.config.dataset.image_count}")
+                for cam_name in self.config.scene_setup.cameras:
+                    plot_points(np.array(cameras_locations[cam_name]),
+                                bpy.context.scene.objects[cam_name],
+                                plot_axis=self.config.logging.plot_axis,
+                                scatter=self.config.logging.scatter)
 
-            # generate render filename
-            base_filename = "s{:0{width}d}_v0".format(i, width=format_width)
+        # control loop for the number of static scenes to render
+        scn_counter = 0
+        while scn_counter < self.config.dataset.scene_count:
 
-            # randomize scene: move objects at random locations, and forward
-            # simulate physics
+            # randomize scene: move objects at random locations, and forward simulate physics
             self.randomize_environment_texture()
             self.randomize_object_transforms()
             self.forward_simulate()
-
-            # repeat if the cameras cannot see the objects
+            
+            # check visibility
             repeat_frame = False
-            if not self.test_visibility(self.config.scene_setup.cameras):
-                self.logger.warn("\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
-                repeat_frame = True
-            else:
-                # loop through all cameras
-                for i_cam, cam in enumerate(self.config.scene_setup.cameras):
-                    # activate camera
-                    self.activate_camera(cam)
-                    # update path information in compositor
-                    self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
-                    # finally, render
-                    self.renderman.render()
+            if not self.config.render_setup.allow_occlusions:
+                for cam_name, cam_locations in cameras_locations.items():
+                    repeat_frame = not self.test_visibility(cam_name, cam_locations)
 
-                    # postprocess. this will take care of creating additional
-                    # information, as well as fix filenames
-                    try:
-                        self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
-                                                   bpy.context.scene.camera, self.objs,
-                                                   self.config.camera_info.zeroing)
-                    except ValueError:
-                        # This issue happens every now and then. The reason might be (not
-                        # yet verified) that the target-object is occluded. In turn, this
-                        # leads to a zero size 2D bounding box...
-                        self.logger.error(
-                            f"\033[1;31mValueError during post-processing, re-generating image index {i}\033[0;37m")
-                        repeat_frame = True
+            # if we need to repeat (change static scene) we skip one iteration
+            # without increasing the counter
+            if repeat_frame:
+                self.logger.warn(f'Something wrong. '
+                                 f'Re-randomizing scene {scn_counter + 1}/{self.config.dataset.scene_count}')
+                continue
 
-                        # no need to continue with other cameras
-                        break
-
-            # if we need to repeat this frame, then do not increment the counter
-            if not repeat_frame:
-                i = i + 1
-
-        return True
-
-    def generate_multiview_dataset(self):
-        """This will generate the dataset according to the configuration that
-            was passed in the constructor."""
-        # filename setup
-        image_count = self.config.dataset.image_count
-        if image_count <= 0:
-            return False
-        scn_format_width = int(ceil(log(image_count, 10)))
-
-        ic = 0
-        while ic < image_count:
-            self.logger.info(f"Generating image {ic + 1} of {image_count}")
-
-            # randomize scene: move objects at random locations, and forward
-            # simulate physics
-            self.randomize_environment_texture()
-            self.randomize_object_transforms()
-            self.forward_simulate()
-
-            # in this scene we use only the first camera in the list.
-            # Build camera names from camera list and scenario.
-            i_cam = 0
-            camera_name = self.get_camera_name(self.config.multiview_setup.cameras[i_cam])
-
-            # set camera locations
-            if self.config.multiview_setup.view_count > 1:
-                camera_locations, _ = camera_utils.generate_multiview_cameras_locations(
-                    num_locations=self.config.multiview_setup.view_count,
-                    mode=self.config.multiview_setup.mode,
-                    camera_names=[camera_name],
-                    config=self.config.multiview_setup.mode_config,
-                    debug=self.config.logging.debug,
-                    plot_axis=self.config.logging.plot_axis,
-                    scatter=self.config.logging.scatter)
-
-                view_format_width = int(ceil(log(len(camera_locations), 10)))
-            else:
-                raise RuntimeError(f'View count must be > 1')
-
-            cam = self.config.multiview_setup.cameras[i_cam]
-            # activate camera
-            self.activate_camera(cam)
-
-            # loop over camera locations
-            for vc, loc in enumerate(camera_locations[camera_name]):
-                # generate render filename
-                base_filename = f"s{ic:0{scn_format_width}}_v{vc:0{view_format_width}}"
-                # update camera location
-                self.set_camera_location(cam, location=loc)
-
-                repeat_frame = False
-                check_visibility = True if self.config.render_setup.allow_occlusions else \
-                    self.test_visibility(self.config.multiview_setup.cameras)
+            # loop over cameras
+            for i_cam, cam_str in enumerate(self.config.scene_setup.cameras):
+                # get bpy object camera name
+                cam_name = self.get_camera_name(cam_str)
                 
-                if check_visibility:
+                # check whether we broke the for-loop responsible for image generation for
+                # multiple camera views and repeat the frame by re-generating the static scene
+                if repeat_frame:
+                    break
+                
+                # extract camera locations
+                cam_locations = cameras_locations[cam_name]
+                
+                # compute format width
+                view_format_width = int(ceil(log(len(cam_locations), 10)))
+                
+                # activate camera
+                self.activate_camera(cam_name)
+
+                # loop over locations
+                for view_counter, cam_loc in enumerate(cam_locations):
+
+                    self.logger.info(
+                        f"Generating image for camera {cam_str}: "
+                        f"scene {scn_counter + 1}/{self.config.dataset.scene_count}, "
+                        f"view {view_counter + 1}/{self.config.dataset.view_count}")
+
+                    # filename
+                    base_filename = f"s{scn_counter:0{scn_format_width}}_v{view_counter:0{view_format_width}}"
+
+                    # set camera location
+                    self.set_camera_location(cam_name, cam_loc)
+
+                    # at this point all the locations have already been tested for visibility
+                    # according to allow_occlusions config.
+                    # Here, we re-run visibility to set object visibility level as well as to update
+                    # the depsgraph needed to update translation and rotation info
+                    self.test_visibility(cam_name, cam_loc)
+
                     # update path information in compositor
                     self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
+                    
                     # finally, render
                     self.renderman.render()
 
                     # postprocess. this will take care of creating additional
                     # information, as well as fix filenames
                     try:
-                        self.renderman.postprocess(self.dirinfos[i_cam], base_filename,
-                                                   bpy.context.scene.camera, self.objs,
-                                                   self.config.camera_info.zeroing)
+                        self.renderman.postprocess(
+                            self.dirinfos[i_cam],
+                            base_filename,
+                            bpy.context.scene.camera,
+                            self.objs,
+                            self.config.camera_info.zeroing,
+                            rectify_depth=self.config.postprocess.rectify_depth,
+                            overwrite=self.config.postprocess.overwrite,
+                            visibility_from_mask=self.config.postprocess.visibility_from_mask)
                     except ValueError:
-                        # This issue happens every now and then. The reason might be (not
-                        # yet verified) that the target-object is occluded. In turn, this
-                        # leads to a zero size 2D bounding box...
                         self.logger.error(
-                            f"\033[1;31mValueError during post-processing, re-generating image index {ic}\033[0;37m")
+                            f"\033[1;31mValueError during post-processing. "
+                            f"Re-generating image {scn_counter + 1}/{self.config.dataset.scene_count}\033[0;37m")
                         repeat_frame = True
-                        # no need to continue with other cameras/locations
                         break
 
-                # repeat frame if objects are occluded and occlusions are not allowed
-                else:
-                    self.logger.warn(f"\033[1;33mObject(s) not visible from every camera. Re-randomizing... \033[0;37m")
-                    repeat_frame = True
-                    # no nee to continue with other cameras/locations
-                    break
-
-            # if we need to repeat this frame, then do not increment the counter
+            # update scene counter
             if not repeat_frame:
-                ic = ic + 1
+                scn_counter = scn_counter + 1
+
         return True
-
-    def set_camera_location(self, cam, location=(0, 0, 2)):
-        # first get the camera name. this depends on the scene (blend file)
-        # and is of the format CameraName.XXX, where XXX is a number with
-        # leading zeros
-        cam_name = self.get_camera_name(cam)
-        # select the camera. Blender often operates on the active object, to
-        # make sure that this happens here, we select it
-        blnd.select_object(cam_name)
-        # set camera location
-        bpy.data.objects[cam_name].location = location
-
-    def get_camera_name(self, cam_str):
-        """Get camera name from suffix string and scenarion number"""
-        return f"{cam_str}.{self.config.scenario_setup.scenario:03}"
 
     def dump_config(self):
         """Dump configuration to a file in the output folder(s)."""
