@@ -80,9 +80,12 @@ def to_PASCAL_VOC(fpath_json):
 
     segmented = ET.SubElement(root, 'segmented')
     segmented.text = str(0)
-    segmented.tail = '\n' + space
 
     for obj_idx, obj in enumerate(data_json):
+        if obj['bbox']['corners2d'] is None:
+            segmented.tail = '\n'
+            break
+        segmented.tail = '\n' + space
         current_obj = ET.SubElement(root, 'object')
         current_obj.text = '\n' + 2 * space
         name = ET.SubElement(current_obj, 'name')
