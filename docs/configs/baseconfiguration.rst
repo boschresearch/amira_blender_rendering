@@ -123,4 +123,35 @@ behaves, or which render backend to use.
     denoising = True
     # samples the ray-tracer uses per pixel
     samples = 64
+    # allow occlusions of target objects (true, false)
+    allow_occlusions = False
 
+logging
+-------
+
+The ``logging`` namespace can be used to toggle log and debug functionatilies
+
+.. code-block::
+
+    [logging]
+    # activate debug logs and print-outs (true, false)
+    debug = False
+
+postprocess
+-----------
+
+The ``postprocess`` namespace can be used to implement functionatilies
+during postprocess and/or after the rendering phase
+
+.. code-block::
+
+    [postprocess]
+    # our rendering pipeline exploits a perfect pinhole camera model according
+    # to which points on a plane parallel to the image plane have different depth
+    # values, computed as the disctance to the pin hole.
+    # Conversely, standard raster models assume that points on planes parallel to
+    # the image plane have all the same depth.
+    # In this case, rectify_depth (true, false) adjst the depth values accordingly.
+    rectify_depth = False
+    # if rectify_depth is active, ovewrite depth files or store as separate (true, false)
+    overwrite = Fasle

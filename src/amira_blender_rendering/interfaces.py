@@ -25,7 +25,6 @@ from amira_blender_rendering.datastructures import filter_state_keys, DynamicStr
 from amira_blender_rendering.math.geometry import rotation_matrix_to_quaternion
 
 
-
 # TODO: derive scenes in abr.scenes from this class
 class ABRScene():
     """interface of functions that each sccene needs to adhere to"""
@@ -274,18 +273,7 @@ class PoseRenderResult:
         self.depth = depth
         self.mask = mask
         self.dense_features = dense_features
-        # internally convert matrix to quanternion WXYZ
-        if rotation is None:
-            q = None
-        else:
-            if rotation.shape == (3, 3):
-                q = rotation_matrix_to_quaternion(rotation)
-            else:
-                q = rotation.flatten()
-                if q.shape != (4,):
-                    q = None
-                    raise ValueError('Rotation must be either a (3,3) matrix or a (4,) quaternion (WXYZ)')
-        self.q = q
+        self.q = try_rotation_to_quaternion(rotation)  # WXYZ
         self.t = translation
         self.corners2d = corners2d
         self.corners3d = corners3d
@@ -293,17 +281,7 @@ class PoseRenderResult:
         self.aabb = aabb
         self.mask_name = mask_name
         self.visible = visible
-        if camera_rotation is None:
-            q_cam = None
-        else:
-            if camera_rotation.shape == (3, 3):
-                q_cam = rotation_matrix_to_quaternion(camera_rotation)
-            else:
-                q_cam = camera_rotation.flatten()
-                if q_cam.shape != (4,):
-                    q_cam = None
-                    raise ValueError('Rotation must be either a (3,3) matrix or a (4,) quaternion (WXYZ)')
-        self.q_cam = q_cam
+        self.q_cam = try_rotation_to_quaternion(camera_rotation)  # WXYZ
         self.t_cam = camera_translation
 
     def state_dict(self, retain_keys: list = None):
@@ -331,6 +309,29 @@ class PoseRenderResult:
         }
         return filter_state_keys(data, retain_keys)
 
-    
+
 def try_to_list(in_array):
     return in_array.tolist() if in_array is not None else None
+
+
+def try_rotation_to_quaternion(rotation):
+    """
+    Try to convert given rotation to quaternion WXYZ
+
+    Args:
+        rotation: matrix or quaternion or None
+    
+    Returns:
+        quaternion or None
+    """
+    if rotation is None:
+        q = None
+    else:
+        if rotation.shape == (3, 3):
+            q = rotation_matrix_to_quaternion(rotation)
+        else:
+            q = rotation.flatten()
+            if q.shape != (4,):
+                q = None
+                raise ValueError('Rotation must be either a (3,3) matrix or a (4,) quaternion (WXYZ)')
+    return q
