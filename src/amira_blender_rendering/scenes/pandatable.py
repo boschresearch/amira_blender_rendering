@@ -154,6 +154,8 @@ class PandaTable(interfaces.ABRScene):
             vs = self.config.parts.ply_scale[part]
             vs = [v.strip() for v in vs.split(',')]
             vs = [float(v) for v in vs]
+            if len(vs) == 1:
+                vs *= 3
             self.config.parts.ply_scale[part] = vs
 
     def setup_dirinfo(self):
@@ -320,6 +322,10 @@ class PandaTable(interfaces.ABRScene):
                         # here we can use bpy.context.object!
                         new_obj = bpy.context.object
                         new_obj.name = f'{class_name}.{j:03d}'
+
+                # rescale object according to ply scale
+                if class_name in self.config.parts.ply_scale:
+                    new_obj.scale = Vector(self.config.parts.ply_scale[class_name])
 
                 # move object to collection
                 try:
