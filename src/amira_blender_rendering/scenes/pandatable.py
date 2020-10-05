@@ -323,9 +323,11 @@ class PandaTable(interfaces.ABRScene):
                         new_obj = bpy.context.object
                         new_obj.name = f'{class_name}.{j:03d}'
 
-                # rescale object according to ply scale
-                if class_name in self.config.parts.ply_scale:
+                # rescale object according to ply scale if present
+                try:
                     new_obj.scale = Vector(self.config.parts.ply_scale[class_name])
+                except KeyError:
+                    pass
 
                 # move object to collection
                 try:

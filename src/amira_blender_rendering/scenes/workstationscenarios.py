@@ -318,8 +318,10 @@ class WorkstationScenarios(interfaces.ABRScene):
                         new_obj.name = f'{class_name}.{j:03d}'
 
                 # rescale object according to ply scale
-                if class_name in self.config.parts.ply_scale:
+                try:
                     new_obj.scale = Vector(self.config.parts.ply_scale[class_name])
+                except KeyError:
+                    pass
 
                 self._obk.add(class_name)
 
