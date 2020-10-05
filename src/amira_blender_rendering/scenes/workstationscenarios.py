@@ -553,6 +553,12 @@ class WorkstationScenarios(interfaces.ABRScene):
                                 plot_axis=self.config.logging.plot_axis,
                                 scatter=self.config.logging.scatter)
 
+            # save all generated camera locations to .blend for later debug
+            if self.config.logging.save_to_blend:
+                for i_cam, cam_name in enumerate(self.config.scene_setup.cameras):
+                    self.logger.info('For debugging purposes, saving all cameras locations to .blend')
+                    self._save_to_blend(i_cam, camera_locations=cameras_locations[cam_name])
+
         # control loop for the number of static scenes to render
         scn_counter = 0
         while scn_counter < self.config.dataset.scene_count:

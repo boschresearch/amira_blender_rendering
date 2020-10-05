@@ -509,11 +509,21 @@ class PandaTable(interfaces.ABRScene):
             return False
         scn_format_width = int(ceil(log(self.config.dataset.scene_count, 10)))
         
-        cameras_locations, original_cameras_locations = camera_utils.generate_multiview_cameras_locations(
-            num_locations=self.config.dataset.view_count,
-            mode=self.config.multiview_setup.mode,
-            camera_names=self.config.scene_setup.cameras,
-            config=self.config.multiview_setup.mode_config)
+        if self.render_mode == 'default':
+            cameras_locations = camera_utils.get_current_cameras_locations(self.config.scene_setup.cameras)
+            for cam_name, cam_location in cameras_locations.items():
+                cameras_locations[cam_name] = np.reshape(cam_location, (1, 3))
+        
+        elif self.render_mode == 'multiview':
+            cameras_locations, _ = camera_utils.generate_multiview_cameras_locations(
+                num_locations=self.config.dataset.view_count,
+                mode=self.config.multiview_setup.mode,
+                camera_names=self.config.scene_setup.cameras,
+                config=self.config.multiview_setup.mode_config)
+        
+        else:
+            raise ValueError(f'Selected render mode {self.render_mode} not currently supported')
+       
 
         # some debug/logging options
         if self.config.logging.debug:
@@ -532,11 +542,6 @@ class PandaTable(interfaces.ABRScene):
                 for i_cam, cam_name in enumerate(self.config.scene_setup.cameras):
                     self.logger.info('For debugging purposes, saving all cameras locations to .blend')
                     self._save_to_blend(i_cam, camera_locations=cameras_locations[cam_name])
-     
-        if self.render_mode == 'default':
-            # reset camera locations to original and put them in the correct shape
-            for cam_name, cam_location in original_cameras_locations.items():
-                cameras_locations[cam_name] = np.reshape(cam_location, (1, 3))
 
         # control loop for the number of static scenes to render
         scn_counter = 0
