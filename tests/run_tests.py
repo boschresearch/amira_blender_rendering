@@ -118,6 +118,12 @@ def import_and_run_implemented_tests():
     test_conversions.main()
     test_geometry.main()
 
+    # utils tests
+    from tests.utils import test_annotation, test_converters, test_camera
+    test_annotation.main()
+    test_converters.main()
+    test_camera.main()
+
 
 if __name__ == "__main__":
     main()
