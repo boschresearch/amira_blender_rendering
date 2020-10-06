@@ -35,11 +35,11 @@ from amira_blender_rendering.utils.io import expandpath
 class TestGeometry(unittest.TestCase):
 
     def setUp(self):
-        self.testfile = 'test.blend'
-        self.testpath = os.path.join(os.getcwd(), 'tests', 'data', self.testfile)
+        self._testfile = 'test.blend'
+        self._testpath = os.path.join(os.getcwd(), 'tests', 'data', self._testfile)
 
         # load test file (2 objects, 1 camera and 1 light)
-        bpy.ops.wm.open_mainfile(filepath=expandpath(self.testpath))
+        bpy.ops.wm.open_mainfile(filepath=expandpath(self._testpath))
 
         # get objects
         self._obj1 = bpy.context.scene.objects['Obj1']
