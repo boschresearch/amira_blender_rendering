@@ -25,7 +25,6 @@ import numpy.testing as npt
 from amira_blender_rendering.datastructures import DynamicStruct
 from amira_blender_rendering.utils import camera
 from amira_blender_rendering.utils.io import expandpath
-from mathutils import Matrix
 
 
 class TestCamera(unittest.TestCase):
