@@ -125,6 +125,11 @@ def import_and_run_implemented_tests():
     test_camera.main()
     test_io.main()
 
+    # additional spare tests
+    from tests import test_config, test_interfaces
+    test_config.main()
+    test_interfaces.main()
+
 
 if __name__ == "__main__":
     main()
