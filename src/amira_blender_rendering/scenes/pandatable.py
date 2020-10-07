@@ -213,7 +213,8 @@ class PandaTable(interfaces.ABRScene):
         """
 
         cam_str = self.config.scene_setup.cameras[0]
-        cam = bpy.data.objects[f'{cam_str}'].data
+        cam_name = self.get_camera_name(cam_str)
+        cam = bpy.data.objects[cam_name].data
 
         # get the effective intrinsics
         effective_intrinsic = camera_utils.get_intrinsics(bpy.context.scene, cam)
@@ -232,10 +233,8 @@ class PandaTable(interfaces.ABRScene):
         """
         scene = bpy.context.scene
         for cam in self.config.scene_setup.cameras:
-            # first get the camera name. this depends on the scene (blend file)
-            # and is of the format CameraName.XXX, where XXX is a number with
-            # leading zeros
-            cam_name = f"{cam}"
+            # first get the camera name. This depends on the scene (blend file)
+            cam_name = self.get_camera_name(cam)
             # select the camera. Blender often operates on the active object, to
             # make sure that this happens here, we select it
             blnd.select_object(cam_name)
@@ -447,6 +446,10 @@ class PandaTable(interfaces.ABRScene):
         # set pose
         bpy.data.objects[name].location = location
 
+    def get_camera_name(self, cam_str):
+        """Get bpy camera name from camera string in config. This depends on the loaded blend file"""
+        return f"{cam_str}"
+
     def test_visibility(self, camera_name: str, locations: np.array):
         """Test whether given camera sees all target objects
         and store visibility level/label for each target object
@@ -516,8 +519,9 @@ class PandaTable(interfaces.ABRScene):
             return False
         scn_format_width = int(ceil(log(self.config.dataset.scene_count, 10)))
         
+        camera_names = [self.get_camera_name(cam_str) for cam_str in self.config.scene_setup.cameras]
         if self.render_mode == 'default':
-            cameras_locations = camera_utils.get_current_cameras_locations(self.config.scene_setup.cameras)
+            cameras_locations = camera_utils.get_current_cameras_locations(camera_names)
             for cam_name, cam_location in cameras_locations.items():
                 cameras_locations[cam_name] = np.reshape(cam_location, (1, 3))
         
@@ -525,7 +529,7 @@ class PandaTable(interfaces.ABRScene):
             cameras_locations, _ = camera_utils.generate_multiview_cameras_locations(
                 num_locations=self.config.dataset.view_count,
                 mode=self.config.multiview_setup.mode,
-                camera_names=self.config.scene_setup.cameras,
+                camera_names=camera_names,
                 config=self.config.multiview_setup.mode_config)
         
         else:
@@ -537,7 +541,7 @@ class PandaTable(interfaces.ABRScene):
             if self.config.logging.plot:
                 from amira_blender_rendering.math.curves import plot_points
 
-                for cam_name in self.config.scene_setup.cameras:
+                for cam_name in camera_names:
                     plot_points(np.array(cameras_locations[cam_name]),
                                 bpy.context.scene.objects[cam_name],
                                 plot_axis=self.config.logging.plot_axis,
@@ -545,7 +549,7 @@ class PandaTable(interfaces.ABRScene):
 
             # save all generated camera locations to .blend for later debug
             if self.config.logging.save_to_blend:
-                for i_cam, cam_name in enumerate(self.config.scene_setup.cameras):
+                for i_cam, cam_name in enumerate(camera_names):
                     self.logger.info('For debugging purposes, saving all cameras locations to .blend')
                     self._save_to_blend(i_cam, camera_locations=cameras_locations[cam_name])
 
@@ -572,7 +576,9 @@ class PandaTable(interfaces.ABRScene):
                 continue
 
             # loop over cameras
-            for i_cam, cam_name in enumerate(self.config.scene_setup.cameras):
+            for i_cam, cam_str in enumerate(self.config.scene_setup.cameras):
+                # get bpy object camera name
+                cam_name = self.get_camera_name(cam_str)
 
                 # check whether we broke the for-loop responsible for image generation for
                 # multiple camera views and repeat the frame by re-generating the static scene
@@ -591,7 +597,7 @@ class PandaTable(interfaces.ABRScene):
                 # loop over locations
                 for view_counter, cam_loc in enumerate(cam_locations):
 
-                    self.logger.info(f"Generating image for camera {cam_name}: "
+                    self.logger.info(f"Generating image for camera {cam_str}: "
                                      f"scene {scn_counter + 1}/{self.config.dataset.scene_count}, "
                                      f"view {view_counter + 1}/{self.config.dataset.view_count}")
 
@@ -720,7 +726,7 @@ class PandaTable(interfaces.ABRScene):
    
         # create and link temporary collection
         if camera_locations is not None:
-            cam_name = self.config.scene_setup.cameras[camera_index]
+            cam_name = self.get_camera_name(self.config.scene_setup.cameras[camera_index])
             tmp_cam_coll = bpy.data.collections.new('TemporaryCameras')
             bpy.context.scene.collection.children.link(tmp_cam_coll)
 

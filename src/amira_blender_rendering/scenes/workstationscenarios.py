@@ -335,7 +335,7 @@ class WorkstationScenarios(interfaces.ABRScene):
                         # interested in here! We need to select it via original name
                         # first, then we rename it to be able to select additional
                         # objects later on
-                        new_obj = bpy.data.objects[class_name]
+                        new_obj = bpy.data.objects[bpy_obj_name]
                         new_obj.name = f'{class_name}.{j:03d}'
                     else:
                         # no blender file given, so we will load the PLY file
@@ -510,7 +510,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         bpy.data.objects[cam_name].location = location
 
     def get_camera_name(self, cam_str):
-        """Get camera name from suffix string and scenarion number"""
+        """Get camera name from suffix string and scenario number. This depends on the loaded blend file"""
         return f"{cam_str}.{self.config.scenario_setup.scenario:03}"
 
     def test_visibility(self, camera_name: str, locations: np.array):
@@ -608,7 +608,7 @@ class WorkstationScenarios(interfaces.ABRScene):
             if self.config.logging.plot:
                 from amira_blender_rendering.math.curves import plot_points
 
-                for cam_name in self.config.scene_setup.cameras:
+                for cam_name in camera_names:
                     plot_points(np.array(cameras_locations[cam_name]),
                                 bpy.context.scene.objects[cam_name],
                                 plot_axis=self.config.logging.plot_axis,
@@ -616,7 +616,7 @@ class WorkstationScenarios(interfaces.ABRScene):
 
             # save all generated camera locations to .blend for later debug
             if self.config.logging.save_to_blend:
-                for i_cam, cam_name in enumerate(self.config.scene_setup.cameras):
+                for i_cam, cam_name in enumerate(camera_names):
                     self.logger.info('For debugging purposes, saving all cameras locations to .blend')
                     self._save_to_blend(i_cam, camera_locations=cameras_locations[cam_name])
 
@@ -794,7 +794,7 @@ class WorkstationScenarios(interfaces.ABRScene):
    
         # create and link temporary collection
         if camera_locations is not None:
-            cam_name = self.config.scene_setup.cameras[camera_index]
+            cam_name = self.get_camera_name(self.config.scene_setup.cameras[camera_index])
             tmp_cam_coll = bpy.data.collections.new('TemporaryCameras')
             bpy.context.scene.collection.children.link(tmp_cam_coll)
 
