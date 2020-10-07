@@ -65,7 +65,8 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
 
         # specific scenario configuration
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
-        self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
+        self.add_param('scenario_setup.target_objects', [], 'List of objects to drop in the scene for which annotated info are stored')
+        self.add_param('scenario_setup.distractor_objects', [], 'List of objects to drop in the scene for which info are NOT stored')
         self.add_param('scenario_setup.abc_objects', [], 'List of all ABC-Dataset objects to drop in environment')
         self.add_param('scenario_setup.abc_color_count', 3, 'Number of random metallic materials to generate')
     
@@ -134,7 +135,12 @@ class WorkstationScenarios(interfaces.ABRScene):
         self.setup_render_output()
 
         # populate the scene with objects
-        self.setup_objects()
+        self.objs = self.setup_objects(self.config.scenario_setup.target_objects,
+                                       bpy_collection='TargetObjects',
+                                       abc_objects=self.config.scenario_setup.abc_objects,
+                                       abc_bpy_collection='ABCObjects')
+        self.distractors = self.setup_objects(self.config.scenario_setup.distractor_objects,
+                                              bpy_collection='DistractorObjects')
 
         # finally, setup the compositor
         self.setup_compositor()
@@ -253,7 +259,8 @@ class WorkstationScenarios(interfaces.ABRScene):
             # set the calibration matrix
             camera_utils.set_camera_info(scene, blender_camera, self.config.camera_info)
 
-    def setup_objects(self):
+    def setup_objects(self, objects: list, bpy_collection: str = 'TargetObjects',
+                      abc_objects: list = None, abc_bpy_collection: str = 'ABCObjects'):
         """This method populates the scene with objects.
 
         Object types and number of objects will be taken from the configuration.
@@ -262,11 +269,25 @@ class WorkstationScenarios(interfaces.ABRScene):
         where ObjectType should be the name of an object that exists in the
         blender file, and number indicates how often the object shall be
         duplicated.
+
+        Args:
+            objects(list): list of ObjectType:Number to setup
+        
+        Optional Args:
+            bpy_collection(str): Name of bpy collection the given objects are
+                linked to in the .blend file. Default: TargetObjects
+                If the given objects are non-target (i.e., they populate the scene but
+                no information regarding them are stored) use a different collection.
+            abc_objects(list): list of ABC objects to add the list of targets
+            abc_bpy_collection(str): Name of bpy collection for ABC objects
+
+        Returns:
+            objs(list): list of dict to handle desired objects
         """
         rgb_shape = (self.config.camera_info.height, self.config.camera_info.width, 3)
         # let's start with an empty list
-        self.objs = []
-        self._obk = ObjectBookkeeper()
+        objs = []
+        obk = ObjectBookkeeper()
 
         # extract all objects from the configuration. An object has a certain
         # type, as well as an own id. this information is storeed in the objs
@@ -276,7 +297,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         #       object_class_id     model type ID (simply incremental numbers)
         #       object_id           instance ID of the object
         #       bpy                 blender object reference
-        for class_id, obj_spec in enumerate(self.config.scenario_setup.target_objects):
+        for class_id, obj_spec in enumerate(objects):
             class_name, obj_count = obj_spec.split(':')
 
             # here we distinguish if we copy a part from the proto objects
@@ -325,10 +346,21 @@ class WorkstationScenarios(interfaces.ABRScene):
                 except KeyError:
                     pass
 
-                self._obk.add(class_name)
+                # move object to collection: in case of debugging
+                try:
+                    collection = bpy.data.collections[bpy_collection]
+                except KeyError:
+                    collection = bpy.data.collections.new(bpy_collection)
+                    bpy.context.scene.collection.children.link(collection)
+
+                if new_obj.name not in collection.objects:
+                    collection.objects.link(new_obj)
+
+                # bookkeep instance
+                obk.add(class_name)
 
                 # append all information
-                self.objs.append({
+                objs.append({
                     'id_mask': '',
                     'object_class_name': class_name,
                     'object_class_id': class_id,
@@ -339,43 +371,56 @@ class WorkstationScenarios(interfaces.ABRScene):
                 })
 
         # Adding ABC objects
-        abc_objects = self.config.scenario_setup.abc_objects
-        if abc_objects == list():
+        if abc_objects is None or not len(abc_objects):
             self.logger.info("Config file does NOT include ABC-Dataset objects")
         else:
             self.logger.info(f"making {self.config.scenario_setup.abc_color_count} random metallic materials")
             abc_importer = ABCImporter(n_materials=int(self.config.scenario_setup.abc_color_count))
 
-        for class_id, obj_spec in enumerate(abc_objects):
-            _class_name, obj_count = obj_spec.split(':')
+            for class_id, obj_spec in enumerate(abc_objects):
+                _class_name, obj_count = obj_spec.split(':')
 
-            for j in range(int(obj_count)):
-                bpy.ops.object.select_all(action='DESELECT')
+                for j in range(int(obj_count)):
+                    bpy.ops.object.select_all(action='DESELECT')
 
-                obj_handle, class_name = abc_importer.import_object(_class_name)
+                    obj_handle, class_name = abc_importer.import_object(_class_name)
 
-                if obj_handle is None:
-                    continue
+                    if obj_handle is None:
+                        continue
 
-                self._obk.add(class_name)
+                    # move object to collection: in case of debugging
+                    try:
+                        collection = bpy.data.collections[abc_bpy_collection]
+                    except KeyError:
+                        collection = bpy.data.collections.new(abc_bpy_collection)
+                        bpy.context.scene.collection.children.link(collection)
 
-                self.objs.append({
-                    'id_mask': '',
-                    'object_class_name': class_name,
-                    'object_class_id': self._obk[class_name]["id"],
-                    'object_id': self._obk[class_name]["instances"] - 1,
-                    'bpy': obj_handle,
-                    'visible': None,
-                    'dimensions': rgb_shape  # TODO: not implemented yet
-                })
+                    if obj_handle.name not in collection.objects:
+                        collection.objects.link(obj_handle)
+
+                    # bookkeep instance
+                    obk.add(class_name)
+
+                    # append to list of objects
+                    objs.append({
+                        'id_mask': '',
+                        'object_class_name': class_name,
+                        'object_class_id': obk[class_name]["id"],
+                        'object_id': obk[class_name]["instances"] - 1,
+                        'bpy': obj_handle,
+                        'visible': None,
+                        'dimensions': rgb_shape  # TODO: not implemented yet
+                    })
 
         # build masks id for compositor of the format _N_M, where N is the model
         # id, and M is the object id
-        w_class = ceil(log(len(self._obk), 10)) if len(self._obk) else 0  # format width for number of model types
-        for i, obj in enumerate(self.objs):
-            w_obj = ceil(log(self._obk[obj['object_class_name']]['instances'], 10))  # format width for same model
+        w_class = ceil(log(len(obk), 10)) if len(obk) else 0  # format width for number of model types
+        for i, obj in enumerate(objs):
+            w_obj = ceil(log(obk[obj['object_class_name']]['instances'], 10))  # format width for same model
             id_mask = f"_{obj['object_class_id']:0{w_class}}_{obj['object_id']:0{w_obj}}"
             obj['id_mask'] = id_mask
+
+        return objs
 
     def setup_compositor(self):
         self.renderman.setup_compositor(self.objs)
@@ -384,14 +429,20 @@ class WorkstationScenarios(interfaces.ABRScene):
         # get list of environment textures
         self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
 
-    def randomize_object_transforms(self):
+    def randomize_object_transforms(self, objs: list):
         """move all objects to random locations within their scenario dropzone,
-        and rotate them."""
+        and rotate them.
+        
+        Args:
+            objs(list): list of objects whose pose is randomized
+            
+        NOTE: the list must be mutable since we directly modify the objects w/o returning them
+        """
 
         # we need #objects * (3 + 3)  many random numbers, so let's just grab them all
         # at once
-        rnd = np.random.uniform(size=(len(self.objs), 3))
-        rnd_rot = np.random.rand(len(self.objs), 3)
+        rnd = np.random.uniform(size=(len(objs), 3))
+        rnd_rot = np.random.rand(len(objs), 3)
 
         # now, move each object to a random location (uniformly distributed) in
         # the scenario-dropzone. The location of a drop box is its centroid (as
@@ -402,7 +453,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         drop_location = bpy.data.objects[dropbox].location
         drop_scale = bpy.data.objects[dropbox].scale
 
-        for i, obj in enumerate(self.objs):
+        for i, obj in enumerate(objs):
             if obj['bpy'] is None:
                 continue
 
@@ -569,7 +620,7 @@ class WorkstationScenarios(interfaces.ABRScene):
 
             # randomize scene: move objects at random locations, and forward simulate physics
             self.randomize_environment_texture()
-            self.randomize_object_transforms()
+            self.randomize_object_transforms(self.objs + self.distractors)
             self.forward_simulate()
             
             # check visibility
