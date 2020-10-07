@@ -220,11 +220,14 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     # .blend file in the 'Proto' collection. You can also specify parts that were
     # presented above using the syntax 'parts.partname:count'
     target_objects = parts.sterngriff:4, parts.wuerfelverbinder_40x40:3, parts.hammerschraube:7, parts.winkel_60x60:5
-    # Similarly to target objects, specify the list of ABC objects to load
-    abc_objects = []
+    # Also we allow to select and set of objects to be dropped in the scene but 
+    # of which annotated information are NOT stored, i.e., they serve as distractors
+    distractor_objects = parts.tool_cap:3
+    # Finally, similarly to target objects, specify the list of ABC objects to load
+    abc_objects =
     # Specify number of random metallic materials to generate for ABC objects
     abc_color_count = 3
-
+    
 
     [multiview_setup]
     # List of cameras to use during multiview rendering
