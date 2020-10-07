@@ -51,6 +51,10 @@ Note that some configuration files, such as the WorkstationScenario
 configuration, allow additional/extended specifications. Details about these are
 described in their corresponding documentation.
 
+ATTENTION: when using ply_scale, the final behavior might be different between
+loading objects from .blend or from .ply since the intrinsic scales might
+be different within the two files.
+
 
 Setting configuration paramters on the command line
 ---------------------------------------------------
