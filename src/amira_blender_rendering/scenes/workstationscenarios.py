@@ -160,8 +160,10 @@ class WorkstationScenarios(interfaces.ABRScene):
 
         for part in self.config.parts.ply_scale:
             vs = self.config.parts.ply_scale[part]
+            # split strip and make numeric
             vs = [v.strip() for v in vs.split(',')]
             vs = [float(v) for v in vs]
+            # if single value given, apply to all axis
             if len(vs) == 1:
                 vs *= 3
             self.config.parts.ply_scale[part] = vs
@@ -317,7 +319,7 @@ class WorkstationScenarios(interfaces.ABRScene):
                         new_obj = bpy.context.object
                         new_obj.name = f'{class_name}.{j:03d}'
 
-                # rescale object according to ply scale
+                # rescale object according to ply scale if given in the config
                 try:
                     new_obj.scale = Vector(self.config.parts.ply_scale[class_name])
                 except KeyError:
