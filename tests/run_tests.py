@@ -119,10 +119,11 @@ def import_and_run_implemented_tests():
     test_geometry.main()
 
     # utils tests
-    from tests.utils import test_annotation, test_converters, test_camera
+    from tests.utils import test_annotation, test_converters, test_camera, test_io
     test_annotation.main()
     test_converters.main()
     test_camera.main()
+    test_io.main()
 
 
 if __name__ == "__main__":
