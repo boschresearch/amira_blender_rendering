@@ -59,8 +59,8 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scene_setup.forward_frames', 25, 'Number of frames in physics forward-simulation')
 
         # scenario: target objects
-        self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
-        self.add_param('scenario_setup.non_target_objects', [],
+        self.add_param('scenario_setup.target_objects', [], 'List of objects to drop in the scene for which annotated info are stored')
+        self.add_param('scenario_setup.distractor_objects', [], 'List of objects to drop in the scene for which info are NOT stored'
                        'List of objects visible in the scene but of which infos are not stored')
         
         # multiview configuration (if implemented)
@@ -124,8 +124,8 @@ class PandaTable(interfaces.ABRScene):
 
         # populate the scene with objects (target and non)
         self.objs = self.setup_objects(self.config.scenario_setup.target_objects, bpy_collection='TargetObjects')
-        self.nt_objs = self.setup_objects(self.config.scenario_setup.non_target_objects,
-                                          bpy_collection='NonTargetObjects')
+        self.distractors = self.setup_objects(self.config.scenario_setup.distractor_objects,
+                                              bpy_collection='DistractorObjects')
 
         # finally, setup the compositor
         self.setup_compositor()
@@ -331,7 +331,7 @@ class PandaTable(interfaces.ABRScene):
                 except KeyError:
                     pass
 
-                # move object to collection
+                # move object to collection: in case of debugging
                 try:
                     collection = bpy.data.collections[bpy_collection]
                 except KeyError:
@@ -341,6 +341,7 @@ class PandaTable(interfaces.ABRScene):
                 if new_obj.name not in collection.objects:
                     collection.objects.link(new_obj)
 
+                # bookkeep instance
                 obk.add(class_name)
 
                 # append all information
@@ -370,17 +371,14 @@ class PandaTable(interfaces.ABRScene):
         # get list of environment textures
         self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
 
-    def randomize_object_transforms(self, objs: list, are_target_objects: bool = False):
+    def randomize_object_transforms(self, objs: list):
         """move all objects to random locations within their scenario dropzone,
         and rotate them.
         
         Args:
             objs(list): list of objects whose pose is randomized.
         
-        Opt Args:
-            are_target_objects(bool): If True, the position is randomized a slightly differently
-
-        NB: the list of objects must be mutable since the method does not return but directly modify them!
+        NOTE: the list of objects must be mutable since the method does not return but directly modify them!
         """
 
         # we need #objects * (3 + 3)  many random numbers, so let's just grab them all
@@ -404,8 +402,6 @@ class PandaTable(interfaces.ABRScene):
             obj['bpy'].location.x = drop_location.x + (rnd[i, 0] - .5) * 2.0 * drop_scale[0]
             obj['bpy'].location.y = drop_location.y + (rnd[i, 1] - .5) * 2.0 * drop_scale[1]
             obj['bpy'].location.z = drop_location.z + (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
-            if are_target_objects:
-                obj['bpy'].location.z = drop_location.z + 2 * (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
             obj['bpy'].rotation_euler = Vector((rnd_rot[i, :] * np.pi))
 
             self.logger.info(f"Object {obj['object_class_name']}: {obj['bpy'].location}, {obj['bpy'].rotation_euler}")
@@ -528,7 +524,6 @@ class PandaTable(interfaces.ABRScene):
         else:
             raise ValueError(f'Selected render mode {self.render_mode} not currently supported')
        
-
         # some debug/logging options
         if self.config.logging.debug:
             # simple plot of generated camera locations
@@ -553,7 +548,7 @@ class PandaTable(interfaces.ABRScene):
 
             # randomize scene: move objects at random locations, and forward simulate physics
             self.randomize_environment_texture()
-            self.randomize_object_transforms(self.objs + self.nt_objs)
+            self.randomize_object_transforms(self.objs + self.distractors)
             self.forward_simulate()
             
             # check visibility
