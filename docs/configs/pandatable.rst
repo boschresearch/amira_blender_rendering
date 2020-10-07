@@ -214,8 +214,9 @@ were used, have a look at `config/pandatable_example.cfg`.
     # .blend file in the 'Proto' collection. You can also specify parts that were
     # presented above using the syntax 'parts.partname:count'
     target_objects = parts.sterngriff:4, parts.wuerfelverbinder_40x40:3, parts.hammerschraube:7, parts.winkel_60x60:5
-    # Select additional objects to render in the scene but of which no information are saved
-    non_target_objects = []
+    # Similarly we allow to select additional objects to drop in the environment for which
+    # annotated information are NOT stored, i.e., they serve as distractors
+    distractor_objects = []
 
     [multiview_setup]
     # List of cameras to use during multiview rendering
