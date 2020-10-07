@@ -310,15 +310,22 @@ class PandaTable(interfaces.ABRScene):
                     if os.path.exists(blendfile):
                         # this is a blender file, so we should load it
                         # we can now load the object into blender
-                        blnd.append_object(blendfile, class_name)
+                        # try-except logic to handle objects from same blend file but different
+                        # class names to allow loading same objects with e.g., different scales
+                        try:
+                            bpy_obj_name = self.config.parts['name'][class_name]
+                        except KeyError:
+                            bpy_obj_name = class_name
+                        blnd.append_object(blendfile, bpy_obj_name)
                         # NOTE: bpy.context.object is **not** the object that we are
                         # interested in here! We need to select it via original name
                         # first, then we rename it to be able to select additional
                         # objects later on
-                        new_obj = bpy.data.objects[class_name]
+                        new_obj = bpy.data.objects[bpy_obj_name]
                         new_obj.name = f'{class_name}.{j:03d}'
                     else:
                         # no blender file given, so we will load the PLY file
+                        # NOTE: no try-except logic for ply since we are not binded to object names as for .blend
                         ply_path = expandpath(self.config.parts.ply[class_name], check_file=True)
                         bpy.ops.import_mesh.ply(filepath=ply_path)
                         # here we can use bpy.context.object!

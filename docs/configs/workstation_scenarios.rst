@@ -159,6 +159,9 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     #
     # Note: We will not automatically add rigid body dynamics to ply-only models!
     #
+    # ATTENTION: when using ply_scale, the final behavior might be different between
+    #            loading objects from .blend or from .ply since the intrinsic scales might
+    #            be different within the two files.
 
     # The first example is a "hammerschraube" (hammer head screw)
     hammerschraube = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
@@ -180,6 +183,27 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     ply.wuerfelverbinder_40x0 = $AMIRA_DATA_GFX/cad/rexroth/wuerfelverbinder_40x40_3.ply
     ply_scale.wuerfelverbinder_40x40 = 0.001
 
+    # a flanged nut
+    bundmutter_m8 = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.blend
+    ply.bundmutter_m8 = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.ply
+    ply_scale.bundmutter_m8 = 0.001
+
+    # it is also possible to load objects from the same blend file
+    # but using a different class name. This will be treated as different
+    # objects in the annotations. Useful for e.g., loading same objects
+    # with different scales
+    bundmutter_m8_A = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.blend
+    name.bundmutter_m8_A = bundmutter_m8
+    ply.bundmutter_m8_A = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.ply
+    ply_scale.bundmutter_m8_A = 0.003
+
+    # similarly we can do with ply files. In this case, it is not
+    # necessary to define a source name with the `name` tag since
+    # when loading from PLY we are not binded to object names.
+    bundmutter_m8_B =
+    ply.bundmutter_m8_B = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.ply
+    ply_scale.bundmutter_m8_B = 0.003
+
     # object 01 from the T-Less dataset
     tless_obj_01 = $AMIRA_DATA_GFX/cad/tless/blender/obj_01.blend
     ply.tless_obj_01 = $AMIRA_DATA_GFX/cad/tless/models/obj_01.ply
@@ -195,21 +219,6 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     ply.tless_obj_13 = $AMIRA_DATA_GFX/cad/tless/models/obj_13.ply
     ply_scale.tless_obj_13 = 0.001
 
-    # object 20 from the T-Less dataset
-    tless_obj_20 = $AMIRA_DATA_GFX/cad/tless/blender/obj_20.blend
-    ply.tless_obj_20 = $AMIRA_DATA_GFX/cad/tless/models/obj_20.ply
-    ply_scale.tless_obj_20 = 0.001
-
-    # object 27 from the T-Less dataset
-    tless_obj_27 = $AMIRA_DATA_GFX/cad/tless/blender/obj_27.blend
-    ply.tless_obj_27 = $AMIRA_DATA_GFX/cad/tless/models/obj_27.ply
-    ply_scale.tless_obj_27 = 0.001
-
-    # add a PLY only entry
-    # tool_cap =
-    # ply.tool_cap = $AMIRA_DATASETS/CADModels/tool_cap.ply
-    # ply_scale.tool_cap = 0.010, 0.010, 0.010
-
     [scenario_setup]
     # At the moment, the 6 different scenarios in workstation_scenarios.blend are
     # simply enumerated. Have a look at the .blend file for the order in which they
@@ -222,7 +231,7 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     target_objects = parts.sterngriff:4, parts.wuerfelverbinder_40x40:3, parts.hammerschraube:7, parts.winkel_60x60:5
     # Also we allow to select and set of objects to be dropped in the scene but 
     # of which annotated information are NOT stored, i.e., they serve as distractors
-    distractor_objects = parts.tool_cap:3
+    distractor_objects = parts.tless_obj_06:3
     # Finally, similarly to target objects, specify the list of ABC objects to load
     abc_objects =
     # Specify number of random metallic materials to generate for ABC objects
