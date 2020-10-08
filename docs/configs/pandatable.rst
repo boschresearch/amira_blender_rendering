@@ -109,10 +109,20 @@ were used, have a look at `config/pandatable_example.cfg`.
     #   Example:
     #       hammerschraube = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
     #
-    #   Note: The object name *must* correspond to the name that the object has in
-    #   the blender file. They will be loaded on-demand when setting up the
-    #   scenario.
+    #   Note: If no further configs are set, the object name *must* correspond 
+    #   to the name that the object has in the blender file. 
+    #   They will be loaded on-demand when setting up the scenario.
+    #   Loading objects from the same .blend file but with different names is
+    #   possible by using the `name.part_name` tag.
+    #   This might be useful in case you want to load the same object but with
+    #   different scale factors (see below for the use of blend_scale).
     #
+    #   Example:
+    #       my_cool_name = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
+    #       name.my_cool_name = hammerschraube
+    #
+    #   The `name.part_name` tag *must* correspond to the name the object has in the
+    #   blender file. After loading, the object name will be overwritten by `my_cool_name`.  
     #
     # 2) blender + PLY
     #   This variant is useful when you want to use the dataset later on and need
@@ -129,14 +139,18 @@ were used, have a look at `config/pandatable_example.cfg`.
     #
     #   The format to specify the ply-file and scale factor is:
     #       ply.part_name = path/to/ply
-    #       scale.part_name = 1.0, 1.0, 1.0
+    #       ply_scale.part_name = 1.0, 1.0, 1.0
+    #
     #   Where the scale is a vector, consisting of the scaling in X, Y, and Z
     #   dimensions.
     #
     #   Example:
     #       hammerschraube = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
     #       ply.hammerschraube = $AMIRA_DATA_PERCEPTION/CADModels/rexroth/
-    #       scale.hammerschraube = 0.001, 0.001, 0.001
+    #       ply_scale.hammerschraube = 0.001, 0.001, 0.001
+    #
+    #   However we also allow to scale objects loaded directly from .blend files.
+    #   For this, use the correpsonding `blend_scale.part_name` config tag.
     #
     # 3) PLY only
     #   In case you only have access to a PLY file, you can specify everything
@@ -151,13 +165,12 @@ were used, have a look at `config/pandatable_example.cfg`.
     #   blender path name. This name will be required if you want to specify the
     #   target_objects below
     #
-    #
     # Note: Make sure that in your blender files the parts are active rigid objects with
     #       proper weight and sensitivity margin!
     #
     # Note: We will not automatically add rigid body dynamics to ply-only models!
     # 
-    # ATTENTION: when using ply_scale, the final behavior might be different between
+    # ATTENTION: when scaling objects the final behavior might be different between
     #            loading objects from .blend or from .ply since the intrinsic scales might
     #            be different within the two files.
 
@@ -192,8 +205,7 @@ were used, have a look at `config/pandatable_example.cfg`.
     # with different scales
     bundmutter_m8_A = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.blend
     name.bundmutter_m8_A = bundmutter_m8
-    ply.bundmutter_m8_A = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.ply
-    ply_scale.bundmutter_m8_A = 0.003
+    blend_scale.bundmutter_m8_A = 0.7
 
     # similarly we can do with ply files. In this case, it is not
     # necessary to define a source name with the `name` tag since

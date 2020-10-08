@@ -87,8 +87,9 @@ class PandaTable(interfaces.ABRScene):
 
         # extract configuration, then build and activate a split config
         self.config = kwargs.get('config', PandaTableConfiguration())
-        if self.config.dataset.scene_type.lower() != 'PandaTable'.lower():
-            raise RuntimeError(f"Invalid configuration of type {self.config.dataset.scene_type} for class PandaTable")
+        # this check that the given configuration is (or inherits from) of the correct type
+        if not isinstance(self.config, PandaTableConfiguration):
+            raise RuntimeError(f"Invalid configuration of type {type(self.config)} for class PandaTable")
         
         # determine if we are rendering in multiview mode
         self.render_mode = kwargs.get('render_mode', 'default')
@@ -146,19 +147,33 @@ class PandaTable(interfaces.ABRScene):
             self.logger.error(f'render mode {self.render_mode} currently not supported')
             raise ValueError(f'render mode {self.render_mode} currently not supported')
 
-        # convert all scaling factors from str to list of floats
-        if 'ply_scale' not in self.config.parts:
-            return
+        # convert (PLY and blend) scaling factors from str to list of floats
+        def _convert_scaling(key: str, config):
+            """
+            Convert scaling factors from string to (list of) floats
+            
+            Args:
+                key(str): string to identify prescribed scaling
+                config(Configuration): object to modify
 
-        for part in self.config.parts.ply_scale:
-            vs = self.config.parts.ply_scale[part]
-            # split strip and make numeric
-            vs = [v.strip() for v in vs.split(',')]
-            vs = [float(v) for v in vs]
-            # if single value given, apply to all axis
-            if len(vs) == 1:
-                vs *= 3
-            self.config.parts.ply_scale[part] = vs
+            Return:
+                none: directly update given "config" object
+            """
+            if key not in config:
+                return
+
+            for part in config[key]:
+                vs = config[key][part]
+                # split strip and make numeric
+                vs = [v.strip() for v in vs.split(',')]
+                vs = [float(v) for v in vs]
+                # if single value given, apply to all axis
+                if len(vs) == 1:
+                    vs *= 3
+                config[key][part] = vs
+
+        _convert_scaling('ply_scale', self.config.parts)
+        _convert_scaling('blend_scale', self.config.parts)
 
     def setup_dirinfo(self):
         """Setup directory information for all cameras.
@@ -322,6 +337,13 @@ class PandaTable(interfaces.ABRScene):
                         # objects later on
                         new_obj = bpy.data.objects[bpy_obj_name]
                         new_obj.name = f'{class_name}.{j:03d}'
+                        # try to rescale object according to its blend_scale if given in the config
+                        try:
+                            new_obj.scale = Vector(self.config.parts.blend_scale[class_name])
+                            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True, properties=False)
+                        except KeyError:
+                            # log and keep going
+                            self.logger.info(f'No blend_scale for obj {class_name} given. Skipping!')
                     else:
                         # no blender file given, so we will load the PLY file
                         # NOTE: no try-except logic for ply since we are not binded to object names as for .blend
@@ -330,13 +352,14 @@ class PandaTable(interfaces.ABRScene):
                         # here we can use bpy.context.object!
                         new_obj = bpy.context.object
                         new_obj.name = f'{class_name}.{j:03d}'
-
-                # rescale object according to ply scale if given in the config
-                try:
-                    new_obj.scale = Vector(self.config.parts.ply_scale[class_name])
-                except KeyError:
-                    pass
-
+                        # try to rescale object according to its ply_scale if given in the config
+                        try:
+                            new_obj.scale = Vector(self.config.parts.ply_scale[class_name])
+                            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True, properties=False)
+                        except KeyError:
+                            # log and keep going
+                            self.logger.info(f'No ply_scale for obj {class_name} given. Skipping!')
+                
                 # move object to collection: in case of debugging
                 try:
                     collection = bpy.data.collections[bpy_collection]
@@ -428,6 +451,7 @@ class PandaTable(interfaces.ABRScene):
         scene = bpy.context.scene
         for i in range(self.config.scene_setup.forward_frames):
             scene.frame_set(i + 1)
+        self.logger.info(f'forward simulation: done!')
 
     def activate_camera(self, cam_name: str):
         # first get the camera name. this depends on the scene (blend file)
