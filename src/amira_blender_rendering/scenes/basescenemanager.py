@@ -21,6 +21,7 @@ import bpy
 from amira_blender_rendering.utils import blender as blnd
 from amira_blender_rendering.utils.logging import get_logger
 
+
 class BaseSceneManager():
     """Class for arbitrary scenes that should be set up for rendering data.
 
