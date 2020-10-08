@@ -59,8 +59,8 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scene_setup.forward_frames', 25, 'Number of frames in physics forward-simulation')
 
         # scenario: target objects
-        self.add_param('scenario_setup.target_objects', [], 'List of all target objects to drop in environment')
-        self.add_param('scenario_setup.non_target_objects', [],
+        self.add_param('scenario_setup.target_objects', [], 'List of objects to drop in the scene for which annotated info are stored')
+        self.add_param('scenario_setup.distractor_objects', [], 'List of objects to drop in the scene for which info are NOT stored'
                        'List of objects visible in the scene but of which infos are not stored')
         
         # multiview configuration (if implemented)
@@ -87,8 +87,9 @@ class PandaTable(interfaces.ABRScene):
 
         # extract configuration, then build and activate a split config
         self.config = kwargs.get('config', PandaTableConfiguration())
-        if self.config.dataset.scene_type.lower() != 'PandaTable'.lower():
-            raise RuntimeError(f"Invalid configuration of type {self.config.dataset.scene_type} for class PandaTable")
+        # this check that the given configuration is (or inherits from) of the correct type
+        if not isinstance(self.config, PandaTableConfiguration):
+            raise RuntimeError(f"Invalid configuration of type {type(self.config)} for class PandaTable")
         
         # determine if we are rendering in multiview mode
         self.render_mode = kwargs.get('render_mode', 'default')
@@ -124,8 +125,8 @@ class PandaTable(interfaces.ABRScene):
 
         # populate the scene with objects (target and non)
         self.objs = self.setup_objects(self.config.scenario_setup.target_objects, bpy_collection='TargetObjects')
-        self.nt_objs = self.setup_objects(self.config.scenario_setup.non_target_objects,
-                                          bpy_collection='NonTargetObjects')
+        self.distractors = self.setup_objects(self.config.scenario_setup.distractor_objects,
+                                              bpy_collection='DistractorObjects')
 
         # finally, setup the compositor
         self.setup_compositor()
@@ -146,15 +147,33 @@ class PandaTable(interfaces.ABRScene):
             self.logger.error(f'render mode {self.render_mode} currently not supported')
             raise ValueError(f'render mode {self.render_mode} currently not supported')
 
-        # convert all scaling factors from str to list of floats
-        if 'ply_scale' not in self.config.parts:
-            return
+        # convert (PLY and blend) scaling factors from str to list of floats
+        def _convert_scaling(key: str, config):
+            """
+            Convert scaling factors from string to (list of) floats
+            
+            Args:
+                key(str): string to identify prescribed scaling
+                config(Configuration): object to modify
 
-        for part in self.config.parts.ply_scale:
-            vs = self.config.parts.ply_scale[part]
-            vs = [v.strip() for v in vs.split(',')]
-            vs = [float(v) for v in vs]
-            self.config.parts.ply_scale[part] = vs
+            Return:
+                none: directly update given "config" object
+            """
+            if key not in config:
+                return
+
+            for part in config[key]:
+                vs = config[key][part]
+                # split strip and make numeric
+                vs = [v.strip() for v in vs.split(',')]
+                vs = [float(v) for v in vs]
+                # if single value given, apply to all axis
+                if len(vs) == 1:
+                    vs *= 3
+                config[key][part] = vs
+
+        _convert_scaling('ply_scale', self.config.parts)
+        _convert_scaling('blend_scale', self.config.parts)
 
     def setup_dirinfo(self):
         """Setup directory information for all cameras.
@@ -209,7 +228,8 @@ class PandaTable(interfaces.ABRScene):
         """
 
         cam_str = self.config.scene_setup.cameras[0]
-        cam = bpy.data.objects[f'{cam_str}'].data
+        cam_name = self.get_camera_name(cam_str)
+        cam = bpy.data.objects[cam_name].data
 
         # get the effective intrinsics
         effective_intrinsic = camera_utils.get_intrinsics(bpy.context.scene, cam)
@@ -228,10 +248,8 @@ class PandaTable(interfaces.ABRScene):
         """
         scene = bpy.context.scene
         for cam in self.config.scene_setup.cameras:
-            # first get the camera name. this depends on the scene (blend file)
-            # and is of the format CameraName.XXX, where XXX is a number with
-            # leading zeros
-            cam_name = f"{cam}"
+            # first get the camera name. This depends on the scene (blend file)
+            cam_name = self.get_camera_name(cam)
             # select the camera. Blender often operates on the active object, to
             # make sure that this happens here, we select it
             blnd.select_object(cam_name)
@@ -306,22 +324,43 @@ class PandaTable(interfaces.ABRScene):
                     if os.path.exists(blendfile):
                         # this is a blender file, so we should load it
                         # we can now load the object into blender
-                        blnd.append_object(blendfile, class_name)
+                        # try-except logic to handle objects from same blend file but different
+                        # class names to allow loading same objects with e.g., different scales
+                        try:
+                            bpy_obj_name = self.config.parts['name'][class_name]
+                        except KeyError:
+                            bpy_obj_name = class_name
+                        blnd.append_object(blendfile, bpy_obj_name)
                         # NOTE: bpy.context.object is **not** the object that we are
                         # interested in here! We need to select it via original name
                         # first, then we rename it to be able to select additional
                         # objects later on
-                        new_obj = bpy.data.objects[class_name]
+                        new_obj = bpy.data.objects[bpy_obj_name]
                         new_obj.name = f'{class_name}.{j:03d}'
+                        # try to rescale object according to its blend_scale if given in the config
+                        try:
+                            new_obj.scale = Vector(self.config.parts.blend_scale[class_name])
+                            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True, properties=False)
+                        except KeyError:
+                            # log and keep going
+                            self.logger.info(f'No blend_scale for obj {class_name} given. Skipping!')
                     else:
                         # no blender file given, so we will load the PLY file
+                        # NOTE: no try-except logic for ply since we are not binded to object names as for .blend
                         ply_path = expandpath(self.config.parts.ply[class_name], check_file=True)
                         bpy.ops.import_mesh.ply(filepath=ply_path)
                         # here we can use bpy.context.object!
                         new_obj = bpy.context.object
                         new_obj.name = f'{class_name}.{j:03d}'
-
-                # move object to collection
+                        # try to rescale object according to its ply_scale if given in the config
+                        try:
+                            new_obj.scale = Vector(self.config.parts.ply_scale[class_name])
+                            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True, properties=False)
+                        except KeyError:
+                            # log and keep going
+                            self.logger.info(f'No ply_scale for obj {class_name} given. Skipping!')
+                
+                # move object to collection: in case of debugging
                 try:
                     collection = bpy.data.collections[bpy_collection]
                 except KeyError:
@@ -331,6 +370,7 @@ class PandaTable(interfaces.ABRScene):
                 if new_obj.name not in collection.objects:
                     collection.objects.link(new_obj)
 
+                # bookkeep instance
                 obk.add(class_name)
 
                 # append all information
@@ -360,17 +400,14 @@ class PandaTable(interfaces.ABRScene):
         # get list of environment textures
         self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
 
-    def randomize_object_transforms(self, objs: list, are_target_objects: bool = False):
+    def randomize_object_transforms(self, objs: list):
         """move all objects to random locations within their scenario dropzone,
         and rotate them.
         
         Args:
             objs(list): list of objects whose pose is randomized.
         
-        Opt Args:
-            are_target_objects(bool): If True, the position is randomized a slightly differently
-
-        NB: the list of objects must be mutable since the method does not return but directly modify them!
+        NOTE: the list of objects must be mutable since the method does not return but directly modify them!
         """
 
         # we need #objects * (3 + 3)  many random numbers, so let's just grab them all
@@ -394,8 +431,6 @@ class PandaTable(interfaces.ABRScene):
             obj['bpy'].location.x = drop_location.x + (rnd[i, 0] - .5) * 2.0 * drop_scale[0]
             obj['bpy'].location.y = drop_location.y + (rnd[i, 1] - .5) * 2.0 * drop_scale[1]
             obj['bpy'].location.z = drop_location.z + (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
-            if are_target_objects:
-                obj['bpy'].location.z = drop_location.z + 2 * (rnd[i, 2] - .5) * 2.0 * drop_scale[2]
             obj['bpy'].rotation_euler = Vector((rnd_rot[i, :] * np.pi))
 
             self.logger.info(f"Object {obj['object_class_name']}: {obj['bpy'].location}, {obj['bpy'].rotation_euler}")
@@ -416,6 +451,7 @@ class PandaTable(interfaces.ABRScene):
         scene = bpy.context.scene
         for i in range(self.config.scene_setup.forward_frames):
             scene.frame_set(i + 1)
+        self.logger.info(f'forward simulation: done!')
 
     def activate_camera(self, cam_name: str):
         # first get the camera name. this depends on the scene (blend file)
@@ -433,6 +469,10 @@ class PandaTable(interfaces.ABRScene):
         blnd.select_object(name)
         # set pose
         bpy.data.objects[name].location = location
+
+    def get_camera_name(self, cam_str):
+        """Get bpy camera name from camera string in config. This depends on the loaded blend file"""
+        return f"{cam_str}"
 
     def test_visibility(self, camera_name: str, locations: np.array):
         """Test whether given camera sees all target objects
@@ -503,19 +543,29 @@ class PandaTable(interfaces.ABRScene):
             return False
         scn_format_width = int(ceil(log(self.config.dataset.scene_count, 10)))
         
-        cameras_locations, original_cameras_locations = camera_utils.generate_multiview_cameras_locations(
-            num_locations=self.config.dataset.view_count,
-            mode=self.config.multiview_setup.mode,
-            camera_names=self.config.scene_setup.cameras,
-            config=self.config.multiview_setup.mode_config)
-
+        camera_names = [self.get_camera_name(cam_str) for cam_str in self.config.scene_setup.cameras]
+        if self.render_mode == 'default':
+            cameras_locations = camera_utils.get_current_cameras_locations(camera_names)
+            for cam_name, cam_location in cameras_locations.items():
+                cameras_locations[cam_name] = np.reshape(cam_location, (1, 3))
+        
+        elif self.render_mode == 'multiview':
+            cameras_locations, _ = camera_utils.generate_multiview_cameras_locations(
+                num_locations=self.config.dataset.view_count,
+                mode=self.config.multiview_setup.mode,
+                camera_names=camera_names,
+                config=self.config.multiview_setup.mode_config)
+        
+        else:
+            raise ValueError(f'Selected render mode {self.render_mode} not currently supported')
+       
         # some debug/logging options
         if self.config.logging.debug:
             # simple plot of generated camera locations
             if self.config.logging.plot:
                 from amira_blender_rendering.math.curves import plot_points
 
-                for cam_name in self.config.scene_setup.cameras:
+                for cam_name in camera_names:
                     plot_points(np.array(cameras_locations[cam_name]),
                                 bpy.context.scene.objects[cam_name],
                                 plot_axis=self.config.logging.plot_axis,
@@ -523,14 +573,9 @@ class PandaTable(interfaces.ABRScene):
 
             # save all generated camera locations to .blend for later debug
             if self.config.logging.save_to_blend:
-                for i_cam, cam_name in enumerate(self.config.scene_setup.cameras):
+                for i_cam, cam_name in enumerate(camera_names):
                     self.logger.info('For debugging purposes, saving all cameras locations to .blend')
                     self._save_to_blend(i_cam, camera_locations=cameras_locations[cam_name])
-     
-        if self.render_mode == 'default':
-            # reset camera locations to original and put them in the correct shape
-            for cam_name, cam_location in original_cameras_locations.items():
-                cameras_locations[cam_name] = np.reshape(cam_location, (1, 3))
 
         # control loop for the number of static scenes to render
         scn_counter = 0
@@ -538,7 +583,7 @@ class PandaTable(interfaces.ABRScene):
 
             # randomize scene: move objects at random locations, and forward simulate physics
             self.randomize_environment_texture()
-            self.randomize_object_transforms(self.objs + self.nt_objs)
+            self.randomize_object_transforms(self.objs + self.distractors)
             self.forward_simulate()
             
             # check visibility
@@ -555,7 +600,9 @@ class PandaTable(interfaces.ABRScene):
                 continue
 
             # loop over cameras
-            for i_cam, cam_name in enumerate(self.config.scene_setup.cameras):
+            for i_cam, cam_str in enumerate(self.config.scene_setup.cameras):
+                # get bpy object camera name
+                cam_name = self.get_camera_name(cam_str)
 
                 # check whether we broke the for-loop responsible for image generation for
                 # multiple camera views and repeat the frame by re-generating the static scene
@@ -574,7 +621,7 @@ class PandaTable(interfaces.ABRScene):
                 # loop over locations
                 for view_counter, cam_loc in enumerate(cam_locations):
 
-                    self.logger.info(f"Generating image for camera {cam_name}: "
+                    self.logger.info(f"Generating image for camera {cam_str}: "
                                      f"scene {scn_counter + 1}/{self.config.dataset.scene_count}, "
                                      f"view {view_counter + 1}/{self.config.dataset.view_count}")
 
@@ -703,7 +750,7 @@ class PandaTable(interfaces.ABRScene):
    
         # create and link temporary collection
         if camera_locations is not None:
-            cam_name = self.config.scene_setup.cameras[camera_index]
+            cam_name = self.get_camera_name(self.config.scene_setup.cameras[camera_index])
             tmp_cam_coll = bpy.data.collections.new('TemporaryCameras')
             bpy.context.scene.collection.children.link(tmp_cam_coll)
 
