@@ -118,22 +118,26 @@ def import_and_run_implemented_tests():
     test_conversions.main()
     test_geometry.main()
 
+    # misc (aka spare) tests
+    from tests.misc import test_config, test_interfaces, test_postprocessing
+    test_config.main()
+    test_interfaces.main()
+    test_postprocessing.main()
+
+    # node tests
+    # TODO
+
+    # scenes tests
+    from tests.scenes import test_threepointlighting, test_basescenemanager
+    test_threepointlighting.main()
+    test_basescenemanager.main()
+
     # utils tests
     from tests.utils import test_annotation, test_converters, test_camera, test_io
     test_annotation.main()
     test_converters.main()
     test_camera.main()
     test_io.main()
-
-    # scenes tests
-    from tests.scenes import test_threepointlighting
-    test_threepointlighting.main()
-
-    # additional spare tests
-    from tests.misc import test_config, test_interfaces, test_postprocessing
-    test_config.main()
-    test_interfaces.main()
-    test_postprocessing.main()
 
 
 if __name__ == "__main__":
