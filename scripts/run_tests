@@ -43,7 +43,7 @@ if __name__ == "__main__":
     args = parse_arguments()
     
     # build command and arguments to run
-    cmd = ['blender', '-b', '-P', os.path.join(os.getcwd(), 'tests', 'run_tests.py'), '--']
+    cmd = ['blender', '-b', '-P', os.path.join(os.getcwd(), 'tests', '__main__.py'), '--']
     if args.abr_path is not None:
         cmd += ['--abr-path', args.abr_path]
  

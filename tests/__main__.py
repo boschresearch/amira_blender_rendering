@@ -125,6 +125,10 @@ def import_and_run_implemented_tests():
     test_camera.main()
     test_io.main()
 
+    # scenes tests
+    from tests.scenes import test_threepointlighting
+    test_threepointlighting.main()
+
     # additional spare tests
     from tests.misc import test_config, test_interfaces, test_postprocessing
     test_config.main()
