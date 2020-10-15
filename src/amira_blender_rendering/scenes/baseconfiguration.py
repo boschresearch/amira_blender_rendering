@@ -54,6 +54,7 @@ class BaseConfiguration(Configuration):
         self.add_param('render_setup.integrator', 'BRANCHED_PATH', 'Integrator used during path tracing. Either of PATH, BRANCHED_PATH')
         self.add_param('render_setup.denoising', True, 'Use denoising algorithms during rendering')
         self.add_param('render_setup.samples', 128, 'Samples to use during rendering')
+        self.add_param('render_setup.color_depth', 16, 'Depth for color (RGB) image [16bit, 8bit]. Default: 16')
         self.add_param('render_setup.allow_occlusions', False, 'If True, allow objects to be occluded from camera')
 
         # logging

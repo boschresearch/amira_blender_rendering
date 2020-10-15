@@ -146,7 +146,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         bpy.context.scene.view_layers[0].cycles.use_denoising = enable_denoising
         self.logger.info(f"Denoising enabled" if enable_denoising else f"Denoising disabled")
 
-    def setup_compositor(self, objs):
+    def setup_compositor(self, objs, **kw):
         """Setup output compositor nodes"""
         self.compositor = abr_nodes.CompositorNodesOutputRenderedObjects()
 
@@ -157,7 +157,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         # extracted into an independent schema file. Note that this does not
         # mean to use any xml garbage! Rather, it should be as plain as
         # possible.
-        self.compositor.setup_nodes(objs, scene=bpy.context.scene)
+        self.compositor.setup_nodes(objs, scene=bpy.context.scene, **kw)
 
     def render(self):
         bpy.ops.render.render(write_still=False)

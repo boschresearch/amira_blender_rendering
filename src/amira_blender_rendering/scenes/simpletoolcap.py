@@ -202,7 +202,7 @@ class SimpleToolCap(interfaces.ABRScene):
     def setup_compositor(self):
         # we let renderman handle the compositor. For this, we need to pass in a
         # list of objects
-        self.renderman.setup_compositor(self.objs)
+        self.renderman.setup_compositor(self.objs, color_depth=self.config.render_setup.color_depth)
 
     def setup_environment_textures(self):
         # get list of environment textures
