@@ -34,13 +34,16 @@ overwriting the default.blend file. Thus, we'll just set it once.
 
 """
 
+
 def bu_to_m(x):
     """Convert blender unit to meters. This is an identity function."""
     return x
 
+
 def bu_to_cm(x):
     """Convert blender units to cm."""
     return x * 100.0 if x is not None else x
+
 
 def bu_to_mm(x):
     """Convert blender units to mm."""

@@ -21,7 +21,7 @@ This file contains classes and prototypes that are shared with amira_perception.
 In particular, it specifies how rendering results should be stored.
 """
 
-from amira_blender_rendering.datastructures import filter_state_keys, DynamicStruct
+from amira_blender_rendering.datastructures import filter_state_keys
 from amira_blender_rendering.math.geometry import rotation_matrix_to_quaternion
 
 
@@ -44,13 +44,11 @@ class ABRScene():
         raise NotImplementedError()
 
 
-#
-#
 # NOTE: the functions and classes below were taken from amira_perception. Make
 #       sure to keep in sync as long as we don't have a core library that is
 #       restricted to such functionality
 #
-#
+# NOTE: unnecessary classes/methods have been pruned
 
 
 class ResultsCollection:
@@ -91,140 +89,6 @@ class ResultsCollection:
         if retain_keys is None:
             retain_keys = []
         return [r.state_dict(retain_keys) for r in self]
-
-    @staticmethod
-    def create_annotations(fname: str, results, retain_keys: list = None, **kwargs):
-        """Convert result into annotation as a list of dicts to be dumped
-
-        Args:
-            fname(.png): name of image where object are detected
-            results: DetectionResult object
-            retain_keys([]): list of keys to filer results
-
-        Returns:
-            annotations([dict]): list of dictionaries with annotated info
-                for each detected object in the same frame
-        """
-        if retain_keys is None:
-            retain_keys = []
-        annotations = []
-        for r in results:
-            data = r.state_dict(retain_keys)
-            # add file_name to identify corresponding frame
-            data['file_name'] = fname
-
-            if "mask_name" in kwargs:
-                data["mask_name"] = kwargs["mask_name"]
-
-            # convert numpy array to list, that it can be dumped as json
-            for k, v in data.items():
-                if isinstance(v, np.ndarray):
-                    data[k] = v.tolist()
-
-            annotations.append(data)
-        return annotations
-
-    @staticmethod
-    def dump_to_json(fpath: str, fname: str, data):
-        """Dump data to json
-
-        Args:
-            fpath: filepath (already expanded)
-            fname: filename (.json)
-            data: json serializable object
-        """
-        with open(expandpath(os.path.join(fpath, fname)), 'w') as f:
-            json.dump(data, f)
-
-    @staticmethod
-    def load_from_json(fpath: str, fname: str):
-        """Load data from fpath/fname
-
-        Args:
-            fpath: path to directory
-            fname: filename (.json)
-
-        Returns:
-            json data converted dict
-        """
-        with open(expandpath(os.path.join(fpath, fname)), 'r') as f:
-            data = json.load(f)
-        return data
-
-    @staticmethod
-    def build_directory_info(base_path: str):
-        """Build a dynamic struct with the directory configuration of a Results folder for RetinaNet.
-
-        The base_path should be expanded and not contain global variables or
-        other system dependent abbreviations.
-
-        Args:
-            base_path (str): path to the root directory of the dataset
-        """
-        # expand once again just to be sure
-        base_path = expandpath(base_path)
-
-        # initialize
-        dir_info = DynamicStruct()
-        dir_info.annotations = DynamicStruct()
-
-        # setup all path related information
-        dir_info.base_path = base_path
-        dir_info.annotations.base_path = os.path.join(dir_info.base_path, 'Annotations')
-        dir_info.annotations.detections = os.path.join(dir_info.annotations.base_path, 'Detections')
-        dir_info.annotations.groundtruths = os.path.join(dir_info.annotations.base_path, 'Groundtruths')
-        dir_info.images = os.path.join(dir_info.base_path, 'Images')
-
-        return dir_info
-
-    @staticmethod
-    def create_directory_structure(dir_info: DynamicStruct):
-        """Build information struct about the directory structure
-
-        Paths contained in dir_info are expected to be already expanded. That is,
-        it should not contain global variables or other system dependent
-        abbreviations.
-
-        Args:
-            dir_info (DynamicStruct): directory information for the dataset. See
-                `build_directory_info` for more information.
-        Returns:
-            bool: whether the directory structure already existed to be able to check for previous results
-        """
-        existing_results = True
-        if os.path.exists(dir_info.base_path):
-            if not os.path.isdir(dir_info.base_path):
-                raise RuntimeError("Output path '{}' exists but is not a directory".format(dir_info.base_path))
-
-        for dir in [dir_info.annotations.detections, dir_info.annotations.groundtruths, dir_info.images]:
-            if not os.path.exists(dir):
-                os.makedirs(dir)
-                existing_results = False
-        return existing_results
-
-    def draw_bbox(self, image):
-        """
-        If result in self._list is BBoxDetection, draw correspoding box to given image
-        """
-        _red = (255, 0, 0)
-        _green = (0, 255, 0)
-        _yellow = (255, 255, 0)
-        for r in self.get_results():
-            if isinstance(r, BBoxDetectionResult):
-                image = draw_bbox(
-                    image,
-                    r.score,
-                    r.class_name,
-                    r.bbox,
-                    textcolor=_yellow if r.type == 'detection' else _red,
-                    boxcolor=_green if r.type == 'detection' else _red)
-        return image
-
-    def draw_pose(self, image):
-        """
-        If result in self._list is PoseDetection, draw corresponding pose to given image
-        """
-        raise NotImplementedError
 
 
 class PoseRenderResult:
@@ -307,6 +171,9 @@ class PoseRenderResult:
                 "t": try_to_list(self.t_cam)
             }
         }
+        if self.dense_features is not None:
+            data['dense_features'] = try_to_list(self.dense_features)
+        
         return filter_state_keys(data, retain_keys)
 
 

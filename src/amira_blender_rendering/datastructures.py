@@ -23,19 +23,17 @@ Configuration class, which can read nested configs from ini files.
 """
 
 import copy
-from functools import partialmethod, partial
 import argparse
 import configparser
 import ast
 
-#
-#
+
 # NOTE: the functions and classes below were taken from amira_perception. Make
 #       sure to keep in sync as long as we don't have a core library that is
 #       restricted to such functionality
 #
 # NOTE: We do not use the logging classes in here
-#
+
 
 def flatten(l):
     """Flatten a nested list lst"""
