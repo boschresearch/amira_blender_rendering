@@ -20,6 +20,7 @@ import os
 import bpy
 from amira_blender_rendering.utils.logging import get_logger
 
+
 class CompositorNodesOutputRenderedObjects():
     """This class contains the setup of compositor nodes that is required for
     the RenderedObjects dataset. Using this class will set up FileOutput and ID
@@ -66,7 +67,6 @@ class CompositorNodesOutputRenderedObjects():
         self.path_backdrop = self.dirinfo.images.backdrop[len(prefix) + 1:]
         self.path_backdrop = os.path.join(self.path_backdrop, '')
 
-
     def __update_node_paths(self):
         """This function will update all base-path knowledge in the node editor"""
 
@@ -76,7 +76,6 @@ class CompositorNodesOutputRenderedObjects():
 
         n_output_file = nodes['RenderObjectsFileOutputNode']
         n_output_file.base_path = self.path_base
-
 
     # NOTE: setup was split into setup_nodes and setup_pathspec
     def setup_nodes(self, objs: list, scene: bpy.types.Scene = bpy.context.scene):
@@ -171,7 +170,6 @@ class CompositorNodesOutputRenderedObjects():
             self.sockets[f"s_obj_mask{obj['id_mask']}"] = s_obj_mask
 
         return self.sockets
-
 
     # NOTE: this function was called update, but was renamed
     def setup_pathspec(self, dirinfo, render_filename: str, objs: dict, scene: bpy.types.Scene = bpy.context.scene):
