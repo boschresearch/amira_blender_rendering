@@ -121,7 +121,6 @@ class CompositorNodesOutputRenderedObjects():
         n_output_file.format.file_format = 'PNG'
         n_output_file.format.color_mode = 'RGB'
         n_output_file.format.color_depth = str(kw.get('color_depth', 16))
-        print(n_output_file.format.color_depth)
 
         # setup sockets/slots. First is RGBA Image by default
         s_render = n_output_file.file_slots[0]
