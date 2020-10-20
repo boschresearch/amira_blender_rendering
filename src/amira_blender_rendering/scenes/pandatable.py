@@ -394,7 +394,7 @@ class PandaTable(interfaces.ABRScene):
         return objs
 
     def setup_compositor(self):
-        self.renderman.setup_compositor(self.objs)
+        self.renderman.setup_compositor(self.objs, color_depth=self.config.render_setup.color_depth)
 
     def setup_environment_textures(self):
         # get list of environment textures
