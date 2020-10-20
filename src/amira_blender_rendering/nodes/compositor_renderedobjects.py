@@ -78,7 +78,7 @@ class CompositorNodesOutputRenderedObjects():
         n_output_file.base_path = self.path_base
 
     # NOTE: setup was split into setup_nodes and setup_pathspec
-    def setup_nodes(self, objs: list, scene: bpy.types.Scene = bpy.context.scene):
+    def setup_nodes(self, objs: list, scene: bpy.types.Scene = bpy.context.scene, **kw):
         """Setup all compositor nodes that are required for exporting to the
         RenderObjects dataset format.
 
@@ -120,7 +120,7 @@ class CompositorNodesOutputRenderedObjects():
         # socket's use_node_format to False (see depth map as example)
         n_output_file.format.file_format = 'PNG'
         n_output_file.format.color_mode = 'RGB'
-        n_output_file.format.color_depth = '16'
+        n_output_file.format.color_depth = str(kw.get('color_depth', 16))
 
         # setup sockets/slots. First is RGBA Image by default
         s_render = n_output_file.file_slots[0]
