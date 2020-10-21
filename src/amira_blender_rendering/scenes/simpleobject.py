@@ -18,6 +18,7 @@
 
 # blender
 import bpy
+import os
 from mathutils import Vector, Matrix
 import pathlib
 from math import ceil, log
@@ -35,33 +36,35 @@ import amira_blender_rendering.math.geometry as abr_geom
 import amira_blender_rendering.interfaces as interfaces
 
 
-class SimpleToolCapConfiguration(abr_scenes.BaseConfiguration):
+class SimpleObjectConfiguration(abr_scenes.BaseConfiguration):
     def __init__(self):
-        super(SimpleToolCapConfiguration, self).__init__()
+        super(SimpleObjectConfiguration, self).__init__()
 
         # scene specific configuration
         # let's be able to specify environment textures
         self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images', 'Path to background images / environment textures')
+        self.add_param('scenario_setup.target_object', 'Tool.Cap', 'Define single target object to render')
+        self.add_param('scenario_setup.object_material', 'metal', 'Select object material ["plastic", "metal"]')
 
 
-class SimpleToolCap(interfaces.ABRScene):
+class SimpleObject(interfaces.ABRScene):
     """Simple toolcap scene in which we have three point lighting and can set
     some background image.
     """
     def __init__(self, **kwargs):
-        super(SimpleToolCap, self).__init__()
+        super(SimpleObject, self).__init__()
         self.logger = get_logger()
 
         # we make use of the RenderManager
         self.renderman = abr_scenes.RenderManager()
 
         # get the configuration, if one was passed in
-        self.config = kwargs.get('config', SimpleToolCapConfiguration())
+        self.config = kwargs.get('config', SimpleObjectConfiguration())
 
         # determine if we are rendering in multiview mode
         self.render_mode = kwargs.get('render_mode', 'default')
         if not self.render_mode == 'default':
-            self.logger.warn(f'SimpleToolCap scene supports only "default" render mode. Falling back to "default"')
+            self.logger.warn(f'{self.__class__} scene supports only "default" render mode. Falling back to "default"')
             self.render_mode = 'default'
 
         # we might have to post-process the configuration
@@ -101,19 +104,37 @@ class SimpleToolCap(interfaces.ABRScene):
         self.config.dataset.scene_count = self.config.dataset.image_count
 
         # log info
-        self.logger.info('The SimpleToolCap scene does not allow for occlusions --> Object always visible')
+        self.logger.info(f'{self.__class__} scene does not allow for occlusions --> Object always visible')
         self.config.render_setup.allow_occlusions = False
-        self.logger.info('The SimpleToolCap scene does not support multiview rendering.')
+        self.logger.info(f'{self.__class__} scene does not support multiview rendering.')
 
-        # convert all scaling factors from str to list of floats
-        if 'ply_scale' not in self.config.parts:
-            return
+        # convert (PLY and blend) scaling factors from str to list of floats
+        def _convert_scaling(key: str, config):
+            """
+            Convert scaling factors from string to (list of) floats
+            
+            Args:
+                key(str): string to identify prescribed scaling
+                config(Configuration): object to modify
 
-        for part in self.config.parts.ply_scale:
-            vs = self.config.parts.ply_scale[part]
-            vs = [v.strip() for v in vs.split(',')]
-            vs = [float(v) for v in vs]
-            self.config.parts.ply_scale[part] = vs
+            Return:
+                none: directly update given "config" object
+            """
+            if key not in config:
+                return
+
+            for part in config[key]:
+                vs = config[key][part]
+                # split strip and make numeric
+                vs = [v.strip() for v in vs.split(',')]
+                vs = [float(v) for v in vs]
+                # if single value given, apply to all axis
+                if len(vs) == 1:
+                    vs *= 3
+                config[key][part] = vs
+
+        _convert_scaling('ply_scale', self.config.parts)
+        _convert_scaling('blend_scale', self.config.parts)
 
     def setup_render_output(self):
         # setup render output dimensions. This is not set for a specific camera,
@@ -184,9 +205,8 @@ class SimpleToolCap(interfaces.ABRScene):
         # shader nodes might not reflect the correct sizes (the metal-tool-cap
         # material depends on an empty that is placed on top of the object.
         # scaling the empty will scale the texture)
-        self._import_mesh()
+        self._import_object()
         self._setup_material()
-        self._rescale_objects()
 
         # we also need to create a dictionary with the object for the compositor
         # to do its job, as well as the annotation generation
@@ -208,18 +228,49 @@ class SimpleToolCap(interfaces.ABRScene):
         # get list of environment textures
         self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
 
-    def _rescale_objects(self):
-        self.obj.scale = Vector(self.config.parts.ply_scale.tool_cap)
+    def _rescale_object(self, scale):
+        try:
+            self.obj.scale = Vector(self.config.parts[scale][self.config.scenario_setup.target_object])
+            bpy.ops.object.transform_apply(location=False, rotation=False, scale=True, properties=False)
+        except KeyError:
+            # log and keep going
+            self.logger.info(f'No scale for obj {self.obj.name} given. Skipping!')
 
-    def _import_mesh(self):
+    def _import_object(self):
         """Import the mesh of the cap from a ply file."""
-        path = expandpath(self.config.parts.ply.tool_cap)
-        bpy.ops.import_mesh.ply(filepath=path)
-        self.obj = bpy.context.object
-        self.obj.name = 'Tool.Cap'
+        bpy.ops.object.select_all(action='DESELECT')
+        class_name = expandpath(self.config.scenario_setup.target_object)
+        blendfile = expandpath(self.config.parts[class_name], check_file=False)
+        # try blender file
+        if os.path.exists(blendfile):
+            try:
+                bpy_obj_name = self.config.parts['name'][class_name]
+            except KeyError:
+                bpy_obj_name = class_name
+            blnd.append_object(blendfile, bpy_obj_name)
+            new_obj = bpy.data.objects[bpy_obj_name]
+            scale_type = 'blend_scale'
+        # if none given try ply
+        else:
+            ply_path = expandpath(self.config.parts.ply[class_name], check_file=True)
+            bpy.ops.import_mesh.ply(filepath=ply_path)
+            new_obj = bpy.context.object
+            scale_type = 'ply_scale'
+
+        new_obj.name = class_name
+        self.obj = new_obj
+        self._rescale_object(scale_type)
 
     def _setup_material(self):
         """Setup object material"""
+        available_materials = {
+            'metal': abr_nodes.material_metal_tool_cap,
+            'plastic': abr_nodes.material_3Dprinted_plastic
+        }
+
+        material = self.config.scenario_setup.object_material.lower()
+        if material not in available_materials:
+            raise ValueError(f'Requested material "{material}" is not supported')
 
         # make sure cap is selected
         blnd.select_object(self.obj.name)
@@ -231,8 +282,8 @@ class SimpleToolCap(interfaces.ABRScene):
 
         # add default material and setup nodes (without specifying empty, to get
         # it created automatically)
-        self.cap_mat = blnd.add_default_material(self.obj)
-        abr_nodes.material_metal_tool_cap.setup_material(self.cap_mat)
+        self.obj_mat = blnd.add_default_material(self.obj)
+        available_materials[material].setup_material(self.obj_mat)
 
     def randomize_object_transforms(self):
         """Set an arbitrary location and rotation for the object"""
