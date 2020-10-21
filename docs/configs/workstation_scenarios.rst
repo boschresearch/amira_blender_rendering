@@ -243,11 +243,7 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     target_objects = parts.sterngriff:4, parts.wuerfelverbinder_40x40:3, parts.hammerschraube:7, parts.winkel_60x60:5
     # Also we allow to select and set of objects to be dropped in the scene but 
     # of which annotated information are NOT stored, i.e., they serve as distractors
-<<<<<<< HEAD
-    distractor_objects = parts.tool_cap:3
-=======
     distractor_objects = parts.tless_obj_06:3
->>>>>>> master
     # Finally, similarly to target objects, specify the list of ABC objects to load
     abc_objects =
     # Specify number of random metallic materials to generate for ABC objects
