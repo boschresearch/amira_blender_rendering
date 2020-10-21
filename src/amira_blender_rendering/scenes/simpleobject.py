@@ -35,7 +35,9 @@ import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 import amira_blender_rendering.interfaces as interfaces
 
+_scene_name = 'SimpleObject'
 
+@abr_scenes.register(name=_scene_name, type='config')
 class SimpleObjectConfiguration(abr_scenes.BaseConfiguration):
     def __init__(self):
         super(SimpleObjectConfiguration, self).__init__()
@@ -47,8 +49,9 @@ class SimpleObjectConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scenario_setup.object_material', 'metal', 'Select object material ["plastic", "metal"]')
 
 
+@abr_scenes.register(name=_scene_name, type='scene')
 class SimpleObject(interfaces.ABRScene):
-    """Simple toolcap scene in which we have three point lighting and can set
+    """Simple scene with a single object in which we have three point lighting and can set
     some background image.
     """
     def __init__(self, **kwargs):
