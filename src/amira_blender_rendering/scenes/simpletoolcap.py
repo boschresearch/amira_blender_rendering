@@ -34,7 +34,10 @@ import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 import amira_blender_rendering.interfaces as interfaces
 
+_scene_name = 'SimpleToolCap'
 
+
+@abr_scenes.register(name=_scene_name, type='config')
 class SimpleToolCapConfiguration(abr_scenes.BaseConfiguration):
     def __init__(self):
         super(SimpleToolCapConfiguration, self).__init__()
@@ -44,6 +47,7 @@ class SimpleToolCapConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images', 'Path to background images / environment textures')
 
 
+@abr_scenes.register(name=_scene_name, type='scene')
 class SimpleToolCap(interfaces.ABRScene):
     """Simple toolcap scene in which we have three point lighting and can set
     some background image.
