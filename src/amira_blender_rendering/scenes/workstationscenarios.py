@@ -42,7 +42,10 @@ import amira_blender_rendering.interfaces as interfaces
 from amira_blender_rendering.abc_importer import ABCImporter
 from amira_blender_rendering.utils.annotation import ObjectBookkeeper
 
+_scene_name = 'WorkstationScenarios'
 
+
+@abr_scenes.register(name=_scene_name, type='config')
 class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
     """This class specifies all configuration options for WorkstationScenarios"""
 
@@ -83,6 +86,7 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         # HINT: these object lists above are parsed as strings, later on split with "," separator
 
 
+@abr_scenes.register(name=_scene_name, type='scene')
 class WorkstationScenarios(interfaces.ABRScene):
     """base class for all workstation scenarios"""
 
