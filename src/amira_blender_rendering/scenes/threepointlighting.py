@@ -8,7 +8,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http:#www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -32,8 +32,7 @@ class ThreePointLighting():
         super(ThreePointLighting, self).__init__()
         self.setup_three_point_lighting()
 
-
-    def setup_three_point_lighting(self, target = Vector((0.0, 0.0, 0.0))):
+    def setup_three_point_lighting(self, target=Vector((0.0, 0.0, 0.0))):
 
         # Key Light
         bpy.ops.object.light_add(type='AREA')
@@ -64,8 +63,3 @@ class ThreePointLighting():
         self.back_light.data.size = 5.0
         self.back_light.data.node_tree.nodes['Emission'].inputs['Strength'].default_value = 25.0
         blnd.look_at(self.back_light, target)
-
-
-# TODO: should become a UnitTest
-if __name__ == "__main__":
-    mgr = ThreePointLighting()

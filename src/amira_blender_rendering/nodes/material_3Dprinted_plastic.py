@@ -8,7 +8,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http:#www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,17 +17,15 @@
 # limitations under the License.
 
 import bpy
-import logging
-from mathutils import Vector
-from amira_blender_rendering import utils
-from amira_blender_rendering.utils.blender import clear_orphaned_materials, remove_material_nodes, add_default_material
+# from amira_blender_rendering import utils
 import amira_blender_rendering.utils.material as mutil
 
 # TODO: comments from material_metal_tool_cap.py apply
 
+
 def setup_material(material: bpy.types.Material):
 
-    logger = utils.get_logger()
+    # logger = utils.get_logger()
     tree = material.node_tree
     nodes = tree.nodes
 
@@ -127,4 +125,3 @@ def setup_material(material: bpy.types.Material):
     tree.links.new(n_ramp_ease.outputs['Color'], n_mix.inputs['Fac'])
     tree.links.new(n_ramp_spline.outputs['Color'], n_mix.inputs['Color1'])
     tree.links.new(n_mix.outputs['Color'], n_output.inputs['Displacement'])
-
