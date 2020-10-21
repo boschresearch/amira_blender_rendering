@@ -42,6 +42,9 @@ from amira_blender_rendering.datastructures import Configuration
 from amira_blender_rendering.utils.annotation import ObjectBookkeeper
 
 
+_scene_name = 'PandaTable'
+
+@abr_scenes.register(name=_scene_name, type='config')
 class PandaTableConfiguration(abr_scenes.BaseConfiguration):
     """This class specifies all configuration options for the Panda Table scenario."""
 
@@ -74,6 +77,7 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('logging.save_to_blend', False, 'If True, in debug mode, log to .blend files')
 
 
+@abr_scenes.register(name=_scene_name, type='scene')
 class PandaTable(interfaces.ABRScene):
 
     def __init__(self, **kwargs):

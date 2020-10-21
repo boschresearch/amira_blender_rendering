@@ -27,15 +27,10 @@ Example:
     $ blender -b -P scripts/render_dataset.py -- --abr-path ~/amira/amira_blender_rendering
 
 """
-# import bpy
 import sys
 import os
 import re
 import argparse
-# import numpy as np
-# import random
-# import logging
-# from math import log, ceil
 
 
 def _err_msg():
@@ -55,10 +50,11 @@ def import_abr(path=None):
     Args:
         path (str): None, or path to amira_blender_rendering.
     """
-    # NOTE: this is essentially the same code as in scripts/phirm. changes here
+    # NOTE: this is essentially the same code as in scripts/abrgen. changes here
     # should likely be reflected there
-    global abr, WorkstationScenarios, WorkstationScenariosConfiguration, expandpath, get_logger
-    global PandaTable, PandaTableConfiguration
+    global abr
+    global expandpath
+    global get_logger
 
     if path is None:
         try:
@@ -79,13 +75,7 @@ def import_abr(path=None):
             sys.exit(1)
 
     # import additional parts
-    import amira_blender_rendering.dataset
-    import amira_blender_rendering.utils.blender as blender_utils
-    import amira_blender_rendering.scenes
     from amira_blender_rendering.utils.io import expandpath
-    from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, \
-        WorkstationScenariosConfiguration
-    from amira_blender_rendering.scenes.pandatable import PandaTable, PandaTableConfiguration
     from amira_blender_rendering.utils.logging import get_logger
 
 
@@ -139,23 +129,8 @@ def get_cmd_argparser():
 
 
 def get_scene_types():
-    # TODO: this could/should be handled with some internal registration
-    #       mechanism that 'knows' all scenarios
-    from amira_blender_rendering.scenes.workstationscenarios import WorkstationScenarios, \
-        WorkstationScenariosConfiguration
-    from amira_blender_rendering.scenes.simpletoolcap import SimpleToolCap, SimpleToolCapConfiguration
-    from amira_blender_rendering.scenes.pandatable import PandaTable, PandaTableConfiguration
-
-    # each scenario consists of a name, and a tuple containing the scenario as
-    # well as its configuration
-    return {
-        'SimpleToolCap':
-            [SimpleToolCap, SimpleToolCapConfiguration],
-        'WorkstationScenarios':
-            [WorkstationScenarios, WorkstationScenariosConfiguration],
-        'PandaTable':
-            [PandaTable, PandaTableConfiguration],
-    }
+    from amira_blender_rendering.scenes import get_registered
+    return get_registered()
 
 
 def determine_scene_type(config_file):
@@ -174,10 +149,14 @@ def determine_scene_type(config_file):
 
 
 def main():
+
     # parse command arguments
     cmd_parser = get_cmd_argparser()
     cmd_args = cmd_parser.parse_known_args(args=get_argv())[0]  # need to parse to get aps and abr
     import_abr(cmd_args.abr_path)
+
+    # get logger instance
+    logger = get_logger()
 
     # pretty print available scenarios?
     scene_types = get_scene_types()
@@ -196,7 +175,7 @@ def main():
         raise RuntimeError(f"Invalid configuration: Unknown scene_type {scene_type_str}")
 
     # instantiate configuration
-    config = scene_types[scene_type_str.lower()][1]()
+    config = scene_types[scene_type_str.lower()]['config']()
 
     # combine parsers and parse command line arguments
     parser = argparse.ArgumentParser(
@@ -223,7 +202,7 @@ def main():
     #       to run the script twice, with two different configurations, to
     #       generate the split. This is significantly easier than internally
     #       maintaining split configurations.
-    scene = scene_types[scene_type_str.lower()][0](config=config, render_mode=cmd_args.render_mode)
+    scene = scene_types[scene_type_str.lower()]['scene'](config=config, render_mode=cmd_args.render_mode)
     # save the config early. In case something goes wrong during rendering, we
     # at least have the config + potentially some images
     scene.dump_config()
@@ -232,7 +211,7 @@ def main():
     success = False
     success = scene.generate_dataset()
     if not success:
-        get_logger().error("Error while generating dataset")
+        logger.error("Error while generating dataset")
 
     # tear down scene. should be handled by blender, but a scene might have
     # other things opened that it should close gracefully
