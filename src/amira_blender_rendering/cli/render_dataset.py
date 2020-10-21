@@ -8,7 +8,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http:#www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -114,9 +114,10 @@ def get_cmd_argparser():
         help='Path where amira_blender_rendering (abr) can be found')
 
     parser.add_argument(
-        '--viewsphere',
-        action='store_true',
-        help='Generate Viewsphere instead of RenderedObjects dataset')
+        '--render-mode',
+        default='default',
+        help='Select render mode. Currently supported: default (ie single view), multiview (ie moving cameras) dataset',
+        dest='render_mode')
 
     parser.add_argument(
         '--list-scenes',
@@ -222,17 +223,14 @@ def main():
     #       to run the script twice, with two different configurations, to
     #       generate the split. This is significantly easier than internally
     #       maintaining split configurations.
-    scene = scene_types[scene_type_str.lower()][0](config=config)
+    scene = scene_types[scene_type_str.lower()][0](config=config, render_mode=cmd_args.render_mode)
     # save the config early. In case something goes wrong during rendering, we
     # at least have the config + potentially some images
     scene.dump_config()
 
     # generate the dataset
     success = False
-    if cmd_args.viewsphere:
-        success = scene.generate_viewsphere_dataset()
-    else:
-        success = scene.generate_dataset()
+    success = scene.generate_dataset()
     if not success:
         get_logger().error("Error while generating dataset")
 

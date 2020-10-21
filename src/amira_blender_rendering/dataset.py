@@ -8,7 +8,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http:#www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,7 +22,7 @@ things to certain scenarios which has an impact on the generated dataset.
 """
 
 import os
-from math import ceil
+# from math import ceil
 from amira_blender_rendering.utils.io import expandpath
 from amira_blender_rendering.datastructures import DynamicStruct
 
@@ -96,22 +96,22 @@ def dump_config(cfg, output_path):
         cfg_file.write(cfg.to_cfg())
 
 
-def check_paths(cfg):
-    """expand variables and check if files exist"""
+# TODO: this should not be used anymore. Clean up!
+# def check_paths(cfg):
+#     """expand variables and check if files exist"""
 
-    if 'model' in cfg['dataset']:
-        cfg['dataset']['model'] = expandpath(cfg['dataset']['model'])
-        if not os.path.isfile(cfg['dataset']['model']):
-            raise Exception("Model file '{}' does not exist".format(cfg['dataset']['model']))
+#     if 'model' in cfg['dataset']:
+#         cfg['dataset']['model'] = expandpath(cfg['dataset']['model'])
+#         if not os.path.isfile(cfg['dataset']['model']):
+#             raise Exception("Model file '{}' does not exist".format(cfg['dataset']['model']))
 
-    if 'output_path' in cfg['dataset']:
-        cfg['dataset']['output_path'] = expandpath(cfg['dataset']['output_path'])
+#     if 'output_path' in cfg['dataset']:
+#         cfg['dataset']['output_path'] = expandpath(cfg['dataset']['output_path'])
 
-    if 'camera_calibration' in cfg['camera_info']:
-        cfg['camera_info']['camera_calibration'] = expandpath(cfg['camera_info']['camera_calibration'])
-        if not os.path.isfile(cfg['camera_info']['camera_calibration']):
-            raise Exception(
-                "Camera calibration file '{}' does not exist".format(cfg['camera_info']['camera_calibration']))
+#     if 'camera_calibration' in cfg['camera_info']:
+#         cfg['camera_info']['camera_calibration'] = expandpath(cfg['camera_info']['camera_calibration'])
+#         if not os.path.isfile(cfg['camera_info']['camera_calibration']):
+#             raise Exception(
+#                 "Camera calibration file '{}' does not exist".format(cfg['camera_info']['camera_calibration']))
 
-    return cfg
-
+#     return cfg
