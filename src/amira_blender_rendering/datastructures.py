@@ -8,7 +8,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http:#www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,19 +23,17 @@ Configuration class, which can read nested configs from ini files.
 """
 
 import copy
-from functools import partialmethod, partial
 import argparse
 import configparser
 import ast
 
-#
-#
+
 # NOTE: the functions and classes below were taken from amira_perception. Make
 #       sure to keep in sync as long as we don't have a core library that is
 #       restricted to such functionality
 #
 # NOTE: We do not use the logging classes in here
-#
+
 
 def flatten(l):
     """Flatten a nested list lst"""

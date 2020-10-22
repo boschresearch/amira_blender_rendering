@@ -80,7 +80,7 @@ If you use ABR or the PhIRM dataset, please make sure to cite our work.
    configs/overview.rst
    configs/baseconfiguration.rst
    configs/workstation_scenarios.rst
-   configs/simpletoolcap.rst
+   configs/simpleobject.rst
 
 .. toctree::
   :maxdepth: 3
