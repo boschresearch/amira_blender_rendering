@@ -53,7 +53,7 @@ Below contains more detailed items
   + Use Case: Point Cloud Data
 
 
-# User Stories
+## User Stories
 
 1. **As a Blender user I want to be able to automatically trigger data generation**
   * *Assumption(s)*: Typical blender users with Blender modeling and rendering knowledge
