@@ -17,14 +17,48 @@
 # limitations under the License.
 
 import bpy
-import numpy as np
 from mathutils import Vector
+
 from amira_blender_rendering.utils.logging import get_logger
+
+
+def get_collection_item_names(bpy_collection):
+    """Get names of current items in a blender collection, e.g. object names in bpy.data.objects
+
+    Args:
+        bpy_collection : a blender iterable, where items are a tuple, and the 1st item element is a name string
+
+    Returns:
+        list of strings : names of items currenlty in collection
+    """
+    names = list()
+    for item in bpy_collection.items():
+        names.append(item[0])
+    return names
+
+
+def find_new_items(bpy_collection, old_names):
+    """Ascertian new item names, given a list of old item names
+
+    Args:
+        bpy_collection : a blender iterable, where items are a tuple, and the 1st item element is a name string
+
+    Returns:
+        set of strings : names of items currenlty in collection
+
+    Usage:
+        Intended usage is to verify the assigned name to a new item (object, material, etc.)
+        This is needed due to blender's automatic name conflict resolution, i.e. apending ".001" etc.
+    """
+    new_names = get_collection_item_names(bpy_collection)
+    return set(new_names).difference(old_names)
+
 
 def unlink_objects():
     for scene in bpy.data.scenes:
         for c in scene.collection.children:
             scene.collection.children.unlink(c)
+
 
 def remove_nodes(scene):
     nodes = scene.node_tree.nodes
@@ -57,7 +91,7 @@ def activate_cuda_devices():
     if not cuda_available:
         get_logger().warn("No CUDA compute device available, will use CPU")
     else:
-        device_set = False
+        device_set = False  # FIXME: unused variable
         for d in prefs.devices:
             if d.type == 'CUDA':
                 get_logger().info(f"Using CUDA device '{d.name}' ({d.id})")

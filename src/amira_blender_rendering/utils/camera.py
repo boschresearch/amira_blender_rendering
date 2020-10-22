@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2016 - for information on the respective copyright owner
+# Copyright (c) 2020 - for information on the respective copyright owner
 # see the NOTICE file and/or the repository
 # <https://github.com/boschresearch/amira-blender-rendering>.
 #
@@ -18,13 +18,16 @@
 
 import bpy
 from mathutils import Vector, Matrix
-import warnings
-from math import degrees, radians, atan2
+from math import radians, atan2
 import numpy as np
+
 from amira_blender_rendering.utils.logging import get_logger
+from amira_blender_rendering.math.curves import points_on_viewsphere, points_on_bezier, points_on_circle, \
+    points_on_wave, random_points
+from amira_blender_rendering.datastructures import Configuration
 
 
-def opengl_to_opencv(v : Vector) -> Vector:
+def opengl_to_opencv(v: Vector) -> Vector:
     """Turn a coordinate in OpenGL convention to OpenCV convention.
 
     OpenGL's (and blenders) coordinate system has x pointing right, y pointing
@@ -33,7 +36,7 @@ def opengl_to_opencv(v : Vector) -> Vector:
     OpenCV's coordinate system has x pointing right, y pointing down, z pointing
     forwards."""
     if len(v) != 3:
-        raise Exception(f"Vector {p} needs to be 3 dimensional")
+        raise Exception(f"Vector {v} needs to be 3 dimensional")
 
     return Vector((v[0], -v[1], -v[2]))
 
@@ -106,7 +109,8 @@ def set_camera_info(scene, cam, camera_info):
     if (sensor_width > 0.0) and (focal_length > 0.0):
         if (width == 0 or height == 0):
             if intrinsics is None:
-                raise RuntimeError("Please specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
+                raise RuntimeError(
+                    "Please specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
             else:
                 _setup_render_size_from_intrinsics(scene, intrinsics)
         logger.info("Setting camera information from sensor_width and focal_length")
@@ -119,7 +123,8 @@ def set_camera_info(scene, cam, camera_info):
     elif hfov > 0.0:
         if (width == 0 or height == 0):
             if intrinsics is None:
-                raise RuntimeError("Please specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
+                raise RuntimeError(
+                    "Please specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
             else:
                 _setup_render_size_from_intrinsics(scene, intrinsics)
         logger.info("Setting camera information from hFOV")
@@ -136,7 +141,8 @@ def set_camera_info(scene, cam, camera_info):
             logger.info("Setting camera information from intrinsics using mode 'mm'")
             _setup_camera_intrinsics_to_mm(scene, cam, intrinsics)
         else:
-            raise RuntimeError(f"Invalid mode '{mode}' to convert intrinsics. Needs to be either 'mm' (default) or 'fov'.")
+            raise RuntimeError(
+                f"Invalid mode '{mode}' to convert intrinsics. Needs to be either 'mm' (default) or 'fov'.")
 
     # if the user specified nothing at all, we will check if the width and
     # height of the image are set. In this case, the user will get the default
@@ -144,7 +150,8 @@ def set_camera_info(scene, cam, camera_info):
     # exception.
     # raise RuntimeError("Encountered invalid value for camera_info.intrinsic")
     elif (width == 0) or (height == 0):
-        raise RuntimeError("Encountered invalid value camera_info setup. Please specify intrinsics, sensor_width + focal length, hfov, or width + height")
+        raise RuntimeError(
+            "Encountered invalid value camera_info setup. Please specify intrinsics, sensor_width + focal length, hfov, or width + height")
 
 
 def _setup_render_size_from_intrinsics(scene, intrinsics):
@@ -171,7 +178,7 @@ def _setup_render_size_from_intrinsics(scene, intrinsics):
     render.resolution_percentage = scale * 100
     render.pixel_aspect_x = 1.0
     render.pixel_aspect_y = pixel_aspect_ratio
-
+    
 
 def _setup_camera_by_swfl(scene, cam, sensor_width, focal_length):
     """Setup the camera by sensor width and focal length
@@ -238,7 +245,7 @@ def _setup_camera_intrinsics_to_mm(scene, cam, intrinsics):
     _setup_render_size_from_intrinsics(scene, intrinsics)
 
     # set to perspective camera with computed focal length and sensor size
-    _setup_camera_by_swfl(scene, cam, f_in_mm, sensor_size_mm)
+    _setup_camera_by_swfl(scene, cam, sensor_size_mm, f_in_mm)
 
 
 def _setup_camera_intrinsics_to_fov(scene, cam, intrinsics):
@@ -297,11 +304,11 @@ def get_intrinsics(scene, cam):
     # extract additional sensor information (size in mm, sensor fit)
     sensor_size_mm = cam.sensor_height if cam.sensor_fit == 'VERTICAL' else cam.sensor_width
     sensor_fit = get_sensor_fit(cam.sensor_fit, render.pixel_aspect_x * resolution_x,
-                                                render.pixel_aspect_y * resolution_y)
+                                render.pixel_aspect_y * resolution_y)
 
     # compute pixel size in mm per pixel
     pixel_aspect_ratio = render.pixel_aspect_y / render.pixel_aspect_x
-    view_fac_in_px = resolution_x if sensor_fit == 'HORIZONTAL' else resolution_y
+    view_fac_in_px = resolution_x if sensor_fit == 'HORIZONTAL' else resolution_y * pixel_aspect_ratio
     pixel_size_mm_per_px = sensor_size_mm / f_in_mm / view_fac_in_px
 
     # compute focal length in x and y direction (s_u, s_v)
@@ -315,3 +322,168 @@ def get_intrinsics(scene, cam):
     # finalize K
     return s_u, s_v, u_0, v_0
 
+
+def project_pinhole_depth_to_rectilinear(filepath: str, outfilepath: str,
+                                         res_x: int = bpy.context.scene.render.resolution_x,
+                                         res_y: int = bpy.context.scene.render.resolution_y,
+                                         sensor_width: float = bpy.context.scene.camera.data.sensor_width,
+                                         f_in_mm: float = bpy.context.scene.camera.data.lens):
+    """
+    Given a depth map computed (as standard in ABR setup) using a perfect pinhole model,
+    compute the projected rectilinear depth
+    
+    Args:
+        filepath(str): path to file with depth map to load
+        outfilepath(str): path to write rectfied map to
+        res_x(int): render/image x resolution
+        res_y(int): render/image y resolution
+        sensor_width(float): camera sensor width
+        f_in_mm(float): camera focal lenght in mm
+    """
+    import cv2
+    logger = get_logger()
+
+    sensor_height = res_y / res_x * sensor_width
+
+    # read image
+    image = (cv2.imread(filepath, cv2.IMREAD_ANYDEPTH)).astype(np.float32)
+
+    # init array
+    rect_depth = np.zeros(image.shape, dtype=np.float32)
+    
+    logger.info('Rectifying pinhole depth map')
+    for u in range(image.shape[1]):
+        for v in range(image.shape[0]):
+
+            d = image[v, u]
+
+            # if d > 100.0:
+            #     continue
+
+            # coordinates on camera plane
+            x = (0.5 - float(u) / float(image.shape[1])) * sensor_width / f_in_mm
+            y = (0.5 - float(v) / float(image.shape[0])) * sensor_height / f_in_mm
+            z = 1.0
+            norm = np.linalg.norm([x, y, z])
+
+            # normalize = project point on unit sphere, then apply depth
+            z = d * z / norm
+            
+            # fill depth map
+            rect_depth[v, u] = z
+    
+    # overwrite file
+    cv2.imwrite(outfilepath, rect_depth, [cv2.IMWRITE_EXR_TYPE, cv2.IMWRITE_EXR_TYPE_FLOAT])
+    logger.info(f'Saved rectified depth map at {outfilepath}')
+
+
+def get_current_cameras_locations(camera_names: list):
+    locations = {}
+    for cam_name in camera_names:
+        camera = bpy.context.scene.objects[cam_name]
+        locations[cam_name] = np.asarray(camera.matrix_world.to_translation())
+    return locations
+
+
+def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_names: list, **kw):
+    """
+    Generate multiple locations for multiple cameras according to selected mode
+
+    Args:
+        num_locations(int): number of locations to generate
+        mode(str): mode used to generate locations
+        camera_names(list(str)): list of string with bpy objects camera names
+    
+    Keywords Args:
+        config(Configuration/dict-like)
+
+    Returns:
+        locations(dict(array)): dictionary with list of locations for each camera
+        original_locations(dict(array)): dictionary with original camera locations
+    """
+
+    def get_array_from_str(cfg, name, default):
+        """
+        Get array from a csv string or fallback to default
+
+        Args:
+            cfg(dict-like): configuration struct where to look
+            name(str): config parameter to search for
+            default(array-like): default array value
+        
+        Returns:
+            array-like: found in cfg or default
+        """
+        p = cfg.get(name, default)
+        if isinstance(p, str):
+            p = np.fromstring(p, sep=',')
+        return p
+
+    # get logger
+    logger = get_logger()
+
+    original_locations = get_current_cameras_locations(camera_names)
+
+    # define supported modes
+    _available_modes = {
+        'random': random_points,
+        'bezier': points_on_bezier,
+        'circle': points_on_circle,
+        'wave': points_on_wave,
+        'viewsphere': points_on_viewsphere
+    }
+
+    # early check for selected mode
+    if mode not in _available_modes.keys():
+        raise ValueError(f'Selected mode {mode} not supported for multiview locations')
+
+    # init container
+    locations = {}
+
+    # loop over cameras
+    for cam_name in camera_names:
+
+        # build dict with available config per each mode
+        mode_cfg = kw.get('config', Configuration())  # get user defined config (if any)
+        _modes_cfgs = {
+            'random': {
+                'base_location': get_array_from_str(mode_cfg, 'base_location', original_locations[cam_name]),
+                'scale': float(mode_cfg.get('scale', 1))
+            },
+            'bezier': {
+                'p0': get_array_from_str(mode_cfg, 'p0', original_locations[cam_name]),
+                'p1': get_array_from_str(
+                    mode_cfg, 'p1',
+                    original_locations[cam_name] + np.random.randn(original_locations[cam_name].size)),
+                'p2': get_array_from_str(
+                    mode_cfg, 'p2',
+                    original_locations[cam_name] + np.random.randn(original_locations[cam_name].size)),
+                'start': float(mode_cfg.get('start', 0)),
+                'stop': float(mode_cfg.get('stop', 1))
+            },
+            'circle': {
+                'radius': float(mode_cfg.get('radius', 1)),
+                'center': get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
+            },
+            'wave': {
+                'radius': float(mode_cfg.get('radius', 1)),
+                'center': get_array_from_str(mode_cfg, 'center', original_locations[cam_name]),
+                'frequency': float(mode_cfg.get('frequency', 1)),
+                'amplitude': float(mode_cfg.get('amplitude', 1))
+            },
+            'viewsphere': {
+                'scale': float(mode_cfg.get('scale', 1)),
+                'bias': tuple(get_array_from_str(mode_cfg, 'bias', [0, 0, 1.5]))
+            }
+        }
+
+        # log
+        logger.info(f'Generating locations for {cam_name} according to {mode} mode')
+
+        # extract camera object
+        camera = bpy.context.scene.objects[cam_name]
+        
+        # get location
+        locations[cam_name] = _available_modes[mode](num_locations, **_modes_cfgs[mode])
+
+    return locations, original_locations

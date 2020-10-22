@@ -17,12 +17,10 @@
 # limitations under the License.
 
 import bpy
-import logging
 from mathutils import Vector
-from amira_blender_rendering import utils
 from amira_blender_rendering.utils.blender import clear_orphaned_materials, remove_material_nodes, add_default_material
 from amira_blender_rendering.utils import material as mutil
-from amira_blender_rendering.utils.logging import get_logger
+# from amira_blender_rendering.utils.logging import get_logger
 
 
 # TODO: change into MaterialNodesMetalToolCap class
@@ -35,7 +33,7 @@ def setup_material(material: bpy.types.Material, empty: bpy.types.Object = None)
     """Setup material nodes for the metal tool cap"""
     # TODO: refactor into smaller node-creation functions that can be re-used elsewhere
 
-    logger = get_logger()
+    # logger = get_logger()
     tree = material.node_tree
     nodes = tree.nodes
 
@@ -203,6 +201,7 @@ def main():
     clear_orphaned_materials()
     mat = add_default_material()
     setup_material_metal_tool_cap(mat)
+
 
 if __name__ == "__main__":
     main()

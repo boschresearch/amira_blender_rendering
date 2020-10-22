@@ -89,7 +89,7 @@ def p2d_to_pixel_coords(p: Vector, render: bpy.types.RenderSettings = bpy.contex
 
     if len(p) != 2:
         raise Exception(f"Vector {p} needs to be 2 dimensinoal")
-
+    
     return Vector(((render.resolution_x - 1) * (p.x + 1.0) / +2.0,
                    (render.resolution_y - 1) * (p.y - 1.0) / -2.0))
 
@@ -106,7 +106,6 @@ def get_relative_rotation(obj1: bpy.types.Object, obj2: bpy.types.Object = bpy.c
     obj2_m = obj2.matrix_world.to_3x3().normalized()
     rel_rotation = (obj2_m.inverted() @ obj1_m).to_euler()
     return rel_rotation
-
 
 
 def get_relative_rotation_to_cam_deg(obj, cam, zeroing=Vector((90, 0, 0))):
@@ -216,15 +215,16 @@ def test_visibility(obj, cam, width, height, require_all=True):
     Returns:
         True, if object is visible, false if not.
     """
+    render = bpy.context.scene.render
     # Test if object is still visible. That is, none of the vertices
     # should lie outside the visible pixel-space
     vs = [obj.matrix_world @ Vector(v) for v in obj.bound_box]
-    ps = [project_p3d(v, cam) for v in vs]
+    ps = [project_p3d(v, cam, render=render) for v in vs]
     # Test if we encountered a "point at infinity"
     if None in ps:
         return False
     else:
-        pxs = [p2d_to_pixel_coords(p) for p in ps]
+        pxs = [p2d_to_pixel_coords(p, render=render) for p in ps]
         oks = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
         return all(oks) if require_all else any(oks)
 
@@ -255,6 +255,7 @@ def test_occlusion(scene, layer, cam, obj, width, height, require_all=True, orig
     """
     dg = bpy.context.evaluated_depsgraph_get()
     dg.update()
+    render = bpy.context.scene.render
 
     # get mesh, evaluated after simulations, and camera origin from the camera's
     # world matrix
@@ -264,12 +265,12 @@ def test_occlusion(scene, layer, cam, obj, width, height, require_all=True, orig
     obj.to_mesh_clear()
 
     # compute projected vertices
-    ps = [project_p3d(v, cam) for v in vs]
+    ps = [project_p3d(v, cam, render=render) for v in vs]
     if None in ps:
         return True
 
     # compute pixel coordinates for each vertex
-    pxs = [p2d_to_pixel_coords(p) for p in ps]
+    pxs = [p2d_to_pixel_coords(p, render=render) for p in ps]
 
     # keep track of what is going on
     vs_visible = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
@@ -448,7 +449,7 @@ def rotation_matrix(alpha, axis, homogeneous=False):
 
 
 # the two following method have been implemented in the amira_lfd pipeline
-def rotation_matrix_to_quaternion(rot_mat):
+def rotation_matrix_to_quaternion(rot_mat, isprecise=False):
     """
     Computes the quaternion (with convention WXYZ) out of a given rotation matrix
     Inverse funtion of quaternion_to_rotation_matrix
@@ -460,40 +461,68 @@ def rotation_matrix_to_quaternion(rot_mat):
     Returns
     -------
     :return q: np.array of shape (4,), quaternion (WXYZ) corresponding to the rotation matrix rot_mat
+    
+    NOTE: the implementation comes from a mixture of codes. Inspiration is taken from Wikipedia and
+        
+        Homogeneous Transformation Matrices and Quaternions library
+        :Author:
+            `Christoph Gohlke <http://www.lfd.uci.edu/~gohlke/>`_
     """
-    qs = min(np.sqrt(np.trace(rot_mat) + 1) / 2.0, 1.0)
-    kx = rot_mat[2, 1] - rot_mat[1, 2]  # Oz - Ay
-    ky = rot_mat[0, 2] - rot_mat[2, 0]  # Ax - Nz
-    kz = rot_mat[1, 0] - rot_mat[0, 1]  # Ny - Ox
-    if (rot_mat[0, 0] >= rot_mat[1, 1]) and (rot_mat[0, 0] >= rot_mat[2, 2]):
-        kx1 = rot_mat[0, 0] - rot_mat[1, 1] - rot_mat[2, 2] + 1  # Nx - Oy - Az + 1
-        ky1 = rot_mat[1, 0] + rot_mat[0, 1]  # Ny + Ox
-        kz1 = rot_mat[2, 0] + rot_mat[0, 2]  # Nz + Ax
-        add = (kx >= 0)
-    elif rot_mat[1, 1] >= rot_mat[2, 2]:
-        kx1 = rot_mat[1, 0] + rot_mat[0, 1]  # Ny + Ox
-        ky1 = rot_mat[1, 1] - rot_mat[0, 0] - rot_mat[2, 2] + 1  # Oy - Nx - Az + 1
-        kz1 = rot_mat[2, 1] + rot_mat[1, 2]  # Oz + Ay
-        add = (ky >= 0)
+    if isprecise:
+        trace = max(np.trace(rot_mat), -1.0)
+        qs = min(np.sqrt(trace + 1) / 2.0, 1.0)
+        kx = rot_mat[2, 1] - rot_mat[1, 2]  # Oz - Ay
+        ky = rot_mat[0, 2] - rot_mat[2, 0]  # Ax - Nz
+        kz = rot_mat[1, 0] - rot_mat[0, 1]  # Ny - Ox
+        if (rot_mat[0, 0] >= rot_mat[1, 1]) and (rot_mat[0, 0] >= rot_mat[2, 2]):
+            kx1 = rot_mat[0, 0] - rot_mat[1, 1] - rot_mat[2, 2] + 1  # Nx - Oy - Az + 1
+            ky1 = rot_mat[1, 0] + rot_mat[0, 1]  # Ny + Ox
+            kz1 = rot_mat[2, 0] + rot_mat[0, 2]  # Nz + Ax
+            add = (kx >= 0)
+        elif rot_mat[1, 1] >= rot_mat[2, 2]:
+            kx1 = rot_mat[1, 0] + rot_mat[0, 1]  # Ny + Ox
+            ky1 = rot_mat[1, 1] - rot_mat[0, 0] - rot_mat[2, 2] + 1  # Oy - Nx - Az + 1
+            kz1 = rot_mat[2, 1] + rot_mat[1, 2]  # Oz + Ay
+            add = (ky >= 0)
+        else:
+            kx1 = rot_mat[2, 0] + rot_mat[0, 2]  # Nz + Ax
+            ky1 = rot_mat[2, 1] + rot_mat[1, 2]  # Oz + Ay
+            kz1 = rot_mat[2, 2] - rot_mat[0, 0] - rot_mat[1, 1] + 1  # Az - Nx - Oy + 1
+            add = (kz >= 0)
+        if add:
+            kx = kx + kx1
+            ky = ky + ky1
+            kz = kz + kz1
+        else:
+            kx = kx - kx1
+            ky = ky - ky1
+            kz = kz - kz1
+        nm = np.linalg.norm(np.array([kx, ky, kz]))
+        if nm == 0:
+            q = np.array([1., 0., 0., 0.])
+        else:
+            s = np.sqrt(1 - qs**2) / nm
+            qv = s * np.array([kx, ky, kz])
+            q = np.append(qs, qv)
     else:
-        kx1 = rot_mat[2, 0] + rot_mat[0, 2]  # Nz + Ax
-        ky1 = rot_mat[2, 1] + rot_mat[1, 2]  # Oz + Ay
-        kz1 = rot_mat[2, 2] - rot_mat[0, 0] - rot_mat[1, 1] + 1  # Az - Nx - Oy + 1
-        add = (kz >= 0)
-    if add:
-        kx = kx + kx1
-        ky = ky + ky1
-        kz = kz + kz1
-    else:
-        kx = kx - kx1
-        ky = ky - ky1
-        kz = kz - kz1
-    nm = np.linalg.norm(np.array([kx, ky, kz]))
-    if nm == 0:
-        q = np.array([1., 0., 0., 0.])
-    else:
-        s = np.sqrt(1 - qs**2) / nm
-        qv = s * np.array([kx, ky, kz])
-        q = np.append(qs, qv)
-    return q
+        m00 = rot_mat[0, 0]
+        m01 = rot_mat[0, 1]
+        m02 = rot_mat[0, 2]
+        m10 = rot_mat[1, 0]
+        m11 = rot_mat[1, 1]
+        m12 = rot_mat[1, 2]
+        m20 = rot_mat[2, 0]
+        m21 = rot_mat[2, 1]
+        m22 = rot_mat[2, 2]
+        # symmetric matrix K
+        K = np.array([[m00 - m11 - m22, 0.0, 0.0, 0.0], [m01 + m10, m11 - m00 - m22, 0.0, 0.0],
+                      [m02 + m20, m12 + m21, m22 - m00 - m11, 0.0],
+                      [m21 - m12, m02 - m20, m10 - m01, m00 + m11 + m22]])
+        K /= 3.0
+        # quaternion is eigenvector of K that corresponds to largest eigenvalue
+        w, V = np.linalg.eigh(K)
+        q = V[[3, 0, 1, 2], np.argmax(w)]
 
+    if q[0] < 0.0:
+        np.negative(q, q)
+    return q
