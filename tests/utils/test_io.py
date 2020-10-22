@@ -28,7 +28,7 @@ class TestIO(unittest.TestCase):
     def setUp(self):
         self._env_var = 'TESTVAR'
         self._var_value = '~/tmp/testdir'
-        self._test_path = os.path.join('/home', getuser(), 'tmp', 'testdir', 'test') 
+        self._test_path = os.path.join('/home', getuser(), 'tmp', 'testdir', 'test')
         os.environ[self._env_var] = self._var_value
 
     def test_expandpath(self):

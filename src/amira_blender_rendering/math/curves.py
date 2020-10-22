@@ -215,5 +215,5 @@ def plot_points(points, camera=None, plot_axis: bool = False, scatter: bool = Fa
             # plot z
             ax.plot([t[0], z_axis[0]], [t[1], z_axis[1]], [t[2], z_axis[2]], color='b')
             # virtual neg z
-            ax.plot([t[0], neg_z_axis[0]], [t[1], neg_z_axis[1]], [t[2], neg_z_axis[2]], color='b', linestyle='--')   
+            ax.plot([t[0], neg_z_axis[0]], [t[1], neg_z_axis[1]], [t[2], neg_z_axis[2]], color='b', linestyle='--')
     plt.show()

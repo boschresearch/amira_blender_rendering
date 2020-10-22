@@ -32,7 +32,7 @@ from math import ceil, log
 
 from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
-from amira_blender_rendering.utils.logging import get_logger
+from amira_blender_rendering.utils.logging import get_logger, add_file_handler
 from amira_blender_rendering.datastructures import Configuration
 from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
 import amira_blender_rendering.scenes as abr_scenes
@@ -62,16 +62,25 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
 
         # specific parts configuration. This is just a dummy entry for purposes
         # of demonstration and help message generation
-        # self.add_param('parts.example_dummy', '/path/to/example_dummy.blend', 'Path to additional blender files containing invidual parts. Format must be partname = /path/to/blendfile.blend')
-        # self.add_param('parts.ply.example_dummy', '/path/to/example_dummy.ply', 'Path to PLY files containing part "example_dummy". Format must be ply.partname = /path/to/blendfile.ply')
-        # self.add_param('parts.ply_scale.example_dummy', [1.0, 1.0, 1.0], 'Scaling factor in X, Y, Z dimensions of part "example_dummy". Format must be a list of 3 floats.')
+        # self.add_param(
+        #     'parts.example_dummy',
+        #     '/path/to/example_dummy.blend',
+        #     'Path to additional blender files containing invidual parts. Format: partname = /path/to/blendfile.blend')
+        # self.add_param(
+        #     'parts.ply.example_dummy',
+        #     '/path/to/example_dummy.ply',
+        #     'Path to PLY files containing part "example_dummy". Format: ply.partname = /path/to/blendfile.ply')
+        # self.add_param(
+        #     'parts.ply_scale.example_dummy',
+        #     [1.0, 1.0, 1.0],
+        #     'Scaling factor in X, Y, Z dimensions of part "example_dummy". Format must be a list of 3 floats.')
 
         # specific scenario configuration
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
         self.add_param('scenario_setup.target_objects', [], 'List of objects to drop in the scene for which annotated info are stored')
         self.add_param('scenario_setup.distractor_objects', [], 'List of objects to drop in the scene for which info are NOT stored')
         self.add_param('scenario_setup.abc_objects', [], 'List of all ABC-Dataset objects to drop in environment')
-        self.add_param('scenario_setup.abc_color_count', 3, 'Number of random metallic materials to generate')
+        self.add_param('scenario_setup.num_abc_colors', 3, 'Number of random metallic materials to generate')
     
         # multiview configuration (if implemented)
         self.add_param('multiview_setup.mode', '',
@@ -93,6 +102,7 @@ class WorkstationScenarios(interfaces.ABRScene):
     def __init__(self, **kwargs):
         super(WorkstationScenarios, self).__init__()
         self.logger = get_logger()
+        add_file_handler(self.logger)
 
         # we do composition here, not inheritance anymore because it is too
         # limiting in its capabilities. Using a render manager is a better way
@@ -123,10 +133,8 @@ class WorkstationScenarios(interfaces.ABRScene):
         # setup the renderer. do this _AFTER_ the file was loaded during
         # setup_scene(), because otherwise the information will be taken from
         # the file, and changes made by setup_renderer ignored
-        self.renderman.setup_renderer(
-            self.config.render_setup.integrator,
-            self.config.render_setup.denoising,
-            self.config.render_setup.samples)
+        self.renderman.setup_renderer(self.config.render_setup.integrator, self.config.render_setup.denoising,
+                                      self.config.render_setup.samples)
 
         # grab environment textures
         self.setup_environment_textures()
@@ -406,8 +414,9 @@ class WorkstationScenarios(interfaces.ABRScene):
         if abc_objects is None or not len(abc_objects):
             self.logger.info("Config file does NOT include ABC-Dataset objects")
         else:
-            self.logger.info(f"making {self.config.scenario_setup.abc_color_count} random metallic materials")
-            abc_importer = ABCImporter(n_materials=int(self.config.scenario_setup.abc_color_count))
+            n_materials = int(self.config.scenario_setup.num_abc_colors)
+            self.logger.info(f"making {n_materials} random metallic materials")
+            abc_importer = ABCImporter(n_materials=n_materials)
 
             for class_id, obj_spec in enumerate(abc_objects):
                 _class_name, obj_count = obj_spec.split(':')
@@ -576,7 +585,7 @@ class WorkstationScenarios(interfaces.ABRScene):
                 if not_visible_or_occluded:
                     self.logger.warn(f"object {obj} not visible or occluded")
                     if self.config.logging.debug:
-                        self.logger.info(f"saving blender file for debugging to /tmp/workstationscenarios.blend")
+                        self.logger.info("saving blender file for debugging to /tmp/workstationscenarios.blend")
                         bpy.ops.wm.save_as_mainfile(filepath="/tmp/workstationscenarios.blend")
                 
                 any_not_visible_or_occluded = any_not_visible_or_occluded or not_visible_or_occluded
@@ -770,7 +779,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         """
         Save log data to .blend files
 
-        The behavior of the method depends on its keywords input arguments. 
+        The behavior of the method depends on its keywords input arguments.
         In particular:
             - with no optional args: it logs the current active scene to .blend in ActiveCamera/Logs
                                     where CurrentCamera identify the directory where data, i.e.,
