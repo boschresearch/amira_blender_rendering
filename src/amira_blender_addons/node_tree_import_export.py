@@ -148,8 +148,10 @@ def _menu_func(self, context):
     layout.operator(NODE_MT_node_tree_import.bl_idname)
     layout.operator(NODE_MT_node_tree_export.bl_idname)
 
+
 classes = (NODE_MT_node_tree_import,
            NODE_MT_node_tree_export)
+
 
 def register():
     for cls in classes:

@@ -35,11 +35,16 @@ and contributors to AMIRA Blender Rendering.
 
 amira_blender_rendering is intended to operate in a headless fashion to render
 datasets from pre-defined blender files. For this, we provide a single entry
-point [render_dataset.py](scripts/render_dataset.py) which can be called from
-the command line using `blender -b -P scripts/render_dataset.py -- additional-parameters`.
+point [render_dataset.py](src/amira_blender_rendering/cli/render_dataset.py) 
+which can be called from the command line 
+using `blender -b -P src/amira_blender_rendering/cli/render_dataset.py -- additional-parameters`.
 Note that this script has some standard parameters that you can query via
 ``-h``, passed as the additional parameters above. Also, each scene might
 provide configurable options.
+
+For the user's convenience, we also provide [abrgen](scripts/abrgen) a wrapper 
+function that simplifies calls to render_dataset.py. Using abrgen, rendering is
+commenced from the command line using `scripts/abrgen additional-paramaters`.
 
 Each scene requires what we call a *backend implementation*. This implementation
 takes care of loading a blender file, setting up everything that is required
