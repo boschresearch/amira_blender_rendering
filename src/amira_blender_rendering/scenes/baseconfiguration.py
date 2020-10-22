@@ -8,7 +8,7 @@
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#     http:#www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,7 @@
 
 from amira_blender_rendering.datastructures import Configuration
 
+
 class BaseConfiguration(Configuration):
     """Basic configuration for any dataset."""
 
@@ -25,7 +26,12 @@ class BaseConfiguration(Configuration):
         super(BaseConfiguration, self).__init__()
 
         # general dataset configuration.
-        self.add_param('dataset.image_count', 1, 'Number of images to generate')
+        self.add_param('dataset.image_count', 1,
+                       'Number of images to generate. Depending whether a multiview dataset generation is requested, \
+                        the final number of images might be controlled by image_count or by a combination of \
+                        scene_count and view_count')
+        self.add_param('dataset.scene_count', 1, 'Number of static scenes to generate')
+        self.add_param('dataset.view_count', 1, 'Number of camera views per scene to generate')
         self.add_param('dataset.base_path', '', 'Path to storage directory')
         self.add_param('dataset.scene_type', '', 'Scene type')
 
@@ -48,7 +54,13 @@ class BaseConfiguration(Configuration):
         self.add_param('render_setup.integrator', 'BRANCHED_PATH', 'Integrator used during path tracing. Either of PATH, BRANCHED_PATH')
         self.add_param('render_setup.denoising', True, 'Use denoising algorithms during rendering')
         self.add_param('render_setup.samples', 128, 'Samples to use during rendering')
+        self.add_param('render_setup.color_depth', 16, 'Depth for color (RGB) image [16bit, 8bit]. Default: 16')
+        self.add_param('render_setup.allow_occlusions', False, 'If True, allow objects to be occluded from camera')
 
         # logging
         self.add_param('logging.debug', False, 'If True, enable log for debugging')
 
+        # postprocess
+        self.add_param('postprocess.rectify_depth', False, 'If True, from pinhole depth map, compute rectilinear map')
+        self.add_param('postprocess.overwrite', False, 'It True (when computing rectified depth) overwrite depth map')
+        self.add_param('postprocess.visibility_from_mask', False, 'If True, if an invalid (empty) mask is found during postprocessing, object visibility info are overwritten to false')

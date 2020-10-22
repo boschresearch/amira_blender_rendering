@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+
+# Copyright (c) 2020 - for information on the respective copyright owner
+# see the NOTICE file and/or the repository
+# <https://github.com/boschresearch/amira-blender-rendering>.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""This script runs blender with the render_dataset command line interface. This
+wrapper around blender is not essential, but it is a convenience structure. If
+you don't use this script, you need to manually pass all options to blender as
+well as to render_dataset.py """
+
+import os, sys, subprocess
+
+
+def err_msg():
+    return \
+"""Error: Could not import amira_blender_rendering. Either install it as a package,
+or specify a valid path to its location with the --abr-path command line argument.
+
+Example:
+        $ abr_rect_depth --abr-path $HOME/abr/src --additional options
+
+For more help, see documentation, or invoke with --help."""
+
+
+def import_abr(path=None): 
+    """(Try to) import amira_blender_rendering.
+
+    This function tries to import amira_blender_rendering (abr) either from
+    pip-installed packages (if path=None), or from a certain location. This is
+    required because, to run rendering, we need to pass a python script to
+    blender. This specific script is packaged within abr. After importing, we
+    can query abr for its location and go on from there.
+    
+    Args:
+        path (str): None, or path to amira_blender_rendering.
+    """
+
+    # NOTE: this is the same code as in abr/cli/render_dataset. Changes here
+    # should likely be reflected there.
+    global abr
+
+    if path is None:
+        try:
+            import amira_blender_rendering as abr
+        except ImportError:
+            print(err_msg())
+            sys.exit(1)
+    else:
+        abr_path = os.path.expanduser(os.path.expandvars(path))
+        if not os.path.exists(abr_path):
+            print(err_msg())
+            sys.exit(1)
+        sys.path.append(abr_path)
+        try:
+            import amira_blender_rendering as abr
+        except ImportError:
+            print(err_msg())
+            sys.exit(1)
+
+
+if __name__ == "__main__":
+    path = None
+    if '--abr-path' in sys.argv:
+        idx = sys.argv.index('--abr-path')
+        if idx == len(sys.argv) - 1:
+            print("Invalid use of option '--abr-path'. Please specify path to amira_blender_rendering.")
+            sys.exit(1)
+        path = sys.argv[idx + 1]
+    import_abr(path)
+    # build command and arguments to run
+    cmd = ['blender', '-b', '-P', os.path.join(abr.__pkgdir__, 'cli', 'rectify_pinhole_depth_map.py'), '--'] + sys.argv[1:]
+    subprocess.run(cmd)
