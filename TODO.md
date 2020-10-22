@@ -53,21 +53,21 @@ Below contains more detailed items
   + Use Case: Point Cloud Data
 
 
-**User Stories**
+# User Stories
 
-1. As a Blender user I want to be able to automatically trigger data generation
+1. **As a Blender user I want to be able to automatically trigger data generation**
 
-*Assumption(s)*: Typical blender users with Blender modeling and rendering knowledge
+    *Assumption(s)*: Typical blender users with Blender modeling and rendering knowledge
 
-*Problem*: Currently, in Blender is possible to render single images or video sequences.
-Users must trigger rendering manually via Blender's GUI. It is possible to render single
-images and video sequences but neither to automatically generate multiple randomization of the same
-scene nor to automatically trigger rendering from multiple cameras
+    *Problem*: Currently, in Blender is possible to render single images or video sequences. 
+    Users must trigger rendering manually via Blender's GUI. It is possible to render single 
+    images and video sequences but neither to automatically generate multiple randomization of the same
+    scene nor to automatically trigger rendering from multiple cameras
 
-*Why(s)*: As a user I want to be able to model my desired scene but also render quickly multiple views and/or
-multiple variations of the scene
+    *Why(s)*: As a user I want to be able to model my desired scene but also render quickly multiple views and/or
+    multiple variations of the scene
 
-*DoD(s)*: ABR Blender Plug-in available
+    *DoD(s)*: ABR Blender Plug-in available
 
 
 2. As a Blender user and big-data practitioner, I want to be able to automatically generate large amount of data
