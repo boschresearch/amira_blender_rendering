@@ -53,3 +53,87 @@ Below contains more detailed items
   + Use Case: Point Cloud Data
 
 
+**User Stories**
+
+1. As a Blender user I want to be able to automatically trigger data generation
+
+*Assumption(s)*: Typical blender users with Blender modeling and rendering knowledge
+
+*Problem*: Currently, in Blender is possible to render single images or video sequences.
+Users must trigger rendering manually via Blender's GUI. It is possible to render single
+images and video sequences but neither to automatically generate multiple randomization of the same
+scene nor to automatically trigger rendering from multiple cameras
+
+*Why(s)*: As a user I want to be able to model my desired scene but also render quickly multiple views and/or
+multiple variations of the scene
+
+*DoD(s)*: ABR Blender Plug-in available
+
+
+2. As a Blender user and big-data practitioner, I want to be able to automatically generate large amount of data
+
+*Assumption(s)*: Entry-level and/or typical blender users with Blender modeling and rendering knowledge 
+working with big-data
+
+*Problem*: Currently, in Blender is possible to render single images or video sequences.
+Automatically render a predefined number of images is not possible.
+
+*Why(s)*: As a user I can model my desired scene. In addition as a big-data practitioner I want to commence
+rendering of large amount of data
+
+*DoD(s)*: ABR Blender Plug-in available
+
+
+3. As a Compute Vision practitioner, I want to be able to automatically generate large amount of data
+
+*Assumption(s)*: 
+  1. CV practitioner in e.g., an industrial context. Blender knowledge: Yes/some
+  2. CV practitioner in e.g., an industrial context. Blender knowledge: No
+
+*Problem*: Currently, in Blender is possible to render single images or video sequences.
+Automatically render a predefined number of images is not possible.
+
+*Why(s)*:
+ - As a CV practioner and blender user I want to model my scene by also generate large amount of data
+ to test/train my technology
+ - As a CV practitioner w/o blender knowledge, I want to quickly generate large amount of data to test/train
+ my technology but w/o blender modeling knowledge I can rely on small variations of predefined scenes
+
+*DoD(s)*:
+- ABR Blender Plug-in available [if Ass. 1]
+- ABR as a python library/OSS project available [if Ass. 2]
+
+
+4. As a Compute Vision researcher, I want to be able to automatically generate large amount of data
+
+*Assumption(s)*:
+  1. CV researcher. Blender knowledge: Yes/some
+  2. CV researcher. Blender knowledge: No
+
+*Problem*: Currently, in Blender is possible to render single images or video sequences.
+Automatically render a predefined number of images is not possible.
+
+*Why(s)*:
+ - As a CV practioner and blender user I want to play around with large amount of data to develop and test
+ my new technology.
+ - As a CV practitioner w/o blender knowledge, I want to quickly generate large amount of data to 
+ develop my knew technology reling on small variations of predefined scenes
+ 
+*DoD(s)*:
+- ABR Blender Plug-in available [if Ass. 1]
+- ABR as a python library/OSS project available [if Ass. 2]
+
+5. As a developer/researcher with SW developer skills I don't want to develop my own custom
+rendering tool but I would gladly contribute to the development of existing ones
+
+*Assumption(s)*: Researcher/developer w some SW developer skills. 
+Blender knowledge: Yes/some (mainly in Blender's Python API)
+
+*Problem*: Integrate solutions for large amount of photorealistic physics-based rendering not availabel 
+(to the best of my knowledge)
+
+*Why(s)*: As a developer I want to rely on existing tools but I am happy to contribute
+ 
+*DoD(s)*: 
+- ABR Blender Plug-in available [if extensive Blender knowledge]
+- ABR as a python library/OSS project available [if limited Blender knowldege]
