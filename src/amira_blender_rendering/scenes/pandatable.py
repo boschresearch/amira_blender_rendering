@@ -44,6 +44,7 @@ from amira_blender_rendering.utils.annotation import ObjectBookkeeper
 
 _scene_name = 'PandaTable'
 
+
 @abr_scenes.register(name=_scene_name, type='config')
 class PandaTableConfiguration(abr_scenes.BaseConfiguration):
     """This class specifies all configuration options for the Panda Table scenario."""
@@ -704,7 +705,7 @@ class PandaTable(interfaces.ABRScene):
         """
         Save log data to .blend files
 
-        The behavior of the method depends on its keywords input arguments. 
+        The behavior of the method depends on its keywords input arguments.
         In particular:
             - with no optional args: it logs the current active scene to .blend in ActiveCamera/Logs
                                     where CurrentCamera identify the directory where data, i.e.,

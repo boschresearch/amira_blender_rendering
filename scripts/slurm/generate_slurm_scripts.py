@@ -66,9 +66,9 @@ def parse_args():
 
     # optional arguments
     parser.add_argument('--input-flag', type=str, dest='input_flag', default='',
-                         help='one additional input flag (without prefix --) for main script')
+                        help='one additional input flag (without prefix --) for main script')
     parser.add_argument('--cudnn', metavar='x.y_vM.N.P', type=str, default='10.0_v7.3.1',
-			help='Cudnn module version to load (Check available running "module avail"). Default: 10.0_v7.3.1')
+                        help='Cudnn module version to load (Check available running "module avail"). Default: 10.0_v7.3.1')
     parser.add_argument('--gpu', metavar='N', type=int, default=4,
                         help='Number of required GPUs for batch job. Default: 4')
     parser.add_argument('--cpu', metavar='N', type=int, default=4,
@@ -154,8 +154,8 @@ def gen_script(user: str,
                cfgfile: str,
                job_name: str = 'BlenderRender',
                py_env_name: str = 'blender-env',
-               input_flag = '',
-	       cudnn_version: str = '10.0_v7.3.1',
+               input_flag: str = '',
+               cudnn_version: str = '10.0_v7.3.1',
                gpu: int = 2,
                cpu: int = 4,
                ssd: int = 10,
@@ -176,7 +176,7 @@ def gen_script(user: str,
         py_env_name(str): name of python environment to use. Default: blender-env
         input_flag(str): string with one additional flag for main script. Default ''
         cudnn_version(str): version of cudnn module to load. Default: 10_v7.3
-	gpu(int): number of required GPUs. Default: 2
+        gpu(int): number of required GPUs. Default: 2
         cpu(int): number of required CPUs. Detault: 4
         ssd(int): hard drive (SSD) memory (in GB) to allocate. Default: 10 GB
         ram(int): RAM (in GB) to allocate. Default: 16 GB

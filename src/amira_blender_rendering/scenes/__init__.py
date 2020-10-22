@@ -49,7 +49,7 @@ def register(name: str, type: str = None):
 
     Args:
         name(str): Name for the scene to register
-        type(str): Either 'scene' or 'config' depending wheter the actual scene class 
+        type(str): Either 'scene' or 'config' depending wheter the actual scene class
             or the corresponding configuration class is registered
 
     Returns:

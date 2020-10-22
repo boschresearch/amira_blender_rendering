@@ -76,7 +76,6 @@ def setup_material(material: bpy.types.Material):
     tree.links.new(n_noise_bump.outputs['Fac'], n_bump.inputs['Height'])
     tree.links.new(n_bump.outputs['Normal'], n_bsdf.inputs['Normal'])
 
-
     # displacement map
     n_texcoord       = nodes.new('ShaderNodeTexCoord')
     n_mapping        = nodes.new('ShaderNodeMapping')

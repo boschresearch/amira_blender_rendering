@@ -37,6 +37,7 @@ import amira_blender_rendering.interfaces as interfaces
 
 _scene_name = 'SimpleObject'
 
+
 @abr_scenes.register(name=_scene_name, type='config')
 class SimpleObjectConfiguration(abr_scenes.BaseConfiguration):
     def __init__(self):

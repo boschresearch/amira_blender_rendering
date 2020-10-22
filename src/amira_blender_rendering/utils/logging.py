@@ -36,7 +36,6 @@ except ImportError:
     # print("FAIL to import coloredlogs, consider installing with pip")
     coloredlogs = None
 
-
 # local logger configuration
 __logger_name = "amira_blender_rendering"
 __logger_logdir = os.path.expandvars("$HOME/.amira_blender_rendering")
@@ -62,6 +61,7 @@ __terminal_format = "[{}] {}:{} | {}".format(
 )
 
 
+# HINT: adding a (file) handler and then lowering logger level does not work well
 def get_logger(level="INFO", fmt=None):
     """This function returns a logger instance.
 
@@ -85,11 +85,7 @@ def get_logger(level="INFO", fmt=None):
     if fmt is None:
         fmt = __basic_format
 
-    logging.basicConfig(
-        level=level,
-        format=fmt,
-        filename=__logger_filename
-    )
+    logging.basicConfig(level=level, format=fmt, filename=__logger_filename)
 
     if coloredlogs is not None:
         coloredlogs.install(
@@ -112,15 +108,33 @@ def _get_level_enum(level):
         return getattr(logging, level)
 
 
+def add_file_handler(logger, filename=__logger_filename, level="DEBUG"):
+    """Explicitly force logging to the terminal (in addition to other logging, e..g to file)"""
+    # logger level can block stream-handler
+    file_logging_level = _get_level_enum(level)
+    logger.debug(f"file_logging_level={file_logging_level}")
+    logger.debug(f"logger level={logger.level}")
+    if logger.level > file_logging_level:
+        logger.setLevel(file_logging_level)
+
+    file_handler = logging.FileHandler(filename)
+    set_level(file_handler, level=level)
+
+    file_handler.setFormatter(logging.Formatter(__basic_format))
+    logger.addHandler(file_handler)
+
+
 def add_stream_handler(logger, level="DEBUG"):
     """Explicitly force logging to the terminal (in addition to other logging, e..g to file)"""
     # logger level can block stream-handler
     stream_logging_level = _get_level_enum(level)
+    logger.debug(f"stream_logging_level={stream_logging_level}")
+    logger.debug(f"logger level={logger.level}")
     if logger.level > stream_logging_level:
         logger.setLevel(stream_logging_level)
 
     stream_handler = logging.StreamHandler()
-    set_level(stream_handler, level="debug")
+    set_level(stream_handler, level=level)
 
     if coloredlogs is not None:
         fmt = __colored_format

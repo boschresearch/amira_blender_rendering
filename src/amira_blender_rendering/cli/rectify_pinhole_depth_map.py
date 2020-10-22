@@ -25,7 +25,7 @@ For this reason, points with equal depth always lay in a sphere around and cente
 Points on planes parallel to the image plane will have different depth values.
 
 Conversely, in standard rasterization models, points on planes parallel to the image plane share the same depth.
-This is becasue during standard rasterization, the view frustum (laying between the near and the far plane, 
+This is becasue during standard rasterization, the view frustum (laying between the near and the far plane,
 with the near plane being ~= camera image plane) is rectified into a parallelepiped volume.
 
 Because of this discrepancy, depth values of pinhole camera models might need to be rectified in some applications.

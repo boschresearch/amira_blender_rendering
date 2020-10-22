@@ -125,6 +125,11 @@ def get_cmd_argparser():
         action='store_true',
         help='Print this help message and exit')
 
+    parser.add_argument(
+        '--debug-dump',
+        action='store_true',
+        help='Save a blender file for development debugging')
+
     return parser
 
 
@@ -212,6 +217,11 @@ def main():
     success = scene.generate_dataset()
     if not success:
         logger.error("Error while generating dataset")
+
+    if cmd_args.debug_dump:
+        print("saving blender file for debugging to /tmp/abc_debug.blend")
+        import bpy
+        bpy.ops.wm.save_as_mainfile(filepath="/tmp/abc_debug.blend")
 
     # tear down scene. should be handled by blender, but a scene might have
     # other things opened that it should close gracefully

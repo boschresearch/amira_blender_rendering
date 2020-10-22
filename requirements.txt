@@ -1,4 +1,5 @@
 # for abr
+coloredlogs
 numpy
 imageio
 
