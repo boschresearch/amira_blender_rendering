@@ -29,18 +29,21 @@ Below contains more detailed items
     - Document issues with PNG and color spaces (sRGB is non-linear but
       typically used when writing PNG files. This is a remarkably bad format to
       store linear data, and the reason why people use EXR and HDF5)
+  + Disparity maps
+  + Visibility ratio
 * Further clarify what levels of realism are required, and how to improve
   realism
   + Motion Blur might be required. Discussion with DLR showed that some
     reviewers complain when datasets are too perfect.
-  + Make scenes more complex, with more textures, models, etc
-  + Dynamics in the scene
+  + Make scenes more complex, with more textures, models, clutter, etc
+  + (Continuous) Dynamics in the scene (both camera and objects)
     - moving objects (example conveyor belt)
     - moving sensors
   + Sensor realism
     - noise
-    - resolution
-    - distance between RGB and depth sensors
+    - resolution: rgb and depth maps sometimes come with different resolutions
+        - e.g., RealSense camera, rgb: 960x540 depth: 640x480
+    - distance between RGB and depth sensors (are they treated as one camera or as two separate ones?)
 * Decide and discuss an interface between ABR and APS
 * User Stories and Use Cases
   + What could users achieve with ABR?
