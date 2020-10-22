@@ -48,12 +48,9 @@ class TestGeometry(unittest.TestCase):
         self._cam = bpy.context.scene.objects['Camera']
 
         self._zeroing = Vector((0, 0, 0))
-        self._setup_renderer()
-
         self._w = 640
         self._h = 480
-        bpy.context.scene.render.resolution_x = self._w
-        bpy.context.scene.render.resolution_y = self._h
+        self._setup_renderer()
 
     def test_get_relative_rotation_to_cam_deg(self):
         # compute relative rotation
@@ -77,10 +74,13 @@ class TestGeometry(unittest.TestCase):
         # test of ray tracing occlusion test
         scene = bpy.context.scene
         layer = scene.view_layers['View Layer']
-        
+
         # test visibile object
         self.assertFalse(geometry.test_occlusion(scene, layer, self._cam, self._obj1, self._w, self._h, False),
                          'Visible object appears occluded')
+        self.assertFalse(geometry.test_occlusion(scene, layer, self._cam, self._obj1, self._w, self._h, True),
+                         'Visible object appears occluded')
+
         # test non visible object
         self.assertTrue(geometry.test_occlusion(scene, layer, self._cam, self._obj_non_visible, self._w, self._h),
                         'Non visible object appears visible')
@@ -128,6 +128,8 @@ class TestGeometry(unittest.TestCase):
     def _setup_renderer(self):
         # setup hardcoded renderer
         bpy.context.scene.render.engine = "CYCLES"
+        bpy.context.scene.render.resolution_x = self._w
+        bpy.context.scene.render.resolution_y = self._h
         bpy.context.scene.cycles.progressive = 'BRANCHED_PATH'
         bpy.context.scene.cycles.aa_samples = 4
 

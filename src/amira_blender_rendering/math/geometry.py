@@ -89,7 +89,7 @@ def p2d_to_pixel_coords(p: Vector, render: bpy.types.RenderSettings = bpy.contex
 
     if len(p) != 2:
         raise Exception(f"Vector {p} needs to be 2 dimensinoal")
-
+    
     return Vector(((render.resolution_x - 1) * (p.x + 1.0) / +2.0,
                    (render.resolution_y - 1) * (p.y - 1.0) / -2.0))
 
@@ -215,15 +215,16 @@ def test_visibility(obj, cam, width, height, require_all=True):
     Returns:
         True, if object is visible, false if not.
     """
+    render = bpy.context.scene.render
     # Test if object is still visible. That is, none of the vertices
     # should lie outside the visible pixel-space
     vs = [obj.matrix_world @ Vector(v) for v in obj.bound_box]
-    ps = [project_p3d(v, cam) for v in vs]
+    ps = [project_p3d(v, cam, render=render) for v in vs]
     # Test if we encountered a "point at infinity"
     if None in ps:
         return False
     else:
-        pxs = [p2d_to_pixel_coords(p) for p in ps]
+        pxs = [p2d_to_pixel_coords(p, render=render) for p in ps]
         oks = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
         return all(oks) if require_all else any(oks)
 
@@ -254,6 +255,7 @@ def test_occlusion(scene, layer, cam, obj, width, height, require_all=True, orig
     """
     dg = bpy.context.evaluated_depsgraph_get()
     dg.update()
+    render = bpy.context.scene.render
 
     # get mesh, evaluated after simulations, and camera origin from the camera's
     # world matrix
@@ -263,12 +265,12 @@ def test_occlusion(scene, layer, cam, obj, width, height, require_all=True, orig
     obj.to_mesh_clear()
 
     # compute projected vertices
-    ps = [project_p3d(v, cam) for v in vs]
+    ps = [project_p3d(v, cam, render=render) for v in vs]
     if None in ps:
         return True
 
     # compute pixel coordinates for each vertex
-    pxs = [p2d_to_pixel_coords(p) for p in ps]
+    pxs = [p2d_to_pixel_coords(p, render=render) for p in ps]
 
     # keep track of what is going on
     vs_visible = [px[0] >= 0 and px[0] < width and px[1] >= 0 and px[1] < height for px in pxs]
