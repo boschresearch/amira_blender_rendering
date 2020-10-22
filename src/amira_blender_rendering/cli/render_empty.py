@@ -25,9 +25,11 @@ to identify and trace issues.
 """
 import bpy
 
+
 def main():
     # gracefully close blender
     bpy.ops.wm.quit_blender()
+
 
 if __name__ == "__main__":
     main()
