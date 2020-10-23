@@ -252,11 +252,17 @@ were used, have a look at `config/pandatable_example.cfg`.
     # mode specific configuration
     mode_config = 
 
-    # additional logging configs
-    [logging]
+    # additional debug configs
+    [debug]
+    # if in debug mode (see baseconfiguration), produce temporary plot of camera locations (best for multiview rendering)
+    plot = False
     # if in debug mode (see baseconfiguration), plot coordinate axis system for camera
     # poses in before multiview rendering
     plot_axis = False
     # if in debug mode (see baseconfiguration), toggle scatter plot of camera locations
     # before multiview rendering 
     scatter = False
+    # if in debug mode (see baseconfiguration), enable saving to blender.
+    # The option can be used to e.g., inspect whether multiple camera locations are occluded,
+    # check object occlusions, check the dymanic simulation.
+    save_to_blend = False

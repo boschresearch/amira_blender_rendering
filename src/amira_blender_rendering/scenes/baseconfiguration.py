@@ -57,8 +57,8 @@ class BaseConfiguration(Configuration):
         self.add_param('render_setup.color_depth', 16, 'Depth for color (RGB) image [16bit, 8bit]. Default: 16')
         self.add_param('render_setup.allow_occlusions', False, 'If True, allow objects to be occluded from camera')
 
-        # logging
-        self.add_param('logging.debug', False, 'If True, enable log for debugging')
+        # debug
+        self.add_param('debug.enabled', False, 'If True, enable debugging. For specifc flags refer to single scenes')
 
         # postprocess
         self.add_param('postprocess.rectify_depth', False, 'If True, from pinhole depth map, compute rectilinear map')

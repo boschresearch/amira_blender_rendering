@@ -126,16 +126,17 @@ behaves, or which render backend to use.
     # allow occlusions of target objects (true, false)
     allow_occlusions = False
 
-logging
+debugging
 -------
 
-The ``logging`` namespace can be used to toggle log and debug functionatilies
+The ``debug`` namespace can be used to toggle debug functionatilies.
+For scene specific flags refer to the desider scene.
 
 .. code-block::
 
-    [logging]
+    [debug]
     # activate debug logs and print-outs (true, false)
-    debug = False
+    enabled = False
 
 postprocess
 -----------
