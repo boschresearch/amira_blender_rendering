@@ -168,7 +168,10 @@ were used, have a look at `config/pandatable_example.cfg`.
     # Note: Make sure that in your blender files the parts are active rigid objects with
     #       proper weight and sensitivity margin!
     #
-    # Note: We will not automatically add rigid body dynamics to ply-only models!
+    # Note/Attenton: We will not automatically add rigid body dynamics to ply-only models!
+    #               This means that if not actively added, the object will (by default) be
+    #               regarded as passive object (i.e., w/o rigid-body properties), hence not
+    #               subject to the dynamic simulation.
     # 
     # ATTENTION: when scaling objects the final behavior might be different between
     #            loading objects from .blend or from .ply since the intrinsic scales might
