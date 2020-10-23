@@ -62,8 +62,8 @@ __terminal_format = "[{}] {}:{} | {}".format(
 
 
 # HINT: adding a (file) handler and then lowering logger level does not work well
-def get_logger(level="INFO", fmt=None):
-    """This function returns a logger instance.
+def configure_logger(level="INFO", fmt=None):
+    """This function configure and returns a logger instance.
 
     If coloredlogs is installed the messages in terminal will have different colors acording to logging level.
     If verboselogs is installed ist supports additional logging levels and color variations.
@@ -97,8 +97,12 @@ def get_logger(level="INFO", fmt=None):
         )
 
     logger = getLogger(__logger_name)
-
     return logger
+
+
+def get_logger():
+    "Return a preconfigured logger instance"
+    return logging.getLogger()
 
 
 def _get_level_enum(level):

@@ -72,10 +72,11 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
                        'Selected mode to generate view points, i.e., random, bezier, viewsphere')
         self.add_param('multiview_setup.mode_config', Configuration(), 'Mode specific configuration')
 
-        self.add_param('logging.plot', False, 'If True, in debug mode, enable simple visual debug')
-        self.add_param('logging.plot_axis', False, 'If True, in debug-plot mode, plot camera coordinate systems')
-        self.add_param('logging.scatter', False, 'If True, in debug mode-plot, enable scatter plot')
-        self.add_param('logging.save_to_blend', False, 'If True, in debug mode, log to .blend files')
+        # specific debug config
+        self.add_param('debug.plot', False, 'If True, in debug mode, enable simple visual debug')
+        self.add_param('debug.plot_axis', False, 'If True, in debug-plot mode, plot camera coordinate systems')
+        self.add_param('debug.scatter', False, 'If True, in debug mode-plot, enable scatter plot')
+        self.add_param('debug.save_to_blend', False, 'If True, in debug mode, log to .blend files')
 
 
 @abr_scenes.register(name=_scene_name, type='scene')
@@ -564,23 +565,29 @@ class PandaTable(interfaces.ABRScene):
         else:
             raise ValueError(f'Selected render mode {self.render_mode} not currently supported')
        
-        # some debug/logging options
-        if self.config.logging.debug:
+        # some debug options
+        # NOTE: at this point the object of interest have been loaded in the blender
+        # file but their positions have not yet been randomized..so they should all be located
+        # at the origin
+        if self.config.debug.enabled:
             # simple plot of generated camera locations
-            if self.config.logging.plot:
+            if self.config.debug.plot:
                 from amira_blender_rendering.math.curves import plot_points
 
                 for cam_name in camera_names:
                     plot_points(np.array(cameras_locations[cam_name]),
                                 bpy.context.scene.objects[cam_name],
-                                plot_axis=self.config.logging.plot_axis,
-                                scatter=self.config.logging.scatter)
+                                plot_axis=self.config.debug.plot_axis,
+                                scatter=self.config.debug.scatter)
 
             # save all generated camera locations to .blend for later debug
-            if self.config.logging.save_to_blend:
+            if self.config.debug.save_to_blend:
                 for i_cam, cam_name in enumerate(camera_names):
-                    self.logger.info('For debugging purposes, saving all cameras locations to .blend')
-                    self._save_to_blend(i_cam, camera_locations=cameras_locations[cam_name])
+                    self.save_to_blend(
+                        self.dirinfos[i_cam],
+                        camera_name=cam_name,
+                        camera_locations=cameras_locations[cam_name],
+                        basefilename='robottable_camera_locations')
 
         # control loop for the number of static scenes to render
         scn_counter = 0
@@ -643,9 +650,13 @@ class PandaTable(interfaces.ABRScene):
                     all_visible = self.test_visibility(cam_name, cam_loc)
 
                     if not all_visible:
-                        if self.config.logging.debug and self.config.logging.save_to_blend:
-                            self.logger.info('One or more objects are not visible. Saving debug data to .blend')
-                            self._save_to_blend(i_cam, scene_index=scn_counter, view_index=view_counter)
+                        # if debug is enabled save to blender for debugging
+                        if self.config.debug.enabled and self.config.debug.save_to_blend:
+                            self.save_to_blend(
+                                self.dirinfos[i_cam],
+                                scene_index=scn_counter,
+                                view_index=view_counter,
+                                basefilename='robottable_visibility')
 
                     # update path information in compositor
                     self.renderman.setup_pathspec(self.dirinfos[i_cam], base_filename, self.objs)
@@ -665,6 +676,15 @@ class PandaTable(interfaces.ABRScene):
                             rectify_depth=self.config.postprocess.rectify_depth,
                             overwrite=self.config.postprocess.overwrite,
                             visibility_from_mask=self.config.postprocess.visibility_from_mask)
+                        
+                        if self.config.debug.enabled and self.config.debug.save_to_blend:
+                            # reset frame to 0 and save
+                            bpy.context.scene.frame_set(0)
+                            self.save_to_blend(
+                                self.dirinfos[i_cam],
+                                scene_index=scn_counter,
+                                view_index=view_counter,
+                                basefilename='robottable')
 
                     except ValueError:
                         self.logger.error(
@@ -673,10 +693,15 @@ class PandaTable(interfaces.ABRScene):
                         repeat_frame = True
 
                         # if requested save to blend files for debugging
-                        if self.config.logging.debug and self.config.logging.save_to_blend:
+                        if self.config.debug.enabled and self.config.debug.save_to_blend:
                             self.logger.error('There might be a discrepancy between generated mask and '
                                               'object visibility data. Saving debug info to .blend')
-                            self._save_to_blend(i_cam, scene_index=scn_counter, view_index=view_counter, on_error=True)
+                            self.save_to_blend(
+                                self.dirinfos[i_cam],
+                                scene_index=scn_counter,
+                                view_index=view_counter,
+                                on_error=True,
+                                basefilename='robottable')
 
                         break
 
@@ -699,98 +724,3 @@ class PandaTable(interfaces.ABRScene):
         """Tear down the scene"""
         # nothing to do
         pass
-
-    def _save_to_blend(self, camera_index: int, **kw):
-        # TODO: move to basescenemanager?
-        """
-        Save log data to .blend files
-
-        The behavior of the method depends on its keywords input arguments.
-        In particular:
-            - with no optional args: it logs the current active scene to .blend in ActiveCamera/Logs
-                                    where CurrentCamera identify the directory where data, i.e.,
-                                    Images and Annotations, for the active camera are dumped
-            - with camera_locations: the active camera is duplicated and move in all given locations.
-                                    Use this behavior to check whether generated locations are valid.
-            - with view_index and scene_index: the current active scene is logged to .blend with
-                                                following our base filenaming convention
-                - if additionally on_error == True: data are logged to a separate timestamped subdirectory
-                                                    (together with additional data) to avoid data overwrite
-
-        Args:
-            camera_index(int): active camera index as in self.config.scene_setup.cameras
-        
-        Kwargs Args:
-            camera_locations(list): list containing multiple camera locations
-            scene_index(int): index of static scene being rendered
-            view_index(int): index of current view being rendered
-            on_error(bool): if True, assume an error has been raised and additional data are logged
-        """
-        # extract and check args
-        camera_locations = kw.get('camera_locations', None)
-        scn_idx = kw.get('scene_index', None)
-        view_idx = kw.get('view_index', None)
-        on_error = kw.get('on_error', False)
-
-        if camera_locations is not None and (scn_idx is not None or view_idx is not None or on_error):
-            raise ValueError('Given arguments are mutually exclusive')
-
-        # extract and create (if necessary) log directory (for each camera)
-        logpath = os.path.join(self.dirinfos[camera_index].base_path, 'Logs')
-        if on_error:
-            from datetime import datetime
-            from shutil import copyfile
-            now = datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
-            logpath = os.path.join(logpath, now)
-        pathlib.Path(logpath).mkdir(parents=True, exist_ok=True)
-
-        # file specs
-        scn_frmt_w = int(ceil(log(self.config.dataset.scene_count, 10)))
-        view_frmt_w = int(ceil(log(self.config.dataset.view_count, 10)))
-        scn_str = '' if scn_idx is None else f'_s{scn_idx:0{scn_frmt_w}}'
-        view_str = '' if view_idx is None else f'_v{view_idx:0{view_frmt_w}}'
-
-        filename = f'robottable' + scn_str + view_str + f'.blend'
-        filepath = os.path.join(logpath, filename)
-   
-        # create and link temporary collection
-        if camera_locations is not None:
-            cam_name = self.get_camera_name(self.config.scene_setup.cameras[camera_index])
-            tmp_cam_coll = bpy.data.collections.new('TemporaryCameras')
-            bpy.context.scene.collection.children.link(tmp_cam_coll)
-
-            tmp_cameras = []
-            for location in camera_locations:
-                blnd.select_object(cam_name)
-                bpy.ops.object.duplicate()
-                # TODO: remove from original collection to avoid name clutter in .blend
-                tmp_cam_obj = bpy.context.object
-                tmp_cam_obj.location = location
-                tmp_cam_coll.objects.link(tmp_cam_obj)
-                tmp_cameras.append(tmp_cam_obj)
-            bpy.context.evaluated_depsgraph_get().update()
-   
-        self.logger.info(f"Saving blender file for debugging to {filepath}")
-        bpy.ops.wm.save_as_mainfile(filepath=filepath)
-
-        # clear objects and collection
-        if camera_locations is not None:
-            bpy.ops.object.select_all(action='DESELECT')
-            for tmp_cam in tmp_cameras:
-                bpy.data.objects.remove(tmp_cam)
-            bpy.data.collections.remove(tmp_cam_coll)
-            
-        # on error we save additional files
-        if on_error:
-            self.logger.error('Saving to .blend on error. Logging additional data')
-            # copy rgb
-            rgbname = scn_str[1:] + view_str + f'.png'
-            srcpath = os.path.join(self.dirinfos[camera_index].images.const, rgbname)
-            dstpath = os.path.join(logpath, rgbname)
-            copyfile(srcpath, dstpath)
-            # copy masks
-            for obj in self.objs:
-                maskname = scn_str[1:] + view_str + f'{obj["id_mask"]}.png'
-                srcpath = os.path.join(self.dirinfos[camera_index].images.mask, maskname)
-                dstpath = os.path.join(logpath, maskname)
-                copyfile(srcpath, dstpath)
