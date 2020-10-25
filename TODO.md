@@ -111,3 +111,20 @@ Automatically render a predefined number of images is not possible.
   * *DoD(s)*: 
     - ABR Blender Plug-in available [if extensive Blender knowledge]
     - ABR as a python library/OSS project available [if limited Blender knowldege]
+
+## (3 months) Planning proposal
+
+* Sprint 11.20
+  + Implement minimal list of changes according to DLR/APA requests
+  + Produce dataset for DLR (otherwise we might get nothing concrete out of the collaboration according to EV6)
+  + Release OSS
+  + Closer estimate for ABR as Blender plug-in
+* Sprint 12.20: none/break
+* Sprint 01.21
+  + Start development of ABR as Blender plug-in
+  + Hotfix/maintain OSS project
+* Sprint 02.21
+  + Polish implementation
+  + Push to OSS ABR as blender plug-in
+* Sprint 03.21
+  + Additional buffer sprint in case of need
