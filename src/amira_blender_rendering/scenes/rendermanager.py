@@ -58,7 +58,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         self.unit_conversion = unit_conversion
 
     def postprocess(self, dirinfo, base_filename, camera, objs, zeroing,
-                    rectify_depth: bool = False, overwrite: bool = False, visibility_from_mask: bool = False):
+                    rectify_depth: bool = False, visibility_from_mask: bool = False):
         """Postprocessing the scene.
 
         This step will compute all the data that is relevant for
@@ -74,7 +74,6 @@ class RenderManager(abr_scenes.BaseSceneManager):
         
         Optional Args:
             rectify_depth(bool): if True, compute rectilinear depth map from pinhole map
-            overwrite(bool): if True, overwrite non-rectified depth map with rectified
             visibility_from_mask(bool): if True, if mask is found empty even if object
                                         is visible, visibility info are overwritten and
                                         set to false
@@ -90,23 +89,24 @@ class RenderManager(abr_scenes.BaseSceneManager):
         self.compositor.postprocess()
 
         # rectify depth map (if requested)
+        # Standard depth maps as returned by blender are indeed ranges.
+        # Here we convert ranges into depth values
         if rectify_depth:
             # get parameters
             res_x = bpy.context.scene.render.resolution_x
             res_y = bpy.context.scene.render.resolution_y
             sensor_width = camera.data.sensor_width
             f_in_mm = camera.data.lens
-            # filenames
-            fpath = os.path.join(dirinfo.images.depth, f'{base_filename}.exr')
-            outfpath = fpath
-            if not overwrite:
-                dirpath = os.path.join(dirinfo.images.base_path, 'depth_rectilinear')
-                if not os.path.exists(dirpath):
-                    os.mkdir(dirpath)
-                outfpath = os.path.join(dirpath, f'{base_filename}.exr')
-            # rectify
-            camera_utils.project_pinhole_depth_to_rectilinear(
-                fpath, outfpath, res_x, res_y, sensor_width, f_in_mm)
+            
+            # filenames (ranges are stored as true exr values, depth as 16 bit png)
+            fpath_in = os.path.join(dirinfo.images.depth, f'{base_filename}.exr')
+            dirpath = os.path.join(dirinfo.images.base_path, 'depth_rectilinear')
+            if not os.path.exists(dirpath):
+                os.mkdir(dirpath)
+            fpath_out = os.path.join(dirpath, f'{base_filename}.png')
+            # convert
+            camera_utils.project_pinhole_range_to_rectilinear_depth(
+                fpath_in, fpath_out, res_x, res_y, sensor_width, f_in_mm)
 
         # compute bounding boxes and save annotations
         results_gl = ResultsCollection()

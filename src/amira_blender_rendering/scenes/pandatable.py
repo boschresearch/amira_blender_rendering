@@ -58,7 +58,7 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images',
                        'Path to background images / environment textures')
         self.add_param('scene_setup.cameras',
-                       ['Camera,' 'StereoCamera.Left', 'StereoCamera.Right', 'Camera.FrontoParallel.Left',
+                       ['Camera', 'StereoCamera.Left', 'StereoCamera.Right', 'Camera.FrontoParallel.Left',
                         'Camera.FrontoParallel.Right'], 'Cameras to render')
         self.add_param('scene_setup.forward_frames', 25, 'Number of frames in physics forward-simulation')
 
@@ -674,7 +674,6 @@ class PandaTable(interfaces.ABRScene):
                             self.objs,
                             self.config.camera_info.zeroing,
                             rectify_depth=self.config.postprocess.rectify_depth,
-                            overwrite=self.config.postprocess.overwrite,
                             visibility_from_mask=self.config.postprocess.visibility_from_mask)
                         
                         if self.config.debug.enabled and self.config.debug.save_to_blend:

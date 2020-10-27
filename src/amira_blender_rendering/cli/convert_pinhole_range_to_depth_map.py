@@ -34,6 +34,7 @@ Because of this discrepancy, depth values of pinhole camera models might need to
 import sys
 import os
 import argparse
+import pathlib
 
 
 def _err_msg():
@@ -93,13 +94,13 @@ def get_cmd_argparser():
     parser = argparse.ArgumentParser(description='Compute rectified depth map of a given dataset')
 
     parser.add_argument('path', help='Path to dataset directory to convert')
-    parser.add_argument('-o', '--overwrite', action='store_true', help='Overwrite depth files')
 
     parser.add_argument('-abr', '--abr-path', dest='abr_path',
                         default='~/amira_blender_rendering/src',
                         help='Path where amira_blender_rendering (abr) can be found')
 
-    parser.add_argument('-c', '--config', help='Path to config file')
+    parser.add_argument('-c', '--config', help='Path to a different config file')
+    parser.add_argument('-s', '--scale', type=float, default=1e4, help='Depth scaling factor. Default 1e4 (m to .1mm)')
     
     return parser
 
@@ -114,12 +115,10 @@ def main():
     if not os.path.exists(args.path) and not os.path.isdir(args.path):
         raise RuntimeError(f'Path "{args.path}" does not exists or is not a directory')
 
-    dirpath_depth = os.path.join(args.path, 'Images', 'depth')
-    dirpath_depth_rect = dirpath_depth
-    if not args.overwrite:
-        dirpath_depth_rect = os.path.join(args.path, 'Images', 'depth_rectilinear')
-        if not os.path.exists(dirpath_depth_rect):
-            os.mkdir(dirpath_depth_rect)
+    dirpath_range = os.path.join(args.path, 'Images', 'depth')
+    dirpath_depth = os.path.join(args.path, 'Images', 'depth_rectilinear')
+    if not os.path.exists(dirpath_depth):
+        os.mkdir(dirpath_depth)
 
     # get and parse config
     config = BaseConfiguration()
@@ -137,10 +136,13 @@ def main():
     f_in_mm = config.camera_info.focal_length
 
     # loop over files
-    for fname in os.listdir(dirpath_depth):
-        fpath = os.path.join(dirpath_depth, fname)
-        outfpath = os.path.join(dirpath_depth_rect, fname)
-        camera_utils.project_pinhole_depth_to_rectilinear(fpath, outfpath, res_x, res_y, sensor_width, f_in_mm)
+    for fpath_in in pathlib.Path(dirpath_range).iterdir():
+        if not fpath_in.is_file():
+            continue
+        fpath_out = os.path.join(dirpath_depth, fpath_in.stem + '.png')
+        fpath_in = str(fpath_in)
+        camera_utils.project_pinhole_range_to_rectilinear_depth(
+            fpath_in, fpath_out, res_x, res_y, sensor_width, f_in_mm, args.scale)
 
 
 if __name__ == '__main__':

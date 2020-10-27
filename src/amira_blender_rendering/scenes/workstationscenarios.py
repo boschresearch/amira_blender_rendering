@@ -744,7 +744,6 @@ class WorkstationScenarios(interfaces.ABRScene):
                             self.objs,
                             self.config.camera_info.zeroing,
                             rectify_depth=self.config.postprocess.rectify_depth,
-                            overwrite=self.config.postprocess.overwrite,
                             visibility_from_mask=self.config.postprocess.visibility_from_mask)
 
                         if self.config.debug.enabled and self.config.debug.save_to_blend:
