@@ -390,8 +390,7 @@ class SimpleObject(interfaces.ABRScene):
                     bpy.context.scene.camera,
                     self.objs,
                     self.config.camera_info.zeroing,
-                    rectify_depth=self.config.postprocess.rectify_depth,
-                    overwrite=self.config.postprocess.overwrite)
+                    rectify_depth=self.config.postprocess.rectify_depth)
             except ValueError:
                 self.logger.warn("ValueError during post-processing, re-generating image index {i}")
             else:

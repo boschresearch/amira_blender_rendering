@@ -323,33 +323,44 @@ def get_intrinsics(scene, cam):
     return s_u, s_v, u_0, v_0
 
 
-def project_pinhole_depth_to_rectilinear(filepath: str, outfilepath: str,
-                                         res_x: int = bpy.context.scene.render.resolution_x,
-                                         res_y: int = bpy.context.scene.render.resolution_y,
-                                         sensor_width: float = bpy.context.scene.camera.data.sensor_width,
-                                         f_in_mm: float = bpy.context.scene.camera.data.lens):
+def project_pinhole_range_to_rectilinear_depth(filepath_in: str, filepath_out: str,
+                                               res_x: int = bpy.context.scene.render.resolution_x,
+                                               res_y: int = bpy.context.scene.render.resolution_y,
+                                               sensor_width: float = bpy.context.scene.camera.data.sensor_width,
+                                               f_in_mm: float = bpy.context.scene.camera.data.lens,
+                                               scale: float = 1e4):
     """
     Given a depth map computed (as standard in ABR setup) using a perfect pinhole model,
     compute the projected rectilinear depth
+
+    The function assumes to read-in from an Exr image format (32 bit true range values)
+    and to write-out in PNG image format (16 bit truncated depth values)
     
     Args:
-        filepath(str): path to file with depth map to load
-        outfilepath(str): path to write rectfied map to
+        filepath_in(str): path to (.exr) file with range values (assumed in m) to load
+        filepath_out(str): path to (.png) file where (rectified) depth map is write to
         res_x(int): render/image x resolution
         res_y(int): render/image y resolution
         sensor_width(float): camera sensor width
         f_in_mm(float): camera focal lenght in mm
+        scale(float): scaling factor for depth value. Default 1e4 (m to .1 mm)
     """
     import cv2
     logger = get_logger()
 
+    # quick check file type
+    if '.exr' not in filepath_in:
+        raise ValueError(f'Given input file {filepath_in} not of type EXR')
+    if '.png' not in filepath_out:
+        raise ValueError(f'Given output file {filepath_out} not of tyep PNG')
+
     sensor_height = res_y / res_x * sensor_width
 
     # read image
-    image = (cv2.imread(filepath, cv2.IMREAD_ANYDEPTH)).astype(np.float32)
+    image = (cv2.imread(filepath_in, cv2.IMREAD_ANYDEPTH)).astype(np.float32)
 
     # init array
-    rect_depth = np.zeros(image.shape, dtype=np.float32)
+    rect_depth = np.zeros(image.shape, dtype=np.uint16)
     
     logger.info('Rectifying pinhole depth map')
     for u in range(image.shape[1]):
@@ -366,15 +377,15 @@ def project_pinhole_depth_to_rectilinear(filepath: str, outfilepath: str,
             z = 1.0
             norm = np.linalg.norm([x, y, z])
 
-            # normalize = project point on unit sphere, then apply depth
-            z = d * z / norm
-            
+            # normalize = project point on unit sphere, then apply depth and scale
+            z = (d * z / norm) * scale
+
             # fill depth map
             rect_depth[v, u] = z
     
     # overwrite file
-    cv2.imwrite(outfilepath, rect_depth, [cv2.IMWRITE_EXR_TYPE, cv2.IMWRITE_EXR_TYPE_FLOAT])
-    logger.info(f'Saved rectified depth map at {outfilepath}')
+    cv2.imwrite(filepath_out, rect_depth, [cv2.IMWRITE_PNG_STRATEGY, cv2.IMWRITE_PNG_STRATEGY_DEFAULT])
+    logger.info(f'Saved rectified depth map at {filepath_out}')
 
 
 def get_current_cameras_locations(camera_names: list):
