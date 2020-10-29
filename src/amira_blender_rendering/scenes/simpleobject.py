@@ -85,7 +85,8 @@ class SimpleObject(interfaces.ABRScene):
         self.renderman.setup_renderer(
             self.config.render_setup.integrator,
             self.config.render_setup.denoising,
-            self.config.render_setup.samples)
+            self.config.render_setup.samples,
+            self.config.render_setup.motion_blur)
 
         # setup environment texture information
         self.setup_environment_textures()

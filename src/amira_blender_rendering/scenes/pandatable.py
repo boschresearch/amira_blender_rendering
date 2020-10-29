@@ -118,7 +118,8 @@ class PandaTable(interfaces.ABRScene):
         self.renderman.setup_renderer(
             self.config.render_setup.integrator,
             self.config.render_setup.denoising,
-            self.config.render_setup.samples)
+            self.config.render_setup.samples,
+            self.config.render_setup.motion_blur)
 
         # grab environment textures
         self.setup_environment_textures()

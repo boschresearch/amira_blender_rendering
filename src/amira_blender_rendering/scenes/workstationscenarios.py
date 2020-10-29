@@ -134,7 +134,7 @@ class WorkstationScenarios(interfaces.ABRScene):
         # setup_scene(), because otherwise the information will be taken from
         # the file, and changes made by setup_renderer ignored
         self.renderman.setup_renderer(self.config.render_setup.integrator, self.config.render_setup.denoising,
-                                      self.config.render_setup.samples)
+                                      self.config.render_setup.samples, self.config.render_setup.motion_blur)
 
         # grab environment textures
         self.setup_environment_textures()
