@@ -108,7 +108,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
                 fpath_out_depth,
                 res_x=bpy.context.scene.render.resolution_x,
                 res_y=bpy.context.scene.render.resolution_y,
-                calibration_matrix=K_cam)
+                calibration_matrix=K_cam,
+                scale=postprocess_config.depth_scale)
 
         # NOTE: this assumes the camera(s) for which the disparity is computed
         # is(are) the correct one(s). That is it has the correct baseline according to
@@ -127,7 +128,10 @@ class RenderManager(abr_scenes.BaseSceneManager):
                 camera_utils.compute_disparity_from_z_info(fpath_in_depth,
                                                            fpath_out_disparity,
                                                            baseline_mm=postprocess_config.parallel_cameras_baseline_mm,
-                                                           calibration_matrix=K_cam)
+                                                           calibration_matrix=K_cam,
+                                                           res_x=bpy.context.scene.render.resolution_x,
+                                                           res_y=bpy.context.scene.render.resolution_y,
+                                                           scale=postprocess_config.depth_scale)
 
         # compute bounding boxes and save annotations
         results_gl = ResultsCollection()
