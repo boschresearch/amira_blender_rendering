@@ -56,6 +56,7 @@ class BaseConfiguration(Configuration):
         self.add_param('render_setup.samples', 128, 'Samples to use during rendering')
         self.add_param('render_setup.color_depth', 16, 'Depth for color (RGB) image [16bit, 8bit]. Default: 16')
         self.add_param('render_setup.allow_occlusions', False, 'If True, allow objects to be occluded from camera')
+        self.add_param('render_setup.motion_blur', False, 'If True, toggle motion blur during rendering. Motion blur specific config must be set directly in the .blend blnderer scene')
 
         # debug
         self.add_param('debug.enabled', False, 'If True, enable debugging. For specifc flags refer to single scenes')

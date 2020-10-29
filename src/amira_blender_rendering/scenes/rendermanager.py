@@ -145,7 +145,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
             results_cv.add_result(render_result_cv)
         self.save_annotations(dirinfo, base_filename, results_gl, results_cv)
 
-    def setup_renderer(self, integrator, enable_denoising, samples):
+    def setup_renderer(self, integrator: str, enable_denoising: bool, samples: int, motion_blur: bool):
         """Setup blender CUDA rendering, and specify number of samples per pixel to
         use during rendering. If the setting render_setup.samples is not set in the
         configuration, the function defaults to 128 samples per image.
@@ -163,6 +163,9 @@ class RenderManager(abr_scenes.BaseSceneManager):
             self.logger.info(f"integrator set to path tracing")
             bpy.context.scene.cycles.progressive = integrator
             bpy.context.scene.cycles.samples = samples
+
+        # set motion blur
+        bpy.context.scene.render.use_motion_blur = motion_blur
 
         # setup denoising option
         bpy.context.scene.view_layers[0].cycles.use_denoising = enable_denoising
