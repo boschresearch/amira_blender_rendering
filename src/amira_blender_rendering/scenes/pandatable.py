@@ -673,8 +673,7 @@ class PandaTable(interfaces.ABRScene):
                             bpy.context.scene.camera,
                             self.objs,
                             self.config.camera_info.zeroing,
-                            rectify_depth=self.config.postprocess.rectify_depth,
-                            visibility_from_mask=self.config.postprocess.visibility_from_mask)
+                            postprocess_config=self.config.postprocess)
                         
                         if self.config.debug.enabled and self.config.debug.save_to_blend:
                             # reset frame to 0 and save
