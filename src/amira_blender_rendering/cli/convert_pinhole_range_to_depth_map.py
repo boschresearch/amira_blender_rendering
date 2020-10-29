@@ -35,6 +35,7 @@ import sys
 import os
 import argparse
 import pathlib
+import numpy as np
 
 
 def _err_msg():
@@ -99,7 +100,6 @@ def get_cmd_argparser():
                         default='~/amira_blender_rendering/src',
                         help='Path where amira_blender_rendering (abr) can be found')
 
-    parser.add_argument('-c', '--config', help='Path to a different config file')
     parser.add_argument('-s', '--scale', type=float, default=1e4, help='Depth scaling factor. Default 1e4 (m to .1mm)')
     
     return parser
@@ -123,17 +123,18 @@ def main():
     # get and parse config
     config = BaseConfiguration()
     config_filepath = os.path.join(expandpath(args.path), 'Dataset.cfg')
-    if args.config is not None:
-        config_filepath = expandpath(args.config)
-        if not os.path.exists(config_filepath):
-            raise RuntimeError(f'File {config_filepath} does not exists')
+    if not os.path.exists(config_filepath):
+        raise RuntimeError(f'File {config_filepath} does not exists')
     config.parse_file(config_filepath)
 
     # get specific configs
+    fx, fy, cx, cy = camera_utils._intrinsics_to_numpy(config.camera_info)
+    calibration_matrix = np.array([fx, 0, cx, 0, fy, cy, 0, 0, 1]).reshape(3, 3)
     res_x = config.camera_info.width
     res_y = config.camera_info.height
-    sensor_width = config.camera_info.sensor_width
-    f_in_mm = config.camera_info.focal_length
+    if res_x in [None, 0] or res_y in [None, 0]:
+        res_x = cx * 2
+        res_y = cy * 2
 
     # loop over files
     for fpath_in in pathlib.Path(dirpath_range).iterdir():
@@ -142,7 +143,7 @@ def main():
         fpath_out = os.path.join(dirpath_depth, fpath_in.stem + '.png')
         fpath_in = str(fpath_in)
         camera_utils.project_pinhole_range_to_rectilinear_depth(
-            fpath_in, fpath_out, res_x, res_y, sensor_width, f_in_mm, args.scale)
+            fpath_in, fpath_out, calibration_matrix, res_x, res_y, args.scale)
 
 
 if __name__ == '__main__':
