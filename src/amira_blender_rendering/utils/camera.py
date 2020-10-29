@@ -345,7 +345,7 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
     Optional Args:
         res_x(int): render/image x resolution (pixel). Default is initial scene resolution_x
         res_y(int): render/image y resolution (pixel). Default is initial scene resolution_y
-        scale(float): scaling factor for depth value. Default 1e4 (m to .1 mm)
+        scale(float): scaling factor to convert range (in m) to depth. Default 1e4 (m to .1 mm)
 
     Return:
         np.array<np.uint16>: converted depth
@@ -381,7 +381,8 @@ def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
                                   baseline_mm: float,
                                   calibration_matrix: np.array,
                                   res_x: int = bpy.context.scene.render.resolution_x,
-                                  res_y: int = bpy.context.scene.render.resolution_y):
+                                  res_y: int = bpy.context.scene.render.resolution_y,
+                                  scale: float = 1e4):
     """Compute disparity map from given z info (depth or range). Values are in .1 mm
     By convention, disparity is computed from left camera to right camera (even for the right camera).
 
@@ -401,6 +402,7 @@ def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
     Opt Args:
         res_x(int): render/image x resolution. Default: bpy.context.scene.resolution_x
         res_y(int): render/image y resolution. Default: bpy.context.scene.resolution_y
+        scale(float): value used to convert range (in m) to depth. Default: 1e4 (.1mm)
 
     Returns:
         np.array<np.uint16>: disparity map in pixels
@@ -414,14 +416,14 @@ def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
         # in case of exr file we convert range to depth first
         logger.info('Computing depth from EXR range')
         depth = project_pinhole_range_to_rectified_depth(
-            filepath_in, None, calibration_matrix, res_x, res_y, 1e4)
+            filepath_in, None, calibration_matrix, res_x, res_y, scale)
 
     else:
         logger.error(f'Given file {filepath_in} is neither of type PNG nor EXR. Skipping!')
         return
 
-    # depth is converted to mm and to float for precision computations
-    depth = depth.astype(np.float32) / 10
+    # depth is always converted to mm and to float for precision computations
+    depth = depth.astype(np.float32) / (scale / 1e3)
 
     logger.info('Computing disparity map')
     # get focal lenght

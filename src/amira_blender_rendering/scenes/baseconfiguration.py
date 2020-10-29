@@ -63,6 +63,7 @@ class BaseConfiguration(Configuration):
 
         # postprocess
         self.add_param('postprocess.rectify_depth', False, 'If True, from pinhole range values, compute rectified depth map')
+        self.add_param('postprocess.depth_scale', 1e4, 'Scale used to convert range to depth. Default: 1e4 (.1mm)')
         self.add_param('postprocess.visibility_from_mask', False, 'If True, if an invalid (empty) mask is found during postprocessing, object visibility info are overwritten to false')
         self.add_param('postprocess.parallel_cameras', [], 'Pair of parallel stereo cameras (among scene_setup.cameras) to postprocess')
         self.add_param('postprocess.compute_disparity', False, 'If True, toggle computation of disparity map (from depth) based on given baseline (mm) value')
