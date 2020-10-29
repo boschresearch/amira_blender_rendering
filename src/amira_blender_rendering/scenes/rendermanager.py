@@ -114,17 +114,20 @@ class RenderManager(abr_scenes.BaseSceneManager):
         # is(are) the correct one(s). That is it has the correct baseline according to
         # the rendered scene
         if postprocess_config.compute_disparity:
-            # use precomputed depth if available, otherwise use range map
-            fpath_in_depth = fpath_out_depth if fpath_out_depth is not None else fpath_in_range
-            dirpath = os.path.join(dirinfo.images.base_path, 'disparity')
-            if not os.path.exists(dirpath):
-                os.mkdir(dirpath)
-            fpath_out_disparity = os.path.join(dirpath, f'{base_filename}.png')
-            # compute map
-            camera_utils.compute_disparity_from_z_info(fpath_in_depth,
-                                                       fpath_out_disparity,
-                                                       baseline_mm=postprocess_config.parallel_cameras_baseline_mm,
-                                                       calibration_matrix=K_cam)
+            # check whether current camera name contains any of the given
+            # string for parallel setup
+            if any([c for c in postprocess_config.parallel_cameras if c in camera.name]):
+                # use precomputed depth if available, otherwise use range map
+                fpath_in_depth = fpath_out_depth if fpath_out_depth is not None else fpath_in_range
+                dirpath = os.path.join(dirinfo.images.base_path, 'disparity')
+                if not os.path.exists(dirpath):
+                    os.mkdir(dirpath)
+                fpath_out_disparity = os.path.join(dirpath, f'{base_filename}.png')
+                # compute map
+                camera_utils.compute_disparity_from_z_info(fpath_in_depth,
+                                                           fpath_out_disparity,
+                                                           baseline_mm=postprocess_config.parallel_cameras_baseline_mm,
+                                                           calibration_matrix=K_cam)
 
         # compute bounding boxes and save annotations
         results_gl = ResultsCollection()
