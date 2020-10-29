@@ -57,8 +57,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         super(RenderManager, self).__init__()
         self.unit_conversion = unit_conversion
 
-    def postprocess(self, dirinfo, base_filename, camera, objs, zeroing,
-                    rectify_depth: bool = False, visibility_from_mask: bool = False):
+    def postprocess(self, dirinfo, base_filename, camera, objs, zeroing, **kwargs):
         """Postprocessing the scene.
 
         This step will compute all the data that is relevant for
@@ -72,12 +71,15 @@ class RenderManager(abr_scenes.BaseSceneManager):
             objs(list): list of target objects
             zeroing(np.array): array for zeroing camera rotation
         
-        Optional Args:
-            rectify_depth(bool): if True, compute rectilinear depth map from pinhole map
-            visibility_from_mask(bool): if True, if mask is found empty even if object
-                                        is visible, visibility info are overwritten and
-                                        set to false
+        Kwargs Args:
+            postprocess_config(Configuration): postprocess specific config.
+                See abr/scenes/baseconfiguration and scene configs for specific configuration values.
         """
+        # get postprocess specific configs
+        postprocess_config = kwargs.get('postprocess_config', abr_scenes.BaseConfiguration().postprocess)
+    
+        # camera matrix
+        K_cam = np.asarray(camera_utils.get_calibration_matrix(bpy.context.scene, camera.data))
 
         # first we update the view-layer to get the updated values in
         # translation and rotation
@@ -91,28 +93,45 @@ class RenderManager(abr_scenes.BaseSceneManager):
         # rectify depth map (if requested)
         # Standard depth maps as returned by blender are indeed ranges.
         # Here we convert ranges into depth values
-        if rectify_depth:
-            # get parameters
-            res_x = bpy.context.scene.render.resolution_x
-            res_y = bpy.context.scene.render.resolution_y
-            sensor_width = camera.data.sensor_width
-            f_in_mm = camera.data.lens
-            
+        fpath_out_depth = None
+        fpath_in_range = os.path.join(dirinfo.images.depth, f'{base_filename}.exr')
+        if postprocess_config.rectify_depth:
             # filenames (ranges are stored as true exr values, depth as 16 bit png)
-            fpath_in = os.path.join(dirinfo.images.depth, f'{base_filename}.exr')
             dirpath = os.path.join(dirinfo.images.base_path, 'depth_rectilinear')
             if not os.path.exists(dirpath):
                 os.mkdir(dirpath)
-            fpath_out = os.path.join(dirpath, f'{base_filename}.png')
+            fpath_out_depth = os.path.join(dirpath, f'{base_filename}.png')
+
             # convert
             camera_utils.project_pinhole_range_to_rectilinear_depth(
-                fpath_in, fpath_out, res_x, res_y, sensor_width, f_in_mm)
+                fpath_in_range,
+                fpath_out_depth,
+                res_x=bpy.context.scene.render.resolution_x,
+                res_y=bpy.context.scene.render.resolution_y,
+                calibration_matrix=K_cam)
+
+        # NOTE: this assumes the camera(s) for which the disparity is computed
+        # is(are) the correct one(s). That is it has the correct baseline according to
+        # the rendered scene
+        if postprocess_config.compute_disparity:
+            # use precomputed depth if available, otherwise use range map
+            fpath_in_depth = fpath_out_depth if fpath_out_depth is not None else fpath_in_range
+            dirpath = os.path.join(dirinfo.images.base_path, 'disparity')
+            if not os.path.exists(dirpath):
+                os.mkdir(dirpath)
+            fpath_out_disparity = os.path.join(dirpath, f'{base_filename}.png')
+            # compute map
+            camera_utils.compute_disparity_from_z_info(fpath_in_depth,
+                                                       fpath_out_disparity,
+                                                       baseline_mm=postprocess_config.parallel_cameras_baseline_mm,
+                                                       calibration_matrix=K_cam)
 
         # compute bounding boxes and save annotations
         results_gl = ResultsCollection()
         results_cv = ResultsCollection()
         for obj in objs:
-            render_result_gl, render_result_cv = self.build_render_result(obj, camera, zeroing, visibility_from_mask)
+            render_result_gl, render_result_cv = self.build_render_result(
+                obj, camera, zeroing, postprocess_config.visibility_from_mask)
             if obj['visible']:
                 results_gl.add_result(render_result_gl)
                 results_cv.add_result(render_result_cv)
