@@ -97,13 +97,13 @@ class RenderManager(abr_scenes.BaseSceneManager):
         fpath_in_range = os.path.join(dirinfo.images.depth, f'{base_filename}.exr')
         if postprocess_config.rectify_depth:
             # filenames (ranges are stored as true exr values, depth as 16 bit png)
-            dirpath = os.path.join(dirinfo.images.base_path, 'depth_rectilinear')
+            dirpath = os.path.join(dirinfo.images.base_path, 'depth_rectified')
             if not os.path.exists(dirpath):
                 os.mkdir(dirpath)
             fpath_out_depth = os.path.join(dirpath, f'{base_filename}.png')
 
             # convert
-            camera_utils.project_pinhole_range_to_rectilinear_depth(
+            camera_utils.project_pinhole_range_to_rectified_depth(
                 fpath_in_range,
                 fpath_out_depth,
                 res_x=bpy.context.scene.render.resolution_x,

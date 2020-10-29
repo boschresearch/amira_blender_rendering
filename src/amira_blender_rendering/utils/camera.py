@@ -323,14 +323,14 @@ def get_intrinsics(scene, cam):
     return s_u, s_v, u_0, v_0
 
 
-def project_pinhole_range_to_rectilinear_depth(filepath_in: str, filepath_out: str,
-                                               calibration_matrix: np.array,
-                                               res_x: int = bpy.context.scene.render.resolution_x,
-                                               res_y: int = bpy.context.scene.render.resolution_y,
-                                               scale: float = 1e4):
+def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str,
+                                             calibration_matrix: np.array,
+                                             res_x: int = bpy.context.scene.render.resolution_x,
+                                             res_y: int = bpy.context.scene.render.resolution_y,
+                                             scale: float = 1e4):
     """
     Given a depth map computed (as standard in ABR setup) using a perfect pinhole model,
-    compute the projected rectilinear depth
+    compute the projected rectified depth
 
     The function assumes to read-in from an Exr image format (32 bit true range values)
     and to write-out in PNG image format (16 bit truncated depth values)
@@ -396,7 +396,7 @@ def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
         calibration_matrix(np.array): 3x3 camera calibration matrix. Used also to extract the focal lenght in pixel
 
     NOTE: if z = range, depth must be computed. This requires additional arguments.
-          See  amira_blender_rendering.utils.camera.project_pinhole_range_to_rectilinear_depth
+          See  amira_blender_rendering.utils.camera.project_pinhole_range_to_rectified_depth
 
     Opt Args:
         res_x(int): render/image x resolution. Default: bpy.context.scene.resolution_x
@@ -413,7 +413,7 @@ def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
     elif '.exr' in filepath_in:
         # in case of exr file we convert range to depth first
         logger.info('Computing depth from EXR range')
-        depth = project_pinhole_range_to_rectilinear_depth(
+        depth = project_pinhole_range_to_rectified_depth(
             filepath_in, None, calibration_matrix, res_x, res_y, 1e4)
 
     else:

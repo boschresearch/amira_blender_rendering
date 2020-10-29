@@ -17,7 +17,7 @@
 # limitations under the License.
 
 """
-Script to be used to compute recitifed, i.e.. rectilinear, depth map starting from
+Script to be used to compute recitifed, i.e.. rectified, depth map starting from
 pinhole depth map.
 
 Depth values for perfect pinhole camera models are computed always with respect to the pinhole of the camera.
@@ -116,7 +116,7 @@ def main():
         raise RuntimeError(f'Path "{args.path}" does not exists or is not a directory')
 
     dirpath_range = os.path.join(args.path, 'Images', 'depth')
-    dirpath_depth = os.path.join(args.path, 'Images', 'depth_rectilinear')
+    dirpath_depth = os.path.join(args.path, 'Images', 'depth_rectified')
     if not os.path.exists(dirpath_depth):
         os.mkdir(dirpath_depth)
 
@@ -142,7 +142,7 @@ def main():
             continue
         fpath_out = os.path.join(dirpath_depth, fpath_in.stem + '.png')
         fpath_in = str(fpath_in)
-        camera_utils.project_pinhole_range_to_rectilinear_depth(
+        camera_utils.project_pinhole_range_to_rectified_depth(
             fpath_in, fpath_out, calibration_matrix, res_x, res_y, args.scale)
 
 
