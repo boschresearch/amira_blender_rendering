@@ -20,11 +20,14 @@ import bpy
 from mathutils import Vector, Matrix
 from math import radians, atan2
 import numpy as np
+import cv2
 
 from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.math.curves import points_on_viewsphere, points_on_bezier, points_on_circle, \
     points_on_wave, random_points
 from amira_blender_rendering.datastructures import Configuration
+
+logger = get_logger()
 
 
 def opengl_to_opencv(v: Vector) -> Vector:
@@ -87,9 +90,6 @@ def set_camera_info(scene, cam, camera_info):
         cam (bpy.types.Camera): camera to modify
         camera_info (Configuration): camera_info configuration block of a configuration file
     """
-
-    logger = get_logger()
-
     # get numpy version of the intrinsics, if possible
     intrinsics = _intrinsics_to_numpy(camera_info)
 
@@ -324,10 +324,9 @@ def get_intrinsics(scene, cam):
 
 
 def project_pinhole_range_to_rectilinear_depth(filepath_in: str, filepath_out: str,
+                                               calibration_matrix: np.array,
                                                res_x: int = bpy.context.scene.render.resolution_x,
                                                res_y: int = bpy.context.scene.render.resolution_y,
-                                               sensor_width: float = bpy.context.scene.camera.data.sensor_width,
-                                               f_in_mm: float = bpy.context.scene.camera.data.lens,
                                                scale: float = 1e4):
     """
     Given a depth map computed (as standard in ABR setup) using a perfect pinhole model,
@@ -338,54 +337,106 @@ def project_pinhole_range_to_rectilinear_depth(filepath_in: str, filepath_out: s
     
     Args:
         filepath_in(str): path to (.exr) file with range values (assumed in m) to load
-        filepath_out(str): path to (.png) file where (rectified) depth map is write to
-        res_x(int): render/image x resolution
-        res_y(int): render/image y resolution
-        sensor_width(float): camera sensor width
-        f_in_mm(float): camera focal lenght in mm
-        scale(float): scaling factor for depth value. Default 1e4 (m to .1 mm)
-    """
-    import cv2
-    logger = get_logger()
+        filepath_out(str): path to (.png) file where (rectified) depth map is write to.
+                           If None (explicitly given) only return converted image (no save).
+                           NOTE: make sure the filesystem tree exists
+        calibration_matrix(np.array): 3x3 camera calibration matrix
 
+    Optional Args:
+        res_x(int): render/image x resolution (pixel). Default is initial scene resolution_x
+        res_y(int): render/image y resolution (pixel). Default is initial scene resolution_y
+        scale(float): scaling factor for depth value. Default 1e4 (m to .1 mm)
+
+    Return:
+        np.array<np.uint16>: converted depth
+    """
     # quick check file type
     if '.exr' not in filepath_in:
         raise ValueError(f'Given input file {filepath_in} not of type EXR')
-    if '.png' not in filepath_out:
+    if '.png' not in filepath_out and filepath_out is not None:
         raise ValueError(f'Given output file {filepath_out} not of tyep PNG')
 
-    sensor_height = res_y / res_x * sensor_width
+    # read range image (float32 values) in meters
+    range_exr = (cv2.imread(filepath_in, cv2.IMREAD_ANYDEPTH)).astype(np.float32)
 
-    # read image
-    image = (cv2.imread(filepath_in, cv2.IMREAD_ANYDEPTH)).astype(np.float32)
+    logger.info('Rectifying pinhole range map into depth')
+    grid = np.indices((res_y, res_x))
+    u = grid[1].flatten()
+    v = grid[0].flatten()
+    uv1 = np.array([u, v, np.ones(res_x * res_y)])
 
-    # init array
-    rect_depth = np.zeros(image.shape, dtype=np.uint16)
+    K_inv = np.linalg.inv(calibration_matrix)
+    unit_dirs = np.reciprocal(np.linalg.norm(np.dot(K_inv, uv1).T.reshape(res_y, res_x, 3), axis=2))
+    depth_img = (range_exr * unit_dirs * scale).astype(np.uint16)
+
+    # write out if requested
+    if filepath_out is not None:
+        cv2.imwrite(filepath_out, depth_img, [cv2.IMWRITE_PNG_STRATEGY, cv2.IMWRITE_PNG_STRATEGY_DEFAULT])
+        logger.info(f'Saved (rectified) depth map at {filepath_out}')
     
-    logger.info('Rectifying pinhole depth map')
-    for u in range(image.shape[1]):
-        for v in range(image.shape[0]):
+    return depth_img
 
-            d = image[v, u]
 
-            # if d > 100.0:
-            #     continue
+def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
+                                  baseline_mm: float,
+                                  calibration_matrix: np.array,
+                                  res_x: int = bpy.context.scene.render.resolution_x,
+                                  res_y: int = bpy.context.scene.render.resolution_y):
+    """Compute disparity map from given z info (depth or range). Values are in .1 mm
+    By convention, disparity is computed from left camera to right camera (even for the right camera).
 
-            # coordinates on camera plane
-            x = (0.5 - float(u) / float(image.shape[1])) * sensor_width / f_in_mm
-            y = (0.5 - float(v) / float(image.shape[0])) * sensor_height / f_in_mm
-            z = 1.0
-            norm = np.linalg.norm([x, y, z])
+    if z = depth, this is assumed to be stored as a PNG image of uint16 (compressed) values in .1 mm
+    If z = range, this is assumed to be stored as a EXR image of float32 (true range) values in meters
 
-            # normalize = project point on unit sphere, then apply depth and scale
-            z = (d * z / norm) * scale
+    Args:
+        fpath_in(str): path to input file to read in
+        fpath_out(str): path to output file to write out. If None (explicitly given), only return (no save to file).
+                        NOTE: make sure the filesystem tree exists
+        baseline_mm(float): baseline value (in mm) between parallel cameras setup
+        calibration_matrix(np.array): 3x3 camera calibration matrix. Used also to extract the focal lenght in pixel
 
-            # fill depth map
-            rect_depth[v, u] = z
+    NOTE: if z = range, depth must be computed. This requires additional arguments.
+          See  amira_blender_rendering.utils.camera.project_pinhole_range_to_rectilinear_depth
+
+    Opt Args:
+        res_x(int): render/image x resolution. Default: bpy.context.scene.resolution_x
+        res_y(int): render/image y resolution. Default: bpy.context.scene.resolution_y
+
+    Returns:
+        np.array<np.uint16>: disparity map in pixels
+    """
+    # check filepath_in to read file from
+    if '.png' in filepath_in:
+        logger.info('Loading depth from .PNG')
+        depth = (cv2.imread(filepath_in, cv2.IMREAD_ANYDEPTH)).astype(np.uint16)
     
-    # overwrite file
-    cv2.imwrite(filepath_out, rect_depth, [cv2.IMWRITE_PNG_STRATEGY, cv2.IMWRITE_PNG_STRATEGY_DEFAULT])
-    logger.info(f'Saved rectified depth map at {filepath_out}')
+    elif '.exr' in filepath_in:
+        # in case of exr file we convert range to depth first
+        logger.info('Computing depth from EXR range')
+        depth = project_pinhole_range_to_rectilinear_depth(
+            filepath_in, None, calibration_matrix, res_x, res_y, 1e4)
+
+    else:
+        logger.error(f'Given file {filepath_in} is neither of type PNG nor EXR. Skipping!')
+        return
+
+    # depth is converted to mm and to float for precision computations
+    depth = depth.astype(np.float32) / 10
+
+    logger.info('Computing disparity map')
+    # get focal lenght
+    focal_length_px = calibration_matrix[0, 0]
+    # disparity in pixels
+    disparity = baseline_mm * focal_length_px * np.reciprocal(depth)
+    # cast to uint16 for PNG format
+    disparity = (disparity).astype(np.uint16)
+
+    # write out if requested
+    if filepath_out is not None:
+        cv2.imwrite(filepath_out, disparity, [cv2.IMWRITE_PNG_STRATEGY, cv2.IMWRITE_PNG_STRATEGY_DEFAULT])
+        logger.info(f'Saved disparity map at {filepath_out}')
+
+    return disparity
 
 
 def get_current_cameras_locations(camera_names: list):
@@ -430,9 +481,7 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
             p = np.fromstring(p, sep=',')
         return p
 
-    # get logger
-    logger = get_logger()
-
+    # camera location
     original_locations = get_current_cameras_locations(camera_names)
 
     # define supported modes
