@@ -263,7 +263,8 @@ if __name__ == "__main__":
                             abr_path=args.abr_path,
                             heavy_duty_dir=args.heavy_duty_dir,
                             out_dir=args.out_dir,
-                            dataset_name=args.dataset_name)
+                            dataset_name=args.dataset_name,
+                            render_mode=args.render_mode)
         # write out
         fname = f"tmp-lsfbatch-{cfg.stem}.sh"
 
