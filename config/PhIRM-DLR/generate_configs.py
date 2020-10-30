@@ -135,8 +135,8 @@ motion_blur = {motion_blur}
 # [scene_setup]
 def get_scene_setup(fframes: int = 20, blend_file: str = 'robottable_empty'):
     return f"""[scene_setup]
-blend_file = $DATA/models/scenes/{blend_file}.blend
-environment_texture = $AMIRA_DATASETS/OpenImagesV4/Images
+blend_file = $DATA_STORAGE/models/scenes/{blend_file}.blend
+environment_texture = $DATA_STORAGE/OpenImagesV4/Images
 cameras = Camera.FrontoParallel.Left, Camera.FrontoParallel.Right
 forward_frames = {fframes}
 """
