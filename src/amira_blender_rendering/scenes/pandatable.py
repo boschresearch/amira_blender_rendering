@@ -191,7 +191,7 @@ class PandaTable(interfaces.ABRScene):
         self.dirinfos = list()
         for cam in self.config.scene_setup.cameras:
             # paths are set up as: base_path + CameraName
-            camera_base_path = f"{self.config.dataset.base_path}-{cam}"
+            camera_base_path = f"{self.config.dataset.base_path}/{cam}"
             dirinfo = build_directory_info(camera_base_path)
             self.dirinfos.append(dirinfo)
 
@@ -304,6 +304,9 @@ class PandaTable(interfaces.ABRScene):
         #       object_id   instance ID of the object
         #       bpy         blender object reference
         for class_id, obj_spec in enumerate(objects):
+            if obj_spec is None or obj_spec == '':
+                return
+
             class_name, obj_count = obj_spec.split(':')
 
             # here we distinguish if we copy a part from the proto objects
