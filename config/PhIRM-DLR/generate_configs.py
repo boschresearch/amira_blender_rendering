@@ -12,8 +12,8 @@ modes = ['Detection', 'Tracking']
 
 # image count per detection / tracking configuration per camera
 images = {
-    modes[0]: 2000,
-    modes[1]: 1000
+    modes[0]: 100,
+    modes[1]: 100
 }
 
 # Target object specification. We will simply enumerate the objects, so that we
@@ -89,7 +89,9 @@ motion_blur = {
 forward_frames = 50
 
 # select which configurations to generate
-target_configs = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'L']
+#target_configs = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'L']
+#target_configs = ['A', 'B']
+target_configs = ['L']
 
 # name of dataset, used as target directory
 dataset_name = 'BoschDataset'
@@ -136,7 +138,7 @@ motion_blur = {motion_blur}
 def get_scene_setup(fframes: int = 20, blend_file: str = 'robottable_empty'):
     return f"""[scene_setup]
 blend_file = $DATA_STORAGE/models/scenes/{blend_file}.blend
-environment_texture = $DATA_STORAGE/OpenImagesV4/Images
+environment_textures = $DATA_STORAGE/OpenImagesV4/Images
 cameras = Camera.FrontoParallel.Left, Camera.FrontoParallel.Right
 forward_frames = {fframes}
 """
