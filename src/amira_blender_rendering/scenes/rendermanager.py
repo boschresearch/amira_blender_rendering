@@ -90,26 +90,23 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         self.compositor.postprocess()
 
-        # rectify depth map (if requested)
-        # Standard depth maps as returned by blender are indeed ranges.
-        # Here we convert ranges into depth values
-        fpath_out_depth = None
-        fpath_in_range = os.path.join(dirinfo.images.depth, f'{base_filename}.exr')
-        if postprocess_config.rectify_depth:
-            # filenames (ranges are stored as true exr values, depth as 16 bit png)
-            dirpath = os.path.join(dirinfo.images.base_path, 'depth_rectified')
-            if not os.path.exists(dirpath):
-                os.mkdir(dirpath)
-            fpath_out_depth = os.path.join(dirpath, f'{base_filename}.png')
+        # rectify range map into depth
+        # Blender depth maps asare indeed ranges. Here we convert ranges into depth values
+        fpath_range = os.path.join(dirinfo.images.range, f'{base_filename}.exr')
 
-            # convert
-            camera_utils.project_pinhole_range_to_rectified_depth(
-                fpath_in_range,
-                fpath_out_depth,
-                res_x=bpy.context.scene.render.resolution_x,
-                res_y=bpy.context.scene.render.resolution_y,
-                calibration_matrix=K_cam,
-                scale=postprocess_config.depth_scale)
+        # filenames (ranges are stored as true exr values, depth as 16 bit png)
+        if not os.path.exists(dirinfo.images.depth):
+            os.mkdir(dirinfo.images.depth)
+        fpath_depth = os.path.join(dirinfo.images.depth, f'{base_filename}.png')
+
+        # convert
+        camera_utils.project_pinhole_range_to_rectified_depth(
+            fpath_range,
+            fpath_depth,
+            res_x=bpy.context.scene.render.resolution_x,
+            res_y=bpy.context.scene.render.resolution_y,
+            calibration_matrix=K_cam,
+            scale=postprocess_config.depth_scale)
 
         # NOTE: this assumes the camera(s) for which the disparity is computed
         # is(are) the correct one(s). That is it has the correct baseline according to
@@ -119,14 +116,13 @@ class RenderManager(abr_scenes.BaseSceneManager):
             # string for parallel setup
             if any([c for c in postprocess_config.parallel_cameras if c in camera.name]):
                 # use precomputed depth if available, otherwise use range map
-                fpath_in_depth = fpath_out_depth if fpath_out_depth is not None else fpath_in_range
                 dirpath = os.path.join(dirinfo.images.base_path, 'disparity')
                 if not os.path.exists(dirpath):
                     os.mkdir(dirpath)
-                fpath_out_disparity = os.path.join(dirpath, f'{base_filename}.png')
+                fpath_disparity = os.path.join(dirpath, f'{base_filename}.png')
                 # compute map
-                camera_utils.compute_disparity_from_z_info(fpath_in_depth,
-                                                           fpath_out_disparity,
+                camera_utils.compute_disparity_from_z_info(fpath_depth,
+                                                           fpath_disparity,
                                                            baseline_mm=postprocess_config.parallel_cameras_baseline_mm,
                                                            calibration_matrix=K_cam,
                                                            res_x=bpy.context.scene.render.resolution_x,

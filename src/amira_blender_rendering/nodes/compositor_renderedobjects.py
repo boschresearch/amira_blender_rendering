@@ -55,11 +55,11 @@ class CompositorNodesOutputRenderedObjects():
         self.path_base = self.dirinfo.images.base_path
 
         prefix = self.dirinfo.images.base_path
-        self.path_img_const = self.dirinfo.images.const[len(prefix) + 1:]
-        self.path_img_const = os.path.join(self.path_img_const, '')
+        self.path_rgb = self.dirinfo.images.rgb[len(prefix) + 1:]
+        self.path_rgb = os.path.join(self.path_rgb, '')
 
-        self.path_depth = self.dirinfo.images.depth[len(prefix) + 1:]
-        self.path_depth = os.path.join(self.path_depth, '')
+        self.path_range = self.dirinfo.images.range[len(prefix) + 1:]
+        self.path_range = os.path.join(self.path_range, '')
 
         self.path_mask = self.dirinfo.images.mask[len(prefix) + 1:]
         self.path_mask = os.path.join(self.path_mask, '')
@@ -117,7 +117,7 @@ class CompositorNodesOutputRenderedObjects():
         # n_output_file.base_path = self.path_base
 
         # the following format will be used for all sockets, except when setting a
-        # socket's use_node_format to False (see depth map as example)
+        # socket's use_node_format to False (see range map as example)
         n_output_file.format.file_format = 'PNG'
         n_output_file.format.color_mode = 'RGB'
         n_output_file.format.color_depth = str(kw.get('color_depth', 16))
@@ -129,6 +129,8 @@ class CompositorNodesOutputRenderedObjects():
         self.sockets['s_render'] = s_render
 
         # add all aditional file slots, e.g. depth map, image masks, backdrops, etc.
+        # NOTE: blender Depth map is indeed a range map since it uses a perfect pinhole camera.
+        #       That is, the map is not rectified yet.
         n_output_file.file_slots.new('Depth')
         s_depth_map = n_output_file.file_slots['Depth']
         s_depth_map.use_node_format = False
@@ -206,8 +208,8 @@ class CompositorNodesOutputRenderedObjects():
         self.__extract_pathspec()
         self.__update_node_paths()
 
-        self.sockets['s_render'].path = os.path.join(self.path_img_const, f'{self.base_filename}.png####')
-        self.sockets['s_depth_map'].path = os.path.join(self.path_depth, f'{self.base_filename}.exr####')
+        self.sockets['s_render'].path = os.path.join(self.path_rgb, f'{self.base_filename}.png####')
+        self.sockets['s_depth_map'].path = os.path.join(self.path_range, f'{self.base_filename}.exr####')
         self.sockets['s_backdrop'].path = os.path.join(self.path_backdrop, f'{self.base_filename}.png####')
         # obj_names are used to setup corresponding output files for masks
         for obj in objs:
@@ -234,11 +236,11 @@ class CompositorNodesOutputRenderedObjects():
         frame_number_str = f"{frame_number:04}"
 
         # get file names
-        self.fname_render = os.path.join(self.dirinfo.images.const, f'{self.base_filename}.png{frame_number_str}')
-        self.fname_depth = os.path.join(self.dirinfo.images.depth, f'{self.base_filename}.exr{frame_number_str}')
+        self.fname_render = os.path.join(self.dirinfo.images.rgb, f'{self.base_filename}.png{frame_number_str}')
+        self.fname_range = os.path.join(self.dirinfo.images.range, f'{self.base_filename}.exr{frame_number_str}')
         self.fname_backdrop = os.path.join(
             self.dirinfo.images.base_path, 'backdrop', f'{self.base_filename}.png{frame_number_str}')
-        for f in (self.fname_render, self.fname_depth, self.fname_backdrop):
+        for f in (self.fname_render, self.fname_range, self.fname_backdrop):
             if not os.path.exists(f):
                 get_logger().error(f"File {f} expected, but does not exist")
             else:
