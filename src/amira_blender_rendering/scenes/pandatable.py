@@ -66,6 +66,8 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scenario_setup.target_objects', [], 'List of objects to drop in the scene for which annotated info are stored')
         self.add_param('scenario_setup.distractor_objects', [], 'List of objects to drop in the scene for which info are NOT stored'
                        'List of objects visible in the scene but of which infos are not stored')
+        self.add_param('scenario_setup.textured_objects', [], 'List of objects whose texture is randomized during rendering')
+        self.add_param('scenario_setup.objects_textures', '', 'Path to images for object textures')
         
         # multiview configuration (if implemented)
         self.add_param('multiview_setup.mode', '',
@@ -123,6 +125,9 @@ class PandaTable(interfaces.ABRScene):
 
         # grab environment textures
         self.setup_environment_textures()
+
+        # setup objects for which the user want to randomize the texture
+        self.setup_textured_objects()
 
         # setup all camera information according to the configuration
         self.setup_cameras()
@@ -410,6 +415,15 @@ class PandaTable(interfaces.ABRScene):
         # get list of environment textures
         self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
 
+    def setup_textured_objects(self):
+        # get list of textures
+        self.objects_textures = get_environment_textures(self.config.scenario_setup.objects_textures)
+        # check whether given objects exists
+        for name in self.config.scenario_setup.textured_objects:
+            if bpy.data.objects.get(name) is None:
+                self.logger.warn(f'Given object {name} not among available object in the scene. Popping!')
+                self.config.scenario_setup.textured_objects.remove(name)
+
     def randomize_object_transforms(self, objs: list):
         """move all objects to random locations within their scenario dropzone,
         and rotate them.
@@ -455,6 +469,11 @@ class PandaTable(interfaces.ABRScene):
         # set some environment texture, randomize, and render
         env_txt_filepath = expandpath(random.choice(self.environment_textures))
         self.renderman.set_environment_texture(env_txt_filepath)
+
+    def randomize_objects_textures(self):
+        for obj_name in self.config.scenario_setup.textured_objects:
+            obj_txt_filepath = expandpath(random.choice(self.objects_textures))
+            self.renderman.set_object_texture(obj_name, obj_txt_filepath)
 
     def forward_simulate(self):
         self.logger.info(f"forward simulation of {self.config.scene_setup.forward_frames} frames")
@@ -599,6 +618,7 @@ class PandaTable(interfaces.ABRScene):
 
             # randomize scene: move objects at random locations, and forward simulate physics
             self.randomize_environment_texture()
+            self.randomize_objects_textures()
             self.randomize_object_transforms(self.objs + self.distractors)
             self.forward_simulate()
             
