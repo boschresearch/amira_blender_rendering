@@ -24,7 +24,7 @@ import cv2
 
 from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.math.curves import points_on_viewsphere, points_on_bezier, points_on_circle, \
-    points_on_wave, random_points
+    points_on_wave, random_points, points_on_line
 from amira_blender_rendering.datastructures import Configuration
 
 logger = get_logger()
@@ -480,6 +480,8 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
         """
         p = cfg.get(name, default)
         if isinstance(p, str):
+            if p == '':
+                return default
             p = np.fromstring(p, sep=',')
         return p
 
@@ -492,7 +494,8 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
         'bezier': points_on_bezier,
         'circle': points_on_circle,
         'wave': points_on_wave,
-        'viewsphere': points_on_viewsphere
+        'viewsphere': points_on_viewsphere,
+        'linear': points_on_line,
     }
 
     # early check for selected mode
@@ -536,6 +539,11 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
             'viewsphere': {
                 'scale': float(mode_cfg.get('scale', 1)),
                 'bias': tuple(get_array_from_str(mode_cfg, 'bias', [0, 0, 1.5]))
+            },
+            'linear': {
+                'p0': get_array_from_str(mode_cfg, 'p0', np.array([0, 0, 0])),
+                'p1': get_array_from_str(mode_cfg, 'p1', np.array([1, 1, 1])),
+                'offset': get_array_from_str(mode_cfg, 'offset', original_locations[cam_name])
             }
         }
 
