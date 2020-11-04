@@ -162,6 +162,22 @@ def points_on_wave(num_points, radius: float = 1, center: np.array = np.array([0
     return points
 
 
+def points_on_line(num_points: int, p0: np.array, p1: np.array, offset: np.array):
+    """Generate num_points of a line between two given points [p0, p1]
+    If offset is given, the entire line is rigidly transformed so p0 = offset
+
+    Args:
+        p0(array(3,)): line starting point
+        p1(array(3,)): line ending point
+        offset(array(3,)): offset for rigid transform
+    
+    Returns:
+        array of points
+    """
+    T = np.linspace(0, 1, num_points, endpoint=True).reshape((num_points, 1))
+    return offset + p0 + np.kron(T, (p1 - p0))
+
+
 def random_points(num_points, base_location, scale):
     points = base_location + scale * np.random.randn(num_points, base_location.size)
     return points
