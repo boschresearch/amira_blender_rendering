@@ -115,8 +115,8 @@ def main():
     if not os.path.exists(args.path) and not os.path.isdir(args.path):
         raise RuntimeError(f'Path "{args.path}" does not exists or is not a directory')
 
-    dirpath_range = os.path.join(args.path, 'Images', 'depth')
-    dirpath_depth = os.path.join(args.path, 'Images', 'depth_rectified')
+    dirpath_range = os.path.join(args.path, 'Images', 'range')
+    dirpath_depth = os.path.join(args.path, 'Images', 'depth')
     if not os.path.exists(dirpath_depth):
         os.mkdir(dirpath_depth)
 
