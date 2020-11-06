@@ -357,7 +357,9 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
         raise ValueError(f'Given output file {filepath_out} not of tyep PNG')
 
     # read range image (float32 values) in meters
-    range_exr = (cv2.imread(filepath_in, cv2.IMREAD_ANYDEPTH)).astype(np.float32)
+    # NOTE: the ANYDEPTH flag lead to a offset in the read value
+    # range_exr = (cv2.imread(filepath_in, cv2.IMREAD_ANYDEPTH)).astype(np.float32)
+    range_exr = (cv2.imread(filepath_in, cv2.IMREAD_UNCHANGED))[:, :, 0].astype(np.float32)
 
     logger.info('Rectifying pinhole range map into depth')
     grid = np.indices((res_y, res_x))
@@ -366,8 +368,10 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
     uv1 = np.array([u, v, np.ones(res_x * res_y)])
 
     K_inv = np.linalg.inv(calibration_matrix)
-    unit_dirs = np.reciprocal(np.linalg.norm(np.dot(K_inv, uv1).T.reshape(res_y, res_x, 3), axis=2))
-    depth_img = (range_exr * unit_dirs * scale).astype(np.uint16)
+    v_dirs_mtx = np.dot(K_inv, uv1).T.reshape(res_y, res_x, 3)
+    v_dirs_mtx_unit_inv = np.reciprocal(np.linalg.norm(v_dirs_mtx, axis=2))
+
+    depth_img = (range_exr * v_dirs_mtx_unit_inv * scale).astype(np.uint16)
 
     # write out if requested
     if filepath_out is not None:
