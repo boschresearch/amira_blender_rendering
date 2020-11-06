@@ -3,7 +3,7 @@ Set Up a Simple Custom Scenario
 
 ABR allows you to setup and render your own scenario.
 
-For further details and to take inspiration refer to the existing 
+For further details and to take inspiration refer to the existing
 scenarios located in src/amira_blender_rendering/scenes/
 
 In order to setup your custom scenario few necessary requirements
@@ -24,7 +24,7 @@ Start by creating a new .py file (e.g. mycoolscenario.py) in src/amira_blender_r
 
 You could start from a minimal set of imports such as
 
-.. code-block::
+.. code-block:: python
 
     # necessary imports
     import bpy
@@ -49,10 +49,10 @@ You could start from a minimal set of imports such as
 As standard in the scenarios already provided, the most natural step is to add
 a custom configuration class
 
-.. code-block::
+.. code-block:: python
 
     # Custom configuration class.
-    # Inheriting from the BaseConfiguration which defines dataset, 
+    # Inheriting from the BaseConfiguration which defines dataset,
     # camera and render -specific configuration parameters.
     class MyCoolScenarioConfiguration(abr_scenes.BaseConfiguration):
         def __init__(self):
@@ -64,16 +64,16 @@ a custom configuration class
             self.add_param(...
 
 
-The following and most import thing is to add your custom scenario class
+The following and most important thing is to add your custom scenario class
 
-.. code-block::
+.. code-block:: python
 
     # Custom scenario class.
-    # Inheriting from ABRScene which defines an interface (in the form of 
+    # Inheriting from ABRScene which defines an interface (in the form of
     # an abstract base class) for all ABR scenes.
-    # This class should be expanded and modified at user wish to implement 
+    # This class should be expanded and modified at user wish to implement
     # all the functionalities needed to interact with her/his custom scenario.
-    # E.g., object identification, random pose initialization etc. 
+    # E.g., object identification, random pose initialization etc.
     class MyCoolScenario(interfaces.ABRScene):
         """
         Example class implementing a custom user-defined scenario
@@ -126,10 +126,10 @@ The following and most import thing is to add your custom scenario class
             self.renderman.setup_compositor(self.objects)
 
 
-        """ 
+        """
         [Mandatory] You need to implement the abstract methods
         """
-        
+
         def dump_config(self):
             """
             Dump dataset configuration into corresponding directory for documentation
@@ -150,11 +150,11 @@ The following and most import thing is to add your custom scenario class
         def generate_dataset(self):
             """
             Main method used to iterate over and generate the dataset
-            
+
             The method should implement all the necessary computations to manipulate
             existing objects, call to render and postprocessing
 
-            At generation time, this is called by the main script abrgen, 
+            At generation time, this is called by the main script abrgen,
             which, in turn, calls cli/render_dataset.py
             """
 
@@ -166,11 +166,11 @@ The following and most import thing is to add your custom scenario class
             # - phisics forward simulation
 
 
-Recall, that the above code is only meant to hint your own one. After the constructor, 
+Recall, that the above code is only meant to hint your own one. After the constructor,
 you are left with implementing the class methods. In the following we provide some examples.
 
 
-.. code-block::
+.. code-block:: python
 
     # [Recommended] Set up directories information, e.g., for multiple cameras
     def setup_dirinfo(self):
@@ -178,7 +178,7 @@ you are left with implementing the class methods. In the following we provide so
         # This could be a single line of code such as
         self.dirinfo = build_directory_info(self.config.dataset.base_path)
 
-        #.. as well as a list of multiple dictionaries depending if you have 
+        #.. as well as a list of multiple dictionaries depending if you have
         # one or multiple cameras
         self.dirinfos = list()
         for cam in self.config.scene_setup.cameras:
@@ -186,14 +186,14 @@ you are left with implementing the class methods. In the following we provide so
             dirinfo = build_directory_info(camera_base_path)
             self.dirinfos.append(dirinfo)
 
-    
-.. code-block::
+
+.. code-block:: python
 
     # [Mandatory] set up anything that we need for the scene before doing anything else.
     # For instance, removing all default objects
     def setup_scene(self):
         # This highly depends on your scene.
-        
+
         """[For more complicated scene which use blender modeling]"""
         # You might just want to load the blender file where you previously modeled your scene...
         bpy.ops.wm.open_mainfile(filepath=expandpath(self.config.scene_setup.blend_file))
@@ -209,7 +209,7 @@ you are left with implementing the class methods. In the following we provide so
         self.lighting = abr_scenes.ThreePointLighting()
 
 
-.. code-block::
+.. code-block:: python
 
     # [Mandatory] setup the camera that we wish to use
     def setup_cameras()
@@ -222,7 +222,7 @@ you are left with implementing the class methods. In the following we provide so
         # - select each existing camera and set its intrinsic values
 
 
-.. code-block::
+.. code-block:: python
 
     # [Mandatory] setup render / output settings
     def setup_render_output()
@@ -235,12 +235,12 @@ you are left with implementing the class methods. In the following we provide so
         # In addition you might want to include additional custom operations...
 
 
-.. code-block::
+.. code-block:: python
 
     # [Mandatory] setup the object that we want to render
     self.setup_objects()
     """
-    Setup all objects of interest to control in the scene. 
+    Setup all objects of interest to control in the scene.
     The main purpose is to create a list of objects (dict) such as
     each object is a dictionary with the following structure
 
@@ -254,7 +254,7 @@ you are left with implementing the class methods. In the following we provide so
 
     """
 
-    # For code-specific implementation please refer to 
+    # For code-specific implementation please refer to
     # abr/scenes/simpletoolcap.py and/or abr/scenes/workspacescenarios.py
 
 
@@ -266,13 +266,13 @@ Make the custom scene `discoverable`
 The last step is to add your custom scene to the list of available scenes to allow ABR to
 correctly discover it.
 
-For the time being, we require you to do this step manually. 
+For the time being, we require you to do this step manually.
 However, we are planning to implement `automatic` discovery of new scenes in the future.
 
 To make your scene available to ABR locate abr/cli/generate_dataset.py and modify the method
 `get_scene_type` as follows
 
-.. code-block::
+.. code-block:: python
 
     def get_scene_types():
         # do not modify import of already available scenes...

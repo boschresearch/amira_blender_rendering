@@ -18,6 +18,7 @@
 
 from amira_blender_rendering.datastructures import Configuration
 
+
 class BaseConfiguration(Configuration):
     """Basic configuration for any dataset."""
 
@@ -25,7 +26,12 @@ class BaseConfiguration(Configuration):
         super(BaseConfiguration, self).__init__()
 
         # general dataset configuration.
-        self.add_param('dataset.image_count', 1, 'Number of images to generate')
+        self.add_param('dataset.image_count', 1,
+                       'Number of images to generate. Depending whether a multiview dataset generation is requested, \
+                        the final number of images might be controlled by image_count or by a combination of \
+                        scene_count and view_count')
+        self.add_param('dataset.scene_count', 1, 'Number of static scenes to generate')
+        self.add_param('dataset.view_count', 1, 'Number of camera views per scene to generate')
         self.add_param('dataset.base_path', '', 'Path to storage directory')
         self.add_param('dataset.scene_type', '', 'Scene type')
 
@@ -48,7 +54,17 @@ class BaseConfiguration(Configuration):
         self.add_param('render_setup.integrator', 'BRANCHED_PATH', 'Integrator used during path tracing. Either of PATH, BRANCHED_PATH')
         self.add_param('render_setup.denoising', True, 'Use denoising algorithms during rendering')
         self.add_param('render_setup.samples', 128, 'Samples to use during rendering')
+        self.add_param('render_setup.color_depth', 16, 'Depth for color (RGB) image [16bit, 8bit]. Default: 16')
+        self.add_param('render_setup.allow_occlusions', False, 'If True, allow objects to be occluded from camera')
+        self.add_param('render_setup.motion_blur', False, 'If True, toggle motion blur during rendering. Motion blur specific config must be set directly in the .blend blnderer scene')
 
-        # logging
-        self.add_param('logging.debug', False, 'If True, enable log for debugging')
+        # debug
+        self.add_param('debug.enabled', False, 'If True, enable debugging. For specifc flags refer to single scenes')
 
+        # postprocess
+        self.add_param('postprocess.rectify_depth', False, 'If True, from pinhole range values, compute rectified depth map')
+        self.add_param('postprocess.depth_scale', 1e4, 'Scale used to convert range to depth. Default: 1e4 (.1mm)')
+        self.add_param('postprocess.visibility_from_mask', False, 'If True, if an invalid (empty) mask is found during postprocessing, object visibility info are overwritten to false')
+        self.add_param('postprocess.parallel_cameras', [], 'Pair of parallel stereo cameras (among scene_setup.cameras) to postprocess')
+        self.add_param('postprocess.compute_disparity', False, 'If True, toggle computation of disparity map (from depth) based on given baseline (mm) value')
+        self.add_param('postprocess.parallel_cameras_baseline_mm', 0, 'Baseline value (i.e., translation) between parallel cameras locations (in mm). Default: 0')
