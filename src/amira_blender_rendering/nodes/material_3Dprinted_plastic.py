@@ -17,17 +17,15 @@
 # limitations under the License.
 
 import bpy
-import logging
-from mathutils import Vector
-from amira_blender_rendering import utils
-from amira_blender_rendering.utils.blender import clear_orphaned_materials, remove_material_nodes, add_default_material
+# from amira_blender_rendering import utils
 import amira_blender_rendering.utils.material as mutil
 
 # TODO: comments from material_metal_tool_cap.py apply
 
+
 def setup_material(material: bpy.types.Material):
 
-    logger = utils.get_logger()
+    # logger = utils.get_logger()
     tree = material.node_tree
     nodes = tree.nodes
 
@@ -78,7 +76,6 @@ def setup_material(material: bpy.types.Material):
     tree.links.new(n_noise_bump.outputs['Fac'], n_bump.inputs['Height'])
     tree.links.new(n_bump.outputs['Normal'], n_bsdf.inputs['Normal'])
 
-
     # displacement map
     n_texcoord       = nodes.new('ShaderNodeTexCoord')
     n_mapping        = nodes.new('ShaderNodeMapping')
@@ -127,4 +124,3 @@ def setup_material(material: bpy.types.Material):
     tree.links.new(n_ramp_ease.outputs['Color'], n_mix.inputs['Fac'])
     tree.links.new(n_ramp_spline.outputs['Color'], n_mix.inputs['Color1'])
     tree.links.new(n_mix.outputs['Color'], n_output.inputs['Displacement'])
-

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright (c) 2016 - for information on the respective copyright owner
+# Copyright (c) 2020 - for information on the respective copyright owner
 # see the NOTICE file and/or the repository
 # <https://github.com/boschresearch/amira-blender-rendering>.
 #
@@ -19,8 +19,10 @@
 """Utility functions for IO and os.path operations"""
 
 import os
+import os.path as osp
 import shutil
 from amira_blender_rendering.utils.logging import get_logger
+
 
 def expandpath(path, check_file=False):
     """Expand global variables and users given a path or a list of paths.
@@ -39,7 +41,6 @@ def expandpath(path, check_file=False):
             raise FileNotFoundError(f'Path {path} does not exist - are all environment variables set?')
     elif isinstance(path, list):
         return [expandpath(p) for p in path]
-
 
 
 def get_my_dir(my_path):
@@ -76,5 +77,3 @@ def try_rmtree(path):
 def try_move(src, dst):
     """Try to move a path from src to dst"""
     shutil.move(src, dst)
-
-

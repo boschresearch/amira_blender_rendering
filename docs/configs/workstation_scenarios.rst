@@ -83,6 +83,8 @@ were used, have a look at `config/examples/workstation_scenarios*.cfg`.
     denoising = True
     # samples the ray-tracer uses per pixel
     samples = 64
+    # allow occlusions of target objects (true, false)
+    allow_occlusions = False
 
     [scene_setup]
     # specify the blender file from which to load the scene
@@ -109,10 +111,20 @@ were used, have a look at `config/examples/workstation_scenarios*.cfg`.
     #   Example:
     #       hammerschraube = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
     #
-    #   Note: The object name *must* correspond to the name that the object has in
-    #   the blender file. They will be loaded on-demand when setting up the
-    #   scenario.
+    #   Note: If no further configs are set, the object name *must* correspond 
+    #   to the name that the object has in the blender file. 
+    #   They will be loaded on-demand when setting up the scenario.
+    #   Loading objects from the same .blend file but with different names is
+    #   possible by using the `name.part_name` tag.
+    #   This might be useful in case you want to load the same object but with
+    #   different scale factors (see below for the use of blend_scale).
     #
+    #   Example:
+    #       my_cool_name = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
+    #       name.my_cool_name = hammerschraube
+    #
+    #   The `name.part_name` tag *must* correspond to the name the object has in the
+    #   blender file. After loading, the object name will be overwritten by `my_cool_name`.  
     #
     # 2) blender + PLY
     #   This variant is useful when you want to use the dataset later on and need
@@ -129,14 +141,18 @@ were used, have a look at `config/examples/workstation_scenarios*.cfg`.
     #
     #   The format to specify the ply-file and scale factor is:
     #       ply.part_name = path/to/ply
-    #       scale.part_name = 1.0, 1.0, 1.0
+    #       ply_scale.part_name = 1.0, 1.0, 1.0
+    #
     #   Where the scale is a vector, consisting of the scaling in X, Y, and Z
     #   dimensions.
     #
     #   Example:
     #       hammerschraube = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
     #       ply.hammerschraube = $AMIRA_DATA_PERCEPTION/CADModels/rexroth/
-    #       scale.hammerschraube = 0.001, 0.001, 0.001
+    #       ply_scale.hammerschraube = 0.001, 0.001, 0.001
+    #
+    #   However we also allow to scale objects loaded directly from .blend files.
+    #   For this, use the correpsonding `blend_scale.part_name` config tag.
     #
     # 3) PLY only
     #   In case you only have access to a PLY file, you can specify everything
@@ -151,12 +167,17 @@ were used, have a look at `config/examples/workstation_scenarios*.cfg`.
     #   blender path name. This name will be required if you want to specify the
     #   target_objects below
     #
-    #
     # Note: Make sure that in your blender files the parts are active rigid objects with
     #       proper weight and sensitivity margin!
     #
-    # Note: We will not automatically add rigid body dynamics to ply-only models!
+    # Note/Attenton: We will not automatically add rigid body dynamics to ply-only models!
+    #               This means that if not actively added, the object will (by default) be
+    #               regarded as passive object (i.e., w/o rigid-body properties), hence not
+    #               subject to the dynamic simulation.
     #
+    # ATTENTION: when scaling objects the final behavior might be different between
+    #            loading objects from .blend or from .ply since the intrinsic scales might
+    #            be different within the two files.
 
     # The first example is a "hammerschraube" (hammer head screw)
     hammerschraube = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
@@ -178,6 +199,26 @@ were used, have a look at `config/examples/workstation_scenarios*.cfg`.
     ply.wuerfelverbinder_40x0 = $AMIRA_DATA_GFX/cad/rexroth/wuerfelverbinder_40x40_3.ply
     ply_scale.wuerfelverbinder_40x40 = 0.001
 
+    # a flanged nut
+    bundmutter_m8 = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.blend
+    ply.bundmutter_m8 = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.ply
+    ply_scale.bundmutter_m8 = 0.001
+
+    # it is also possible to load objects from the same blend file
+    # but using a different class name. This will be treated as different
+    # objects in the annotations. Useful for e.g., loading same objects
+    # with different scales
+    bundmutter_m8_A = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.blend
+    name.bundmutter_m8_A = bundmutter_m8
+    blend_scale.bundmutter_m8_A = 0.7
+
+    # similarly we can do with ply files. In this case, it is not
+    # necessary to define a source name with the `name` tag since
+    # when loading from PLY we are not binded to object names.
+    bundmutter_m8_B =
+    ply.bundmutter_m8_B = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.ply
+    ply_scale.bundmutter_m8_B = 0.003
+
     # object 01 from the T-Less dataset
     tless_obj_01 = $AMIRA_DATA_GFX/cad/tless/blender/obj_01.blend
     ply.tless_obj_01 = $AMIRA_DATA_GFX/cad/tless/models/obj_01.ply
@@ -193,21 +234,6 @@ were used, have a look at `config/examples/workstation_scenarios*.cfg`.
     ply.tless_obj_13 = $AMIRA_DATA_GFX/cad/tless/models/obj_13.ply
     ply_scale.tless_obj_13 = 0.001
 
-    # object 20 from the T-Less dataset
-    tless_obj_20 = $AMIRA_DATA_GFX/cad/tless/blender/obj_20.blend
-    ply.tless_obj_20 = $AMIRA_DATA_GFX/cad/tless/models/obj_20.ply
-    ply_scale.tless_obj_20 = 0.001
-
-    # object 27 from the T-Less dataset
-    tless_obj_27 = $AMIRA_DATA_GFX/cad/tless/blender/obj_27.blend
-    ply.tless_obj_27 = $AMIRA_DATA_GFX/cad/tless/models/obj_27.ply
-    ply_scale.tless_obj_27 = 0.001
-
-    # add a PLY only entry
-    # tool_cap =
-    # ply.tool_cap = $AMIRA_DATASETS/CADModels/tool_cap.ply
-    # ply_scale.tool_cap = 0.010, 0.010, 0.010
-
     [scenario_setup]
     # At the moment, the 6 different scenarios in workstation_scenarios.blend are
     # simply enumerated. Have a look at the .blend file for the order in which they
@@ -218,3 +244,38 @@ were used, have a look at `config/examples/workstation_scenarios*.cfg`.
     # .blend file in the 'Proto' collection. You can also specify parts that were
     # presented above using the syntax 'parts.partname:count'
     target_objects = parts.sterngriff:4, parts.wuerfelverbinder_40x40:3, parts.hammerschraube:7, parts.winkel_60x60:5
+    # Also we allow to select and set of objects to be dropped in the scene but 
+    # of which annotated information are NOT stored, i.e., they serve as distractors
+    distractor_objects = parts.tless_obj_06:3
+    # Finally, similarly to target objects, specify the list of ABC objects to load
+    abc_objects =
+    # Specify number of random metallic materials to generate for ABC objects
+    abc_color_count = 3
+    
+
+    [multiview_setup]
+    # List of cameras to use during multiview rendering
+    cameras = []
+    # number of views per camera
+    view_count = 0
+    # control how multiview camera locations are generated (bezier curve, circle, viewsphere etc.)
+    mode = 
+    # mode specific configuration
+    mode_config = 
+
+    # additional debug configs
+    [debug]
+    # if in debug mode (see baseconfiguration), produce temporary plot of camera locations (best for multiview rendering)
+    plot = False
+    # if in debug mode (see baseconfiguration), plot coordinate axis system for camera
+    # poses in before multiview rendering
+    plot_axis = False
+    # if in debug mode (see baseconfiguration), toggle scatter plot of camera locations
+    # before multiview rendering 
+    scatter = False
+    # if in debug mode (see baseconfiguration), enable saving to blender.
+    # The option can be used to e.g., inspect whether multiple camera locations are occluded,
+    # check object occlusions, check the dymanic simulation.
+    save_to_blend = False
+
+

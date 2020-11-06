@@ -22,13 +22,16 @@ import setuptools
 
 __this_dir = os.path.dirname(__file__)
 
+
 # Specify version information from file
 def get_version():
     with open(os.path.join(__this_dir, 'VERSION')) as version_file:
         return version_file.read().strip()
 
+
 VERSION = get_version()
 PKGNAME = 'amira_blender_rendering'
+
 
 # Generate the version file
 def write_version_file():
@@ -38,15 +41,19 @@ def write_version_file():
     with open(path, 'w') as f:
         f.write(file_content)
 
+
 write_version_file()
+
 
 def requirements():
     with open('requirements.txt') as f:
         return f.read().splitlines()
 
+
 def readme():
     with open('README.md') as f:
         return f.read()
+
 
 setuptools.setup(
     name='AMIRA Blender Rendering',
