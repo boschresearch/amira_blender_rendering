@@ -10,10 +10,38 @@
 # dataset type
 modes = ['Detection', 'Tracking']
 
-# scene/view count per mode per camera
+# scene types to load
+scene_types = {
+    'Detection': 'PandaTable',
+    'Tracking': 'StaticScene'
+}
+
+# scene/view count per mode per camera per config
 images = {
-    modes[0]: [100, 5],
-    modes[1]: [1, 100]
+    'Detection': {
+        'A': [1000, 4],
+        'B': [500, 4],
+        'C': [500, 4],
+        'D': [500, 4],
+        'E': [500, 4],
+        'F': [500, 4],
+        'G': [500, 4],
+        'H': [1000, 4],
+    },
+    'Tracking': {
+        'A': [1, 1000],
+        'B': [1, 1000],
+        'C': [1, 1000],
+        'D': [1, 1000],
+        'E': [1, 1000],
+        'F': [1, 1000],
+        'G': [1, 1000],
+        'H': [1, 1000],
+        'I': [1, 1000],
+        'J': [1, 1000],
+        'K': [1, 1000],
+        'L': [1, 1000],
+    }
 }
 
 # Target object specification. We will simply enumerate the objects, so that we
@@ -34,47 +62,75 @@ target_objects = {
 
 # object configurations, i.e. which objects to pair in which configuration.
 target_obj_sets = {
-    'A': [0, 1],
-    'B': [2, 3],
-    'C': [4, 5, 6],
-    'D': [0, 2, 4, 6],
-    'E': [0, 1, 2, 3, 4, 5, 6, 7, 8],
-    'F': [0, 7],
-    'G': [1, 8],
-    'H': [1, 2, 3],
-    'I': [1, 3, 5, 7],
-    'L': [1, 2, 3, 4, 5, 6, 7, 8],
+    'Detection': {
+        'A': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        'B': [0, 8],
+        'C': [1, 7],
+        'D': [0, 1, 2, 3],
+        'E': [4, 5, 6, 7],
+        'F': [0, 2, 3, 5, 6, 7],
+        'G': [1, 3, 4, 5, 6, 8],
+        'H': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    },
+    'Tracking': {
+        # TODO: if use we static scene this is not necessary (maybe for keep tracking in the config)
+        'A': [0, 1, 2, 5, 6],
+        'B': [0, 1, 2, 5, 6],
+        'C': [0, 1, 2, 5, 6],
+        'D': [0, 1, 2, 5, 6],
+        'E': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        'F': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        'G': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        'H': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        'I': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        'J': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        'K': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+        'L': [0, 1, 2, 3, 4, 5, 6, 7, 8],
+    }
 }
 
 target_scenes = {
-    'A': 'robottable_empty_no_cameraframe',
-    'B': 'robottable_empty_no_cameraframe',
-    'C': 'robottable_empty_no_cameraframe',
-    'D': 'robottable_empty_no_cameraframe',
-    'E': 'robottable_empty_no_cameraframe',
-    'F': 'robottable_distractors_no_cameraframe',
-    'G': 'robottable_distractors_no_cameraframe',
-    'H': 'robottable_distractors_no_cameraframe',
-    'I': 'robottable_distractors_no_cameraframe',
-    'L': 'robottable_distractors_no_cameraframe',
+    'Detection': {
+        'A': 'robottable_empty_no_cameraframe',
+        'B': 'robottable_distractors_no_cameraframe',
+        'C': 'robottable_distractors_no_cameraframe',
+        'D': 'robottable_distractors_no_cameraframe',
+        'E': 'robottable_distractors_no_cameraframe',
+        'F': 'robottable_distractors_no_cameraframe',
+        'G': 'robottable_distractors_no_cameraframe',
+        'H': 'robottable_distractors_no_cameraframe',
+    },
+    # TODO: depends on the static scenes
+    'Tracking': {
+        'A': 'robottable_some_objects_no_cameraframe',
+        'B': 'robottable_some_objects_no_cameraframe',
+        'C': 'robottable_some_objects_no_cameraframe',
+        'D': 'robottable_some_objects_no_cameraframe',
+        'E': 'robottable_all_objects_no_cameraframe',
+        'F': 'robottable_all_objects_no_cameraframe',
+        'G': 'robottable_all_objects_no_cameraframe',
+        'H': 'robottable_all_objects_no_cameraframe',
+        'I': 'robottable_all_objects_distractors_no_cameraframe',
+        'J': 'robottable_all_objects_distractors_no_cameraframe',
+        'K': 'robottable_all_objects_distractors_no_cameraframe',
+        'L': 'robottable_all_objects_distractors_no_cameraframe',
+    }
 }
 
 # specify for which mode we want to produce multi-view output
 multi_view = {
-    modes[0]: {
+    'Detection': {
         'enabled': True,
-        'A': 'linear',
-        'B': 'linear',
-        'C': 'linear',
-        'D': 'linear',
-        'E': 'linear',
-        'F': 'linear',
-        'G': 'linear',
-        'H': 'linear',
-        'I': 'linear',
-        'L': 'linear',
+        'A': 'random',
+        'B': 'random',
+        'C': 'random',
+        'D': 'random',
+        'E': 'random',
+        'F': 'random',
+        'G': 'random',
+        'H': 'random',
     },
-    modes[1]: {
+    'Tracking': {
         'enabled': True,
         'A': 'wave',
         'B': 'circle',
@@ -85,35 +141,59 @@ multi_view = {
         'G': 'wave',
         'H': 'circle',
         'I': 'wave',
+        'J': 'circle',
+        'K': 'wave',
         'L': 'circle',
     }
 }
 
 # specify for which mode we want to produce motion blur
 motion_blur = {
-    modes[0]: False,
-    modes[1]: True
+    'Detection': False,
+    'Tracking': True
 }
 
 # specify how many frames we want to forward simulate each Configuration
-forward_frames = 50
+forward_frames = {
+    'Detection': 50,
+    'Tracking': 50
+}
+
+num_samples = 32
 
 # specify object(s) in the scene whose textures are randommized
 textured_objs_sets = {
-    'A': {'objects': [], 'textures': ''},
-    'B': {'objects': [], 'textures': ''},
-    'C': {'objects': [], 'textures': ''},
-    'D': {'objects': [], 'textures': ''},
-    'E': {'objects': [], 'textures': ''},
-    'F': {'objects': ['RubberPlate'], 'textures': '$DATA/models/object_textures'},
-    'G': {'objects': ['RubberPlate'], 'textures': '$DATA/models/object_textures'},
-    'H': {'objects': ['RubberPlate'], 'textures': '$DATA/models/object_textures'},
-    'I': {'objects': ['RubberPlate'], 'textures': '$DATA/models/object_textures'},
-    'L': {'objects': ['RubberPlate'], 'textures': '$DATA/models/object_textures'},
+    'Detection': {
+        'A': {'objects': [], 'textures': ''},
+        'B': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
+        'C': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
+        'D': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
+        'E': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
+        'F': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
+        'G': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
+        'H': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
+    },
+    'Tracking': {
+        'A': {'objects': [], 'textures': ''},
+        'B': {'objects': [], 'textures': ''},
+        'C': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
+        'D': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
+        'E': {'objects': [], 'textures': ''},
+        'F': {'objects': [], 'textures': ''},
+        'G': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
+        'H': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
+        'I': {'objects': [], 'textures': ''},
+        'J': {'objects': [], 'textures': ''},
+        'K': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
+        'L': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
+    },
 }
 
 # select which configurations to generate
-target_configs = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'L']
+target_configs = {
+    'Detection': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+    'Tracking': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'],
+}
 
 # name of dataset, used as target directory
 dataset_name = 'BoschDataset'
@@ -145,12 +225,12 @@ intrinsics_conversion_mode = mm
 
 
 # [render_setup]
-def get_render_setup(motion_blur: bool = True):
+def get_render_setup(num_samples: int = 32, motion_blur: bool = True):
     return f"""[render_setup]
 backend = blender-cycles
 integrator = BRANCHED_PATH
 denoising = True
-samples = 32
+samples = {num_samples}
 allow_occlusions = True
 motion_blur = {motion_blur}
 """
@@ -168,7 +248,7 @@ forward_frames = {fframes}
 
 # [postprocess]
 postprocess = """[postprocess]
-depth_scale = 1000.0
+depth_scale = 10000.0
 compute_disparity = True
 parallel_cameras = Camera.FrontoParallel.Left, Camera.FrontoParallel.Right
 parallel_cameras_baseline_mm = 50
@@ -179,19 +259,21 @@ parallel_cameras_baseline_mm = 50
 # [multiview_setup]
 def get_multiview_setup(mode: str = 'wave'):
     if mode == 'wave':
-        cfg_str = """mode_config.center = -0.75, 0., 1.8
+        cfg_str = """mode_config.center = 0.43, -0.005, 0.06
 mode_config.radius = 0.5
 mode_config.frequency = 4
 mode_config.amplitude = 0.28
 """
     elif mode == 'circle':
-        cfg_str = """mode_config.center = -0.75, 0., 1.5
+        cfg_str = """mode_config.center = 0.43, -0.005, -0.23
 mode_config.radius = 0.45
 """
-    elif mode == 'linear':
-        cfg_str = """mode_config.p0 = 0, 0, 0
-mode_config.p1 = 0.1, 0, -0.5
-mode_config.offset =
+    elif mode == 'piecewiselinear':
+        cfg_str = """mode_config.points = [[0, 0, 0], [0.05, -0.1, -0.1], [0.1, 0.1, -0.2]]
+"""
+    elif mode == 'random':
+        cfg_str = """mode_config.base_location =
+mode_config.scale = 0.3
 """
     else:
         ValueError(f'Unknown multiview mode {mode}')
@@ -222,7 +304,7 @@ objects_textures = {textures}
 """
 
 
-def gen_config(C, trgt_objs_set, txt_objs_set):
+def gen_config(C, trgt_objs_set, txt_objs_set, mode):
 
     # construct target objects
     targets = [f'{target_objects[obj_id][0]}:{target_objects[obj_id][1]}' for obj_id in trgt_objs_set]
@@ -232,33 +314,34 @@ def gen_config(C, trgt_objs_set, txt_objs_set):
     textured_objects = ", ".join(txt_objs_set['objects'])
     object_textures = txt_objs_set['textures']
 
-    for mode in modes:
-        base_path = f"$AMIRA_DATASETS/{dataset_name}/{mode}/Configuration{C}"
+    base_path = f"$AMIRA_DATASETS/{dataset_name}/{mode}/Configuration{C}"
 
-        if multi_view[mode]['enabled']:
-            multi_view_mode = multi_view[mode][C]
-            dset_str = get_dataset(images[mode][0] * images[mode][1], base_path,
-                                   nscenes=images[mode][0], nviews=images[mode][1])
-            multi_view_str = get_multiview_setup(multi_view_mode)
-        else:
-            dset_str = get_dataset(images[mode], base_path, nscenes=images[mode])
-            multi_view_str = ''
+    if multi_view[mode]['enabled']:
+        multi_view_mode = multi_view[mode][C]
+        dset_str = get_dataset(images[mode][C][0] * images[mode][C][1], base_path,
+                               nscenes=images[mode][C][0], nviews=images[mode][C][1], scene_type=scene_types[mode])
+        multi_view_str = get_multiview_setup(multi_view_mode)
+    else:
+        dset_str = get_dataset(images[mode], base_path, nscenes=images[mode])
+        multi_view_str = ''
 
-        cfg = dset_str + '\n' \
-            + camera_info + '\n' \
-            + get_render_setup(motion_blur[mode]) + '\n' \
-            + get_scene_setup(forward_frames, target_scenes[C]) + '\n' \
-            + multi_view_str + '\n' \
-            + postprocess + '\n' \
-            + parts + '\n' \
-            + get_scenario_setup(targets, textured_objects, object_textures)
+    cfg = dset_str + '\n' \
+        + camera_info + '\n' \
+        + get_render_setup(num_samples, motion_blur[mode]) + '\n' \
+        + get_scene_setup(forward_frames[mode], target_scenes[mode][C]) + '\n' \
+        + multi_view_str + '\n' \
+        + postprocess + '\n' \
+        + parts + '\n' \
+        + get_scenario_setup(targets, textured_objects, object_textures)
 
-        fname = f"cfgs/tmp-{mode}-C{C}.cfg"
-        with open(fname, 'w') as f:
-            f.write(cfg)
+    fname = f"cfgs/tmp-{mode}-C{C}.cfg"
+    with open(fname, 'w') as f:
+        f.write(cfg)
 
 
 if __name__ == "__main__":
-    for C in target_configs:
-        print(f"Generating configs for Configuration {C}")
-        gen_config(C, target_obj_sets[C], textured_objs_sets[C])
+
+    for mode in modes:
+        for C in target_configs[mode]:
+            print(f"Generating configs for mode {mode}, Configuration {C}")
+            gen_config(C, target_obj_sets[mode][C], textured_objs_sets[mode][C], mode)
