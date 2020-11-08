@@ -102,18 +102,18 @@ target_scenes = {
     },
     # TODO: depends on the static scenes
     'Tracking': {
-        'A': 'robottable_some_objects_no_cameraframe',
-        'B': 'robottable_some_objects_no_cameraframe',
-        'C': 'robottable_some_objects_no_cameraframe',
-        'D': 'robottable_some_objects_no_cameraframe',
-        'E': 'robottable_all_objects_no_cameraframe',
-        'F': 'robottable_all_objects_no_cameraframe',
-        'G': 'robottable_all_objects_no_cameraframe',
-        'H': 'robottable_all_objects_no_cameraframe',
-        'I': 'robottable_all_objects_distractors_no_cameraframe',
-        'J': 'robottable_all_objects_distractors_no_cameraframe',
-        'K': 'robottable_all_objects_distractors_no_cameraframe',
-        'L': 'robottable_all_objects_distractors_no_cameraframe',
+        'A': 'robottable_static_some_objects_no_cameraframe',
+        'B': 'robottable_static_some_objects_no_cameraframe',
+        'C': 'robottable_static_some_objects_no_cameraframe',
+        'D': 'robottable_static_some_objects_no_cameraframe',
+        'E': 'robottable_static_all_objects_no_cameraframe',
+        'F': 'robottable_static_all_objects_no_cameraframe',
+        'G': 'robottable_static_all_objects_no_cameraframe',
+        'H': 'robottable_static_all_objects_no_cameraframe',
+        'I': 'robottable_static_all_objects_distractors_no_cameraframe',
+        'J': 'robottable_static_all_objects_distractors_no_cameraframe',
+        'K': 'robottable_static_all_objects_distractors_no_cameraframe',
+        'L': 'robottable_static_all_objects_distractors_no_cameraframe',
     }
 }
 
@@ -156,7 +156,7 @@ motion_blur = {
 # specify how many frames we want to forward simulate each Configuration
 forward_frames = {
     'Detection': 50,
-    'Tracking': 50
+    'Tracking': ''
 }
 
 num_samples = 32
