@@ -67,3 +67,31 @@ class BaseSceneManager():
 
         # setup link (doesn't matter if already exists, won't duplicate)
         tree.links.new(n_envtex.outputs['Color'], nodes['Background'].inputs['Color'])
+
+    def set_object_texture(self, obj_name: str, filepath: str):
+        """Set a specific (image) texture for the specified object.
+        NOTE: if the object has specific material properites, these will be overwritten
+
+        Args:
+            obj(str): bpy object name to select
+            filepath(str): path to texture image
+        """
+        if not os.path.exists(filepath) or filepath in [None, '']:
+            self.logger.info(f'Path {filepath} to object texture does not exist. Skipping')
+            return
+
+        # add node to object tree
+        tree = bpy.data.objects[obj_name].active_material.node_tree
+        nodes = tree.nodes
+        if 'Surface Image Texture' not in nodes:
+            n_objtex = nodes.new('ShaderNodeTexImage')
+            # change default name
+            n_objtex.name = 'Surface Image Texture'
+        n_objtex = nodes['Surface Image Texture']
+
+        # load and assign image
+        img = blnd.load_img(filepath)
+        n_objtex.image = img
+
+        # link to color output
+        tree.links.new(n_objtex.outputs['Color'], nodes['Principled BSDF'].inputs['Base Color'])
