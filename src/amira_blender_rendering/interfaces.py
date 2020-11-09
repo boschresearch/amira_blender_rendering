@@ -181,7 +181,7 @@ class ABRScene():
                 _save_data_on_error(
                     scn_str,
                     view_str,
-                    dirinfo.images.const,
+                    dirinfo.images.rgb,
                     dirinfo.images.mask,
                     logpath,
                     self.objs)
