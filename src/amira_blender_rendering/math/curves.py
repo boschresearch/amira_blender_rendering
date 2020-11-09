@@ -102,8 +102,8 @@ def points_on_bezier(num_points: int, p0: np.array, p1: np.array, p2: np.array, 
         p2(2d/3d array): 2d/3d second control point of curve
 
     Optional Args:
-        start(float): start of curve lenght [0, 1]. Default: 0
-        end(float): end of curve lenght [0, 1]. Default: 1
+        start(float): start of curve length [0, 1]. Default: 0
+        end(float): end of curve length [0, 1]. Default: 1
 
     Returns:
         list of points
@@ -162,20 +162,35 @@ def points_on_wave(num_points, radius: float = 1, center: np.array = np.array([0
     return points
 
 
-def points_on_line(num_points: int, p0: np.array, p1: np.array, offset: np.array):
-    """Generate num_points of a line between two given points [p0, p1]
-    If offset is given, the entire line is rigidly transformed so p0 = offset
+def points_on_piecewise_line(num_points: int, control_points: dict):
+    """Generate num_points on a piecewise line defined by a sequence of
+    control points [p0, p1, p2, ...]
 
     Args:
-        p0(array(3,)): line starting point
-        p1(array(3,)): line ending point
-        offset(array(3,)): offset for rigid transform
+        num_points(int): number of points to create
+        cntrl_points(dict): dictionary of control points for the piecwise line
     
     Returns:
         array of points
     """
-    T = np.linspace(0, 1, num_points, endpoint=True).reshape((num_points, 1))
-    return offset + p0 + np.kron(T, (p1 - p0))
+    # directions and norms
+    directions = np.diff(np.asarray(control_points), axis=0)
+    norms = np.linalg.norm(directions, axis=1)
+    length = np.sum(norms)
+    cum_length = np.cumsum(norms)
+    T = np.linspace(0, length, num_points, endpoint=True)
+    points = np.empty((num_points, control_points[0].size))
+
+    j = 0
+    current_length = 0
+    for i, t in enumerate(T):
+        if t >= cum_length[j]:
+            current_length = cum_length[j]
+            j += 1
+        points[i, :] = control_points[j]
+        if j < len(directions):
+            points[i, :] += (t - current_length) * directions[j]
+    return points
 
 
 def random_points(num_points, base_location, scale):

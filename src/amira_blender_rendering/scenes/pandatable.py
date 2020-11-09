@@ -68,7 +68,7 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
                        'List of objects visible in the scene but of which infos are not stored')
         self.add_param('scenario_setup.textured_objects', [], 'List of objects whose texture is randomized during rendering')
         self.add_param('scenario_setup.objects_textures', '', 'Path to images for object textures')
-        
+
         # multiview configuration (if implemented)
         self.add_param('multiview_setup.mode', '',
                        'Selected mode to generate view points, i.e., random, bezier, viewsphere')
@@ -470,7 +470,7 @@ class PandaTable(interfaces.ABRScene):
         env_txt_filepath = expandpath(random.choice(self.environment_textures))
         self.renderman.set_environment_texture(env_txt_filepath)
 
-    def randomize_objects_textures(self):
+    def randomize_textured_objects_textures(self):
         for obj_name in self.config.scenario_setup.textured_objects:
             obj_txt_filepath = expandpath(random.choice(self.objects_textures))
             self.renderman.set_object_texture(obj_name, obj_txt_filepath)
@@ -584,7 +584,7 @@ class PandaTable(interfaces.ABRScene):
                 mode=self.config.multiview_setup.mode,
                 camera_names=camera_names,
                 config=self.config.multiview_setup.mode_config)
-        
+
         else:
             raise ValueError(f'Selected render mode {self.render_mode} not currently supported')
        
@@ -618,7 +618,7 @@ class PandaTable(interfaces.ABRScene):
 
             # randomize scene: move objects at random locations, and forward simulate physics
             self.randomize_environment_texture()
-            self.randomize_objects_textures()
+            self.randomize_textured_objects_textures()
             self.randomize_object_transforms(self.objs + self.distractors)
             self.forward_simulate()
             

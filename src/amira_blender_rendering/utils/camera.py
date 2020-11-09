@@ -24,7 +24,7 @@ import cv2
 
 from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.math.curves import points_on_viewsphere, points_on_bezier, points_on_circle, \
-    points_on_wave, random_points, points_on_line
+    points_on_wave, random_points, points_on_piecewise_line
 from amira_blender_rendering.datastructures import Configuration
 
 logger = get_logger()
@@ -455,7 +455,12 @@ def get_current_cameras_locations(camera_names: list):
 
 def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_names: list, **kw):
     """
-    Generate multiple locations for multiple cameras according to selected mode
+    Generate multiple locations for multiple cameras according to selected mode.
+
+    NOTE: cameras' locations will be offset from their initial location in the scene.
+    This way, the location of a given camera setup (e.g., consisting of multiple cameras) is
+    "rigidly" transformed (notice that cameras will in general rotate), in space.
+    This allow to preserve relative locations within the given setup, e.g., parallel cameras.
 
     Args:
         num_locations(int): number of locations to generate
@@ -464,6 +469,7 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
     
     Keywords Args:
         config(Configuration/dict-like)
+        offset(bool): if False, generated locations are not offset with original camera locations. Default: True
 
     Returns:
         locations(dict(array)): dictionary with list of locations for each camera
@@ -489,6 +495,14 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
             p = np.fromstring(p, sep=',')
         return p
 
+    def get_list_from_str(cfg, name, default):
+        import ast
+        tmp = cfg.get(name, None)
+        if tmp is None:
+            return default
+        alist = ast.literal_eval(tmp)
+        return [np.array(v) for v in alist]
+
     # camera location
     original_locations = get_current_cameras_locations(camera_names)
 
@@ -499,65 +513,61 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
         'circle': points_on_circle,
         'wave': points_on_wave,
         'viewsphere': points_on_viewsphere,
-        'linear': points_on_line,
+        'piecewiselinear': points_on_piecewise_line,
     }
 
     # early check for selected mode
     if mode not in _available_modes.keys():
         raise ValueError(f'Selected mode {mode} not supported for multiview locations')
 
-    # init container
-    locations = {}
-
-    # loop over cameras
-    for cam_name in camera_names:
-
-        # build dict with available config per each mode
-        mode_cfg = kw.get('config', Configuration())  # get user defined config (if any)
-        _modes_cfgs = {
-            'random': {
-                'base_location': get_array_from_str(mode_cfg, 'base_location', original_locations[cam_name]),
-                'scale': float(mode_cfg.get('scale', 1))
-            },
-            'bezier': {
-                'p0': get_array_from_str(mode_cfg, 'p0', original_locations[cam_name]),
-                'p1': get_array_from_str(
-                    mode_cfg, 'p1',
-                    original_locations[cam_name] + np.random.randn(original_locations[cam_name].size)),
-                'p2': get_array_from_str(
-                    mode_cfg, 'p2',
-                    original_locations[cam_name] + np.random.randn(original_locations[cam_name].size)),
-                'start': float(mode_cfg.get('start', 0)),
-                'stop': float(mode_cfg.get('stop', 1))
-            },
-            'circle': {
-                'radius': float(mode_cfg.get('radius', 1)),
-                'center': get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
-            },
-            'wave': {
-                'radius': float(mode_cfg.get('radius', 1)),
-                'center': get_array_from_str(mode_cfg, 'center', original_locations[cam_name]),
-                'frequency': float(mode_cfg.get('frequency', 1)),
-                'amplitude': float(mode_cfg.get('amplitude', 1))
-            },
-            'viewsphere': {
-                'scale': float(mode_cfg.get('scale', 1)),
-                'bias': tuple(get_array_from_str(mode_cfg, 'bias', [0, 0, 1.5]))
-            },
-            'linear': {
-                'p0': get_array_from_str(mode_cfg, 'p0', np.array([0, 0, 0])),
-                'p1': get_array_from_str(mode_cfg, 'p1', np.array([1, 1, 1])),
-                'offset': get_array_from_str(mode_cfg, 'offset', original_locations[cam_name])
-            }
+    # build dict with available config per each mode
+    mode_cfg = kw.get('config', Configuration())  # get user defined config (if any)
+    _modes_cfgs = {
+        'random': {
+            'base_location': get_array_from_str(mode_cfg, 'base_location', np.zeros(3)),
+            'scale': float(mode_cfg.get('scale', 1))
+        },
+        'bezier': {
+            'p0': get_array_from_str(mode_cfg, 'p0', np.zeros(3)),
+            'p1': get_array_from_str(mode_cfg, 'p1', np.random.randn(3)),
+            'p2': get_array_from_str(mode_cfg, 'p2', np.random.randn(3)),
+            'start': float(mode_cfg.get('start', 0)),
+            'stop': float(mode_cfg.get('stop', 1))
+        },
+        'circle': {
+            'radius': float(mode_cfg.get('radius', 1)),
+            'center': get_array_from_str(mode_cfg, 'center', np.zeros(3))
+        },
+        'wave': {
+            'radius': float(mode_cfg.get('radius', 1)),
+            'center': get_array_from_str(mode_cfg, 'center', np.zeros(3)),
+            'frequency': float(mode_cfg.get('frequency', 1)),
+            'amplitude': float(mode_cfg.get('amplitude', 1))
+        },
+        'viewsphere': {
+            'scale': float(mode_cfg.get('scale', 1)),
+            'bias': tuple(get_array_from_str(mode_cfg, 'bias', [0, 0, 1.5]))
+        },
+        'piecewiselinear': {
+            'control_points': get_list_from_str(mode_cfg, 'points', [np.zeros(3), np.ones(3)])
         }
+    }
+
+    # generate locations according to selected mode
+    locations = _available_modes[mode](num_locations, **_modes_cfgs[mode])
+
+    # iterate over cameras
+    cameras_locations = {}
+    offset = kw.get('offset', True)
+    for cam_name in camera_names:
 
         # log
         logger.info(f'Generating locations for {cam_name} according to {mode} mode')
-
-        # extract camera object
-        camera = bpy.context.scene.objects[cam_name]
         
         # get location
-        locations[cam_name] = _available_modes[mode](num_locations, **_modes_cfgs[mode])
+        # NOTE: need to copy otherwise we overwrite the array being mutable
+        cameras_locations[cam_name] = np.copy(locations)
+        if offset:
+            cameras_locations[cam_name] += np.copy(original_locations[cam_name])
 
-    return locations, original_locations
+    return cameras_locations, original_locations
