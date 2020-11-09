@@ -19,7 +19,7 @@
 import os
 import pathlib
 import numpy as np
-from skimage import img_as_float, img_as_int
+from skimage import img_as_float, img_as_ubyte
 
 import imageio
 try:
@@ -261,15 +261,14 @@ class ABRDataset:
         depth = imageio.imread(os.path.join(self.dir_info['images']['depth'], fname_png))
         # collapse depth to single axis
         range_img = range_img[:, :, 0]
-        # depth = depth[:, :, 0]
 
         # assign images
         sample['images'] = {
-            'rgb': img_as_float(rgb).astype(np.float32),
-            'mask': img_as_int((composite_mask / np.max(composite_mask)).astype(np.int16)).astype(np.uint8),
+            'rgb': img_as_float(rgb),
+            'mask': img_as_ubyte(composite_mask / np.max(composite_mask)),
             'range': np.asarray(range_img, dtype=np.float32),  # keep depth info
-            'depth': img_as_float(depth).astype(np.float32),
-            'backdrop': img_as_int((backdrop / np.max(backdrop)).astype(np.int16)).astype(np.uint8)
+            'depth': img_as_float(depth),
+            'backdrop': img_as_ubyte(backdrop / np.max(backdrop))
         }
         return sample
 
