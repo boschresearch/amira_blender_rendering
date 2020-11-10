@@ -242,6 +242,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
                             f'Overwriting visibility information for obj {obj["object_class_name"]}:{obj["object_id"]}')
                 obj['visible'] = False
             else:
+                self.logger.error('Invalid mask given')
                 raise ValueError('Invalid mask given')
 
         render_result_gl = PoseRenderResult(

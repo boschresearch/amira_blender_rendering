@@ -247,12 +247,23 @@ forward_frames = {fframes}
 
 
 # [postprocess]
-postprocess = """[postprocess]
+postprocess = {
+    'Detection': """[postprocess]
 depth_scale = 10000.0
 compute_disparity = True
 parallel_cameras = Camera.FrontoParallel.Left, Camera.FrontoParallel.Right
 parallel_cameras_baseline_mm = 50
-"""
+""",
+    'Tracking': """[postprocess]
+depth_scale = 10000.0
+# fall back to visibility computations from mask if there is any issue
+visibility_from_mask = True
+compute_disparity = True
+parallel_cameras = Camera.FrontoParallel.Left, Camera.FrontoParallel.Right
+parallel_cameras_baseline_mm = 50
+""",
+}
+
 
 
 # TODO
@@ -330,7 +341,7 @@ def gen_config(C, trgt_objs_set, txt_objs_set, mode):
         + get_render_setup(num_samples, motion_blur[mode]) + '\n' \
         + get_scene_setup(forward_frames[mode], target_scenes[mode][C]) + '\n' \
         + multi_view_str + '\n' \
-        + postprocess + '\n' \
+        + postprocess[mode] + '\n' \
         + parts + '\n' \
         + get_scenario_setup(targets, textured_objects, object_textures)
 
