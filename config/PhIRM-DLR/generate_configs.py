@@ -73,7 +73,6 @@ target_obj_sets = {
         'H': [0, 1, 2, 3, 4, 5, 6, 7, 8],
     },
     'Tracking': {
-        # TODO: if use we static scene this is not necessary (maybe for keep tracking in the config)
         'A': [0, 1, 2, 5, 6],
         'B': [0, 1, 2, 5, 6],
         'C': [0, 1, 2, 5, 6],
@@ -100,7 +99,6 @@ target_scenes = {
         'G': 'robottable_distractors_no_cameraframe',
         'H': 'robottable_distractors_no_cameraframe',
     },
-    # TODO: depends on the static scenes
     'Tracking': {
         'A': 'robottable_static_some_objects_no_cameraframe',
         'B': 'robottable_static_some_objects_no_cameraframe',
@@ -165,27 +163,27 @@ num_samples = 32
 textured_objs_sets = {
     'Detection': {
         'A': {'objects': [], 'textures': ''},
-        'B': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
-        'C': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
-        'D': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
-        'E': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
-        'F': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
-        'G': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
-        'H': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/object_textures'},
+        'B': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/textures/detection'},
+        'C': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/textures/detection'},
+        'D': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/textures/detection'},
+        'E': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/textures/detection'},
+        'F': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/textures/detection'},
+        'G': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/textures/detection'},
+        'H': {'objects': ['RubberPlate', 'TableTop'], 'textures': '$DATA_STORAGE/models/textures/detection'},
     },
     'Tracking': {
         'A': {'objects': [], 'textures': ''},
         'B': {'objects': [], 'textures': ''},
-        'C': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
-        'D': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
+        'C': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/textures/tracking/Wood023_2K_Color.png'},
+        'D': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/textures/tracking/Wood023_2K_Color.png'},
         'E': {'objects': [], 'textures': ''},
         'F': {'objects': [], 'textures': ''},
-        'G': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
-        'H': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
+        'G': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/textures/tracking/Wood023_2K_Color.png'},
+        'H': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/textures/tracking/Wood023_2K_Color.png'},
         'I': {'objects': [], 'textures': ''},
         'J': {'objects': [], 'textures': ''},
-        'K': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
-        'L': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/object_textures/Wood023_2K_Color.png'},
+        'K': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/textures/tracking/Wood023_2K_Color.png'},
+        'L': {'objects': ['RubberPlate'], 'textures': '$DATA_STORAGE/models/textures/tracking/Wood023_2K_Color.png'},
     },
 }
 
@@ -237,10 +235,10 @@ motion_blur = {motion_blur}
 
 
 # [scene_setup]
-def get_scene_setup(fframes: int = 20, blend_file: str = 'robottable_empty'):
+def get_scene_setup(fframes: int = 20, blend_file: str = 'robottable_empty', mode=''):
     return f"""[scene_setup]
 blend_file = $DATA_STORAGE/models/scenes/{blend_file}.blend
-environment_textures = $DATA_STORAGE/OpenImagesV4/Images
+environment_textures = {'$DATA_STORAGE/models/textures/background/machine_shop_02_4k.hdr' if mode == 'Tracking' else '$DATA_STORAGE/OpenImagesV4/Images'}
 cameras = Camera.FrontoParallel.Left, Camera.FrontoParallel.Right
 forward_frames = {fframes}
 """
@@ -265,8 +263,6 @@ parallel_cameras_baseline_mm = 50
 }
 
 
-
-# TODO
 # [multiview_setup]
 def get_multiview_setup(mode: str = 'wave'):
     if mode == 'wave':
@@ -339,7 +335,7 @@ def gen_config(C, trgt_objs_set, txt_objs_set, mode):
     cfg = dset_str + '\n' \
         + camera_info + '\n' \
         + get_render_setup(num_samples, motion_blur[mode]) + '\n' \
-        + get_scene_setup(forward_frames[mode], target_scenes[mode][C]) + '\n' \
+        + get_scene_setup(forward_frames[mode], target_scenes[mode][C], mode=mode) + '\n' \
         + multi_view_str + '\n' \
         + postprocess[mode] + '\n' \
         + parts + '\n' \
