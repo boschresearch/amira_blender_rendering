@@ -333,7 +333,9 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
     compute the projected rectified depth
 
     The function assumes to read-in from an Exr image format (32 bit true range values)
-    and to write-out in PNG image format (16 bit truncated depth values)
+    and to write-out in PNG image format (16 bit truncated depth values).
+
+    NOTE: depth values that might cause overflow in 16bit (i.e. >65k) are set to 0.
     
     Args:
         filepath_in(str): path to (.exr) file with range values (assumed in m) to load
@@ -371,7 +373,11 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
     v_dirs_mtx = np.dot(K_inv, uv1).T.reshape(res_y, res_x, 3)
     v_dirs_mtx_unit_inv = np.reciprocal(np.linalg.norm(v_dirs_mtx, axis=2))
 
-    depth_img = (range_exr * v_dirs_mtx_unit_inv * scale).astype(np.uint16)
+    depth_img = (range_exr * v_dirs_mtx_unit_inv * scale)
+    # remove overflow values
+    depth_img[depth_img > 65000] = 0
+    # cast to 16 bit
+    depth_img = depth_img.astype(np.uint16)
 
     # write out if requested
     if filepath_out is not None:
