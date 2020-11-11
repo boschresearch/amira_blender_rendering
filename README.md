@@ -44,7 +44,7 @@ make html
 ```
 
 This will build the documentation under `docs/_build` and can be conveniently
-browsed by opening `docs/_build/html/index.rst` into you preferred browers.
+browsed by opening `docs/_build/html/index.html` into you preferred browers.
 
 **Notes**: as explained in the documentation, running ABR requires to create
 and work with a custom python3.7 environemnt. Hence, it is suggested to create 
