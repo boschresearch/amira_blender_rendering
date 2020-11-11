@@ -32,7 +32,7 @@ See [NOTICE](./NOTICE) file for an update list of the current holders
 and contributors to AMIRA Blender Rendering.
 
 Also, in case you want to get involve and contribute yourself, please
-refer to the [CONTRIBUTING](./CONTRIBUTING) file.
+refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) file.
 
 
 ## Documentation<a name="docs"></a>
@@ -46,7 +46,7 @@ make html
 This will build the documentation under `docs/_build` and can be conveniently
 browsed by opening `docs/_build/html/index.html` into you preferred browers.
 
-**Notes**: as explained in the documentation, running ABR requires to create
+**Notes**: as explained in the documentation, running ABR *might* require to create
 and work with a custom python3.7 environemnt. Hence, it is suggested to create 
 one before staring. Also, according to requirements.txt, compiling the documentation 
 requires sphinx-rtd-theme to be installed in your current python3 environment.
