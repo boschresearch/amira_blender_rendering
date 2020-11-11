@@ -127,7 +127,7 @@ behaves, or which render backend to use.
     allow_occlusions = False
 
 debugging
--------
+---------
 
 The ``debug`` namespace can be used to toggle debug functionatilies.
 For scene specific flags refer to the desider scene.
