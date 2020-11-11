@@ -419,12 +419,12 @@ def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
     """
     # check filepath_in to read file from
     if '.png' in filepath_in:
-        logger.info('Loading depth from .PNG')
-        depth = (cv2.imread(filepath_in, cv2.IMREAD_ANYDEPTH)).astype(np.uint16)
+        logger.info(f'Loading depth from .PNG file {filepath_in}')
+        depth = (cv2.imread(filepath_in, cv2.IMREAD_UNCHANGED)).astype(np.uint16)
     
     elif '.exr' in filepath_in:
         # in case of exr file we convert range to depth first
-        logger.info('Computing depth from EXR range')
+        logger.info(f'Computing depth from EXR range file {filepath_in}')
         depth = project_pinhole_range_to_rectified_depth(
             filepath_in, None, calibration_matrix, res_x, res_y, scale)
 
