@@ -420,7 +420,7 @@ def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
     # check filepath_in to read file from
     if '.png' in filepath_in:
         logger.info(f'Loading depth from .PNG file {filepath_in}')
-        depth = (cv2.imread(filepath_in, cv2.IMREAD_UNCHANGED))[:, :, 0].astype(np.uint16)
+        depth = (cv2.imread(filepath_in, cv2.IMREAD_UNCHANGED)).astype(np.uint16)
     
     elif '.exr' in filepath_in:
         # in case of exr file we convert range to depth first
