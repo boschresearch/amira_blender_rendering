@@ -75,7 +75,8 @@ class StaticSceneConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('multiview_setup.mode', '',
                        'Selected mode to generate view points, i.e., random, bezier, viewsphere')
         self.add_param('multiview_setup.mode_config', Configuration(), 'Mode specific configuration')
-
+        self.add_param('multiview_setup.offset', True, 'If False, multi views are not offset with initial camera location. Default: True')
+        
         # specific debug config
         self.add_param('debug.plot', False, 'If True, in debug mode, enable simple visual debug')
         self.add_param('debug.plot_axis', False, 'If True, in debug-plot mode, plot camera coordinate systems')
@@ -471,7 +472,8 @@ class StaticScene(interfaces.ABRScene):
                 num_locations=self.config.dataset.view_count,
                 mode=self.config.multiview_setup.mode,
                 camera_names=camera_names,
-                config=self.config.multiview_setup.mode_config)
+                config=self.config.multiview_setup.mode_config,
+                offset=self.config.multiview_setup.offset)
 
         else:
             raise ValueError(f'Selected render mode {self.render_mode} not currently supported')

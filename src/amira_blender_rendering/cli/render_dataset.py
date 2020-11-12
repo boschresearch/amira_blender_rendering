@@ -161,6 +161,15 @@ def main():
     # parse command arguments
     cmd_parser = get_cmd_argparser()
     cmd_args = cmd_parser.parse_known_args(args=get_argv())[0]  # need to parse to get aps and abr
+
+    # print help if requested
+    # NOTE: we check for config since if config are given also all the avaliable config will be printed.
+    # However, if no configs are given, calling --help will still work
+    if cmd_args.help and 'config' not in cmd_args:
+        cmd_parser.print_help()
+        sys.exit(0)
+
+    # import abr
     import_abr(cmd_args.abr_path)
 
     # get logger instance
