@@ -163,3 +163,27 @@ Here's a non-exhaustive) list of the variables that we usually use (Name | Descr
 $AMIRA_DATASETS | Path to datasets, such as the one produced here, or OpenImagesV4
 $AMIRA_BLENDER_RENDERING_ASSETS | Path to additional assets, such as textures
 $AMIRA_DATA_GFX | Path to graphics data
+
+
+.. _RenderingModes:
+
+Rendering modes
+---------------
+
+Currently, for some of the ready available scenes, ABR offers two different
+rendering modes ``(DEFAULT, MULTIVIEW)`` which can be selected at deployment 
+time by running ``abrgen`` with the flag ``--render-mode`` followed by the 
+name of the mode.
+
+``DEFAULT`` refers to the default rendering mode. That is, if no flag is explicitly
+selected, this mode is automatically called.
+In this mode we usually render one camera view (static-camera) per each (random) scene.
+Note that the exact behavior of the render mode depends on the so-called *scene backend*.
+
+``MULTIVIEW`` usually refers to the case when we render multiple camera views for
+the same (random) scene. That is the camera is *moved* around in 3D space and images
+are rendered from each of these camera locations.
+Note that how camera locations are selected depends on specific configuration values
+to be set in the .cfg file abrgen is called with.
+
+For specific behaviors, refer to the :ref:`configurations` docs.
