@@ -72,7 +72,7 @@ If you use ABR please make sure to cite our work.
 
 .. toctree::
    :maxdepth: 3
-   :caption: ABR User's Guide:
+   :caption: ABR User's Guide
 
    installation.rst
    using.rst
@@ -84,29 +84,31 @@ If you use ABR please make sure to cite our work.
 
 .. toctree::
    :maxdepth: 3
-   :caption: ABR Developer's Guide:
+   :caption: ABR Developer's Guide
 
    contributing.rst
 
 .. toctree::
    :maxdepth: 3
-   :caption: Configurations:
+   :caption: Configurations
+   :name: configurations
 
    configs/overview.rst
    configs/baseconfiguration.rst
    configs/workstation_scenarios.rst
    configs/pandatable.rst
    configs/simpleobject.rst
+   configs/multiview.rst
 
 .. toctree::
   :maxdepth: 3
-  :caption: Datasets:
+  :caption: Datasets
 
   datasets/phirm.rst
 
 .. toctree::
   :maxdepth: 3
-  :caption: Tutorials:
+  :caption: Tutorials
 
   tutorials/simplecustomscenario.rst
 
@@ -123,6 +125,6 @@ Contacts
 ========
 
 | `Nicolai Waniek <mailto:Nicolai.Waniek@de.bosch.com>`_
-| `Markus Spies <mailto:Markus.Spies2@de.bosch.com>`_
 | `Marco Todescato <mailto:Marco.Todescato@de.bosch.com>`_
+| `Markus Spies <mailto:Markus.Spies2@de.bosch.com>`_
 
