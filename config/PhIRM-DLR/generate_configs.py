@@ -21,6 +21,7 @@ target_configs = {
 resolution = 'medium'
 
 # define camera data based on resolution level [width, height, intrinsics]
+#TODO: add camera data.. waiting for Narunas
 camera_data = {
     'low': [640, 480, ''],
     'medium': [960, 540, '698.128, 698.617, 478.459, 274.426'],
