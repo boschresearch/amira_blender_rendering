@@ -3,7 +3,7 @@
 Multiview Configurations
 ========================
 
-Multiview configurations can be used to select and setup a certain *camera motions*
+Multiview configurations can be used to select and setup certain *camera motions*
 during ``multiview`` `render mode <RenderingModes>`_.
 
 A prescribed mode and its corresponding configuration can be selected in the config file 
