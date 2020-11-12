@@ -242,7 +242,7 @@ were used, have a look at `config/pandatable_example.cfg`.
     # annotated information are NOT stored, i.e., they serve as distractors
     distractor_objects = []
 
-    # Camera multiview is applied to all the camera selected in scene_setup.cameras and
+    # Camera multiview is applied to all cameras selected in scene_setup.cameras and
     # it is activated calling abrgen with the --render-mode multiview flag.
     # For specific multiview modes/configs config refer to "Multiview Configuration" docs.
     [multiview_setup]
