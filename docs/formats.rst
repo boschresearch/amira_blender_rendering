@@ -44,7 +44,7 @@ Image indexing
 All image files (except for masks) are named based on the indexing scheme ``sXXX_vYYY`` 
 where XXX and YYY are index determined depeding on the selected number of images and ``render-mode``.
 
-For more info about the ``render-mode`` refer to TODO (WE NEED TO DESCRIBE THE RENDER MODES : DEFAULT/MULTIVIEW)
+For more info about the ``render-mode`` refer to :ref:`RenderingModes`.
 
 For you to know, in ``DEFAULT`` render mode XXX wgoes from 0 to N-1 where N is the total number
 of images in the dataset while YYY=0. 
