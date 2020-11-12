@@ -17,6 +17,13 @@ images, as well as the output directory where data will be written to.
     [dataset]
     # Specify how many images should be rendered
     image_count = 5
+    # Depending on the rendering mode it is also possible to set scene 
+    # and camera view counts. Note that setting these values might affect
+    # the total number of rendered image and, in turn, image_count.
+    # As an example, if supported, setting scene_cout = 5, view_count = 5 in
+    # "multiview" render mode will result in image_count = 25 
+    scene_count = 
+    view_count =
     # Specify the base path where data will be written to. Note that this is a base
     # path, to which additional information will be added such as Scenario-Number
     # and Camera-Name
@@ -104,6 +111,17 @@ information.
     # in the camera reference frame.
     zeroing = 0.0, 0.0, 0.0
 
+    # We allow to set camera parameters also using additional values. These are:
+    # The sensor width in mm (if not available, set to 0.0)
+    sensor_width =
+    # The camera focal lenght in mm (if not available, set to 0.0)
+    focal_length = 
+    # The camera Horizontal Field-of-View in degrees (if not available, set to 0.0) 
+    hfov =
+    # Additionally, it is possible to determin how to compute the camera setup if only
+    # instrinsics values are give among "fov" and "mm" (default is "mm").
+    intrinsics_conversion_mode = 
+
 render_setup
 ------------
 
@@ -125,9 +143,15 @@ behaves, or which render backend to use.
     samples = 64
     # allow occlusions of target objects (true, false)
     allow_occlusions = False
+    # select bit size of RGB images between 8 bit and 16 bit (default)
+    color_depth = 16
+    # toggle motion blur (True, False (defualt)) during rendering. 
+    # Notice that, this might not heavily affect
+    # your render output if the rendered scene is standing still.
+    motion_blue = False
 
 debugging
--------
+---------
 
 The ``debug`` namespace can be used to toggle debug functionatilies.
 For scene specific flags refer to the desider scene.
@@ -147,12 +171,22 @@ during postprocess and/or after the rendering phase
 .. code-block::
 
     [postprocess]
-    # our rendering pipeline exploits a perfect pinhole camera model according
-    # to which points on a plane parallel to the image plane have different depth
-    # values, computed as the disctance to the pin hole.
-    # Conversely, standard raster models assume that points on planes parallel to
-    # the image plane have all the same depth.
-    # In this case, rectify_depth (true, false) adjst the depth values accordingly.
-    rectify_depth = False
-    # if rectify_depth is active, ovewrite depth files or store as separate (true, false)
-    overwrite = Fasle
+    # By default Blender uses a perfect pinhole camera models and its output depth maps
+    # contain indeed ranges (in meters saved as .exr files). For this reasons, (rectified) depth 
+    # maps (saved as png files) are computed during postprocessing. During generation we allow to
+    # select the output scale to convert range to depth. Default is 1e4 = .1mm 
+    depth_scale = 
+    # During post processing it might happen that object visibility information (which are computed
+    # using ray-casting) and the corresponding object mask do not correspond (ie. the mask is empty).
+    # This might happen due to image resolution: the visible portion of the object is not big enough
+    # for a single pixel. Since, for how seldom, this behavior can happen, we allow, to overwrite 
+    # visibility information based on the computed mask (defualt is False). 
+    visibility_from_mask = 
+    # If requested, the disparity between a set of parallel cameras can be computed. Default is False
+    compute_disparity = 
+    # Disparity is computed only on given cameras (chosen among those set in scene_setup.cameras)
+    parallel_cameras = []
+    # Disparity maps require a baseline value (in mm) between the selected cameras. Default is 0
+    parallel_cameras_baseline_mm = 
+
+

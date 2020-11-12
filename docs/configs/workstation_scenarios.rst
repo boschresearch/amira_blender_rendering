@@ -252,18 +252,16 @@ were used, have a look at `config/examples/workstation_scenarios*.cfg`.
     # Specify number of random metallic materials to generate for ABC objects
     abc_color_count = 3
     
-
+    # Camera multiview is applied to all cameras selected in scene_setup.cameras and 
+    # it is activated calling abrgen with the --render-mode multiview flag.
+    # For specific multiview modes/configs config refer to "Multiview Configuration" docs.
     [multiview_setup]
-    # List of cameras to use during multiview rendering
-    cameras = []
-    # number of views per camera
-    view_count = 0
     # control how multiview camera locations are generated (bezier curve, circle, viewsphere etc.)
     mode = 
     # mode specific configuration
     mode_config = 
 
-    # additional debug configs
+    # additional debug configs (used is debug.enable=True)
     [debug]
     # if in debug mode (see baseconfiguration), produce temporary plot of camera locations (best for multiview rendering)
     plot = False
@@ -277,5 +275,3 @@ were used, have a look at `config/examples/workstation_scenarios*.cfg`.
     # The option can be used to e.g., inspect whether multiple camera locations are occluded,
     # check object occlusions, check the dymanic simulation.
     save_to_blend = False
-
-

@@ -30,8 +30,8 @@ You could start from a minimal set of imports such as
     import bpy
     from amira_blender_rendering.utils import camera as camera_utils
     from amira_blender_rendering.utils.io import expandpath
-    from amira_blender_rendering.scenes import BaseConfiguration, RenderManager
-    from amira_blender_rendering.interfaces import ABRScene
+    import  amira_blender_rendering.scenes as abr_scenes
+    import amira_blender_rendering.interfaces as interfaces
 
     # useful imports
     import os
@@ -51,9 +51,13 @@ a custom configuration class
 
 .. code-block:: python
 
+    # for later convenience, give your scene/scenario a name
+    _scene_name = 'MyCoolScenario'
+ 
     # Custom configuration class.
     # Inheriting from the BaseConfiguration which defines dataset,
     # camera and render -specific configuration parameters.
+    # abr_scene.register(name=_scene_name, type='config')
     class MyCoolScenarioConfiguration(abr_scenes.BaseConfiguration):
         def __init__(self):
             super(MyCoolScenarioConfiguration, self).__init__()
@@ -74,6 +78,7 @@ The following and most important thing is to add your custom scenario class
     # This class should be expanded and modified at user wish to implement
     # all the functionalities needed to interact with her/his custom scenario.
     # E.g., object identification, random pose initialization etc.
+    @abr_scenes.register(name=_scene_name, type='scene')
     class MyCoolScenario(interfaces.ABRScene):
         """
         Example class implementing a custom user-defined scenario
@@ -85,7 +90,7 @@ The following and most important thing is to add your custom scenario class
             self.logger = get_logger()
 
             # [Recommended] get the configuration, if one was passed in
-            self.config = kwargs.get('config', SimpleToolCapConfiguration())
+            self.config = kwargs.get('config', MyCoolScenarioConfiguration())
 
             # [Mandatory] make use of ABR RenderManager for interaction with Blender
             self.renderman = abr_scenes.RenderManager()
@@ -104,7 +109,8 @@ The following and most important thing is to add your custom scenario class
             self.renderman.setup_renderer(
                 self.config.render_setup.integrator,
                 self.config.render_setup.denoising,
-                self.config.render_setup.samples)
+                self.config.render_setup.samples,
+                self.config.render_setup.motion_blur)
 
             # [Recommended] setup environment texture information
             # This could be as simple as importing a list of all the available textures.
@@ -263,34 +269,37 @@ you are left with implementing the class methods. In the following we provide so
 Make the custom scene `discoverable`
 ------------------------------------
 
-The last step is to add your custom scene to the list of available scenes to allow ABR to
-correctly discover it.
-
-For the time being, we require you to do this step manually.
-However, we are planning to implement `automatic` discovery of new scenes in the future.
-
-To make your scene available to ABR locate abr/cli/generate_dataset.py and modify the method
-`get_scene_type` as follows
+As you might have noticed, right before the class definition for your custom scene and 
+its corresponding configurations, we used the following syntax
 
 .. code-block:: python
 
-    def get_scene_types():
-        # do not modify import of already available scenes...
-        # ...add yours
-        from amira_blender_rendering.scenes.mycoolscenario import MyCoolScenarioConfiguration, MyCoolScenario
+    _scene_name = 'MyCoolScenario'
 
-        # Each scenario consists of a name, and a tuple containing the scenario as
-        # well as its configuration
-        return {
-            'SimpleToolCap':
-                [SimpleToolCap, SimpleToolCapConfiguration],
-            'WorkstationScenarios':
-                [WorkstationScenarios, WorkstationScenariosConfiguration],
-            # add yours
-            'MyCoolScenarioTag':
-                [MyCoolScenario, MyCoolScenarioConfiguration]
-            }
+    @abr_scene.register(name=_scene_name, type='config')
+    class MyCoolScenarioConfiguration(abr_scenes.BaseConfiguration):
+        def __init__(self):
+          # additional code
 
 
-**NOTE** In the config file used at rendering time, you need to use the prescribed `MyCoolScenarioTag`
-to correctly select your custom scenario.
+    @abr_scenes.register(name=_scene_name, type='scene')
+    class MyCoolScenario(interfaces.ABRScene):
+        def __init__(self, **kwargs):
+          # additional code
+    
+
+In particular, the line ``@abr_scene.register(name=, type=)`` might appear a bit  obscure 
+if you are not familiar with python.
+In any case, it is important to add this line to  your custom code since, internally, it is 
+ used to *automatically* register your scene (and its configuration), 
+expose and make it available to ABR.
+If you do not add those lines and you try to run ``abrgen`` with your brand new scene you most 
+likely are going to encounter a 
+
+.. code-block:: bash
+
+  RuntimeError: Invalid configuration: Unknown scene_type MyCoolSceneario
+
+
+**NOTE** In the config file used at rendering time, you need to use the value set in 
+``_scene_name`` to correctly select your custom scenario.

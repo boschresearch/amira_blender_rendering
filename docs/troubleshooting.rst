@@ -36,3 +36,13 @@ Troubleshooting
 
     Conclusively, either wait until it's done, or use a low-poly model of your
     target object.
+
+4. I set up my custom sceneario and its python *backend* but when I try to run abrgen
+   I get a "Runtime" error telling that ABR does not know my scenario!
+
+    Most likely you forgot to let ABR automatically register your scenario by using
+    ``abr_scenes.register(name=, type=)``. Please refer to :ref:`discover_scene` for
+    more details.
+
+    If the above is not the case, in your configuration .cfg file make sure that
+    ``dataset.scene_type`` is set to be exactly equal to your selected ``_scene_name``.
