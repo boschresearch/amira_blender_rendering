@@ -252,7 +252,7 @@ were used, have a look at `config/examples/workstation_scenarios*.cfg`.
     # Specify number of random metallic materials to generate for ABC objects
     abc_color_count = 3
     
-    # Camera multiview is applied to all the camera selected in scene_setup.cameras and 
+    # Camera multiview is applied to all cameras selected in scene_setup.cameras and 
     # it is activated calling abrgen with the --render-mode multiview flag.
     # For specific multiview modes/configs config refer to "Multiview Configuration" docs.
     [multiview_setup]
