@@ -10,6 +10,23 @@
 # dataset type
 modes = ['Detection', 'Tracking']
 
+# select which configurations to generate
+target_configs = {
+    'Detection': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
+    'Tracking': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'],
+}
+
+# select resolution (currently high, medium, low). See specs below
+# NOTE: this affects the output base_path as well.
+resolution = 'medium'
+
+# define camera data based on resolution level [width, height, intrinsics]
+camera_data = {
+    'low': [640, 480, ''],
+    'medium': [960, 540, '698.128, 698.617, 478.459, 274.426'],
+    'high': [1280, 720, ''],
+}
+
 # scene types to load
 scene_types = {
     'Detection': 'PandaTable',
@@ -187,11 +204,6 @@ textured_objs_sets = {
     },
 }
 
-# select which configurations to generate
-target_configs = {
-    'Detection': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
-    'Tracking': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'],
-}
 
 # name of dataset, used as target directory
 dataset_name = 'BoschDataset'
@@ -211,13 +223,13 @@ scene_type = {scene_type}
 
 
 # [camera_info]
-camera_info = """[camera_info]
-width = 960
-height = 540
+camera_info = f"""[camera_info]
+width = {camera_data[resolution][0]}
+height = {camera_data[resolution][1]}
 model = pinhole
 name = RealSenseD435
 zeroing = 0, 0, 0
-intrinsic = 698.128, 698.617, 478.459, 274.426
+intrinsic = {camera_data[resolution][2]}
 intrinsics_conversion_mode = mm
 """
 
@@ -321,7 +333,7 @@ def gen_config(C, trgt_objs_set, txt_objs_set, mode):
     textured_objects = ", ".join(txt_objs_set['objects'])
     object_textures = txt_objs_set['textures']
 
-    base_path = f"$AMIRA_DATASETS/{dataset_name}/{mode}/Configuration{C}"
+    base_path = f"$AMIRA_DATASETS/{dataset_name}/{resolution}_res/{mode}/Configuration{C}"
 
     if multi_view[mode]['enabled']:
         multi_view_mode = multi_view[mode][C]
