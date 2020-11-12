@@ -12,6 +12,9 @@ environments and bad light conditions.
 
 TODO: image of the workstation scenarios
 
+**NOTE** : The dataset is not yet freely available.
+If you are interested in it, get in :ref:`Contacts` with us.
+
 Objects
 -------
 
@@ -59,6 +62,8 @@ numbered from 0 to 5, each only slightly different from the other. For instance,
 while one scenario might be an empty table, another might have boxes in the
 environment as well. For the PhIRM dataset, we rendered scenarios 0, 1, 3.
 
+
+.. _phirm_configurations:
 
 Configurations
 --------------

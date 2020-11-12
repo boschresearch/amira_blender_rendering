@@ -28,10 +28,12 @@ it consists of the following
 |  └── BaseName.Camera
 |    ├── Dataset.cfg: summary configuration for rendered dataset
 |    ├── Images/
-|    |  ├── backdrop/ : folder with background drop images (composite mask)
-|    |  ├── depth/    : folder with depth images
+|    |  ├── backdrop/  : folder with background drop images (composite mask)
+|    |  ├── range/     : folder with range (.exr) images
+|    |  ├── depth/     : folder with depth (.png) images
+|    |  ├── disparity/ : (if set in the config file) folder with disparity (.png) images
 |    |  ├── masks/     : folder with mask for each segmented object
-|    |  └── rgb/      : folder with RGG images
+|    |  └── rgb/       : folder with RGG images
 |    └── Annotations/
 |       ├── OpenCV/ : :ref:`annotations<Annotations>` with object poses in OpenCV convention
 |       └── OpenGL/ : :ref:`annotations<Annotations>` with object poses in OpenGL convention
@@ -39,13 +41,21 @@ it consists of the following
 Image indexing
 --------------
 
-All image files (except for masks) are named based on their index from 0 to N-1,
-being N the total number of available images in the dataset.
+All image files (except for masks) are named based on the indexing scheme ``sXXX_vYYY`` 
+where XXX and YYY are index determined depeding on the selected number of images and ``render-mode``.
+
+For more info about the ``render-mode`` refer to :ref:`RenderingModes`.
+
+For you to know, in ``DEFAULT`` render mode XXX wgoes from 0 to N-1 where N is the total number
+of images in the dataset while YYY=0. 
+In ``MULTIVIEW`` mode, XXX goes from 0 to S-1 where S is the selected number of scenes, 
+while YYY goes from 0 to V-1 where V is the selected number of camera views.
+In this case the total number of images is SxV.
+Notice that, if necessary, XXX and YYY are zero-padded automatically.
 
 In order to distinguish different instances of objects as well as different object types,
-for masks we use the different convention n_t_i.png where:
+for masks we use the different convention sXXX_vYYY_t_i.png where:
 
-* n : image number
 * t : index for the object type
 * i : instance number for the same object type
 
@@ -53,7 +63,7 @@ for masks we use the different convention n_t_i.png where:
 .. _Annotations:
 
 Annotation File Contents
---------------------------------
+--------------------------
 
 Annotations are stored as .json files following the same naming convention used for images.
 That is to image n.png corresponds the annotation n.json, being n the image number.
@@ -63,15 +73,16 @@ of a list of dictionaries where each dictionary refer to one object instance.
 
 Specifically, for each object we store:
 
-* model_name  (str): label/name for object type
-* model_id    (int): object type
-* object_name (str): instance name
-* object_id   (int): instance number for object of same type
-* mask_name   (str): mask suffix
-* pose (dict): dictionary containing:
+* object_class_name  (str):  label/name for object type
+* object_class_id    (int):  object type
+* object_name        (str):  instance name
+* object_id          (int):  instance number for object of same type
+* mask_name          (str):  mask suffix
+* visible            (bool): visibility flag
+* pose               (dict): dictionary containing:
 
-  * q (list (4,)): rotation embedded as a quaternion (xyzw)
-  * t (list (3,)): translation vector
+  * q (list (4,)): object rotation w.r.t. the camera embedded as a quaternion (xyzw)
+  * t (list (3,)): object translation vector w.r.t. the camera
 
 * bbox (dict): dictionary containing bounding boxes information:
 
@@ -79,3 +90,33 @@ Specifically, for each object we store:
   * corners3d (list (9,2)): 3d bounding box corners in (sub)pixel space 
   * aabb (list (9,3)): axis aligned bounding box corners in 3D space
   * oobb (list (9,3)): object oriented bounding box corners in 3D space
+
+* camera_pose (dict): dictionary containing:
+
+  * q (list (4,)): camera rotation w.r.t. the world frame embedded as a quaternion (xyzw)
+  * t (list (3,)): camera translation vector w.r.t. the world frame
+
+
+.. _ABRDatasetsAPI:
+
+ABR Datasets API (abr_dataset_tools)
+------------------------------------
+
+ABR ships also a standalone lean python package to handle datasets rendered using it.
+
+To access ABR's Datasets API, you need to install the abr_dataset_tools package in your working
+python environment by running (from the package root directory) (assuming pip3.7)
+
+.. code-block:: bash
+
+  (active venv)$ pip install .
+
+Then, to have a quick overview of how to use it, run
+
+.. code-block:: bash
+
+  (active venv)$ python -m abr_dataset_tools --help
+
+The package implements some basic functionalities to load/plot images and print information
+about a prescribed dataset.
+

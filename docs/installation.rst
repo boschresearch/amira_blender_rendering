@@ -4,7 +4,17 @@ Installation
 ============
 
 This page explains how to install ABR. In order for ABR to properly interact
-with blender, it might be necessary that you replace
+with blender, it might be necessary to replace the python distribution
+shipped with Blender as below explained.
+We suggest to first try w/o doing so and resort to it if nothing else works.
+
+**Minimal tested requirements**:
+
+* Blender 2.80
+* python3.7
+
+Using a more recent version of Blender should be possible but we do not ensure it.
+
 
 Installing ABR as a python package
 ----------------------------------
@@ -68,7 +78,7 @@ require certain variants of the package `encodings`.
 
 Download the 64bit linux version of blender from blender.org_ to your local
 computer and unpack it in some suitable directory. The next few steps assume
-that you have the following layout of files in your home folder:
+that you have the following layout of files in your `home` folder:
 
 .. code-block:: bash
 
@@ -76,24 +86,27 @@ that you have the following layout of files in your home folder:
     $ ~/bin/blender-2.80.d      # un-packed blender download
     $ ~/bin/blender             # symlink to ~/bin/blender-2.80.d/blender
 
-Make sure that ``~/bin`` is on your path. You can test this by running
-``blender`` from your command line.
+Make sure that ``~/bin`` is on your path (you can add it e.g., through your ``~/.bashrc``). 
+To quickly test if the setup is correct you can try running ``blender`` from your command line
+which should start Blender's 2.80 GUI.
 
 As mentioned above, blender ships its own python binary. This leads to issues
-when trying to install third party libraries due to numpy version mismatches.
+when trying to install third party libraries due to, e.g., numpy version mismatches.
 The following replaces the shipped python version with the python of a
-virtualenv. We assume that blender was installed as above to ``~/bin/blender``,
+virtualenv. 
+
+We assume that blender was installed as above to ``~/bin/blender``,
 and that you have ``virtualenv`` or ``virtualenvwrapper`` installed.
 
 .. code-block:: bash
 
     $ mkvirtualenv blender-venv                  # This creates a new virtual environment.
                                                  # The path to the venv depends on your system
-                                                 # setup. By default, it should end up in
-                                                 # ~/.venvs or something similar. In the
-                                                 # example here, we assume that virtualenvs
-                                                 # are created in ~/venvs
-                                                 # Note that this also activtes the venv,
+                                                 # setup. By default, it should end up either in
+                                                 # ~/.venvs, ~/.virtualenvs or something similar. 
+                                                 # In the example here, we assume that virtualenvs
+                                                 # are created in ~/.venvs .
+                                                 # Note that this also activates the venv,
                                                  # which should be indicated by
                                                  # `(blender-env)` in front of PS1 (the dollar
                                                  # sign that indicates your shell $).
@@ -130,17 +143,17 @@ from which you run the above commands, i.e.
 
 1. Create a python3 environment with your virtualenv installation, e.g.
    called 'py3bootstrap'
-2. Locally install ``virtualenv`` and ``virtualenvwrapper``
+2. Locally (i.e., inside the python3 environemnt) install ``virtualenv`` and ``virtualenvwrapper``
 
 .. code-block:: bash
 
-       $ (py3bootstrap) pip install virtualenv virtualenvwrapper``
+       $ (py3bootstrap) pip install virtualenv virtualenvwrapper
 
 3. Now create your blender virtual environment
 
 .. code-block:: bash
 
-       ``$ (py3bootstrap) mkvirtualenv blender-venv``
+       $ (py3bootstrap) mkvirtualenv blender-venv
 
 4. Follow the steps above.
 
@@ -155,8 +168,8 @@ If this still does not solve the issue, please get in contact with us, and we
 try to help you out.
 
 However, if everything worked as it should, you can now install python packages
-with pip, which are then also available from within blender. For instance, to
-install numpy, imageio, and torch, simply run the following
+within the newly created virtual environment with pip, which are then also available 
+from within blender. For instance, to install numpy, imageio, and torch, simply run the following
 
 .. code-block:: bash
 
@@ -171,6 +184,7 @@ numpy, torch, etc.
     >>> import numpy, torch, imageio
 
 without getting an ImportError.
+
 If this worked out, you can finally install ABR in your local virtualenv by running
 from ABR root dir (where setup.py is located)
 
@@ -183,3 +197,36 @@ or, for the `editable` version
 .. code-block:: bash
 
     (blender-venv) $ pip install -e .
+
+
+Using Conda
+...........
+
+Yet another option is to use conda as a virtual environement and package manager for python.
+
+We assume `anaconda3 <https://www.anaconda.com/products/individual or https://repo.anaconda.com/archive/>`_
+is `installed <https://phoenixnap.com/kb/how-to-install-anaconda-ubuntu-18-04-or-20-04>`_ 
+in your ``$HOME`` and available on you path. Make sure your version of anaconda python is >= 3.6
+
+Create a conda environment by running
+
+.. code-block:: bash
+
+    $ conda create --name blender-venv python=3.7.5 imageio numpy
+
+Similar to explained when using virtualenv, symlink blender to the environment. That is, 
+from within ``~/bin/blender-2.80.d/2.80`` run
+
+.. code-block:: bash
+
+  $ ln -s ~/anaconda3/env/blender-venv python
+
+To check whether this was successfull, run
+
+.. code-block:: bash
+
+    $ conda activate blender-venv
+    (blender-venv) $ blender -b --python-console
+
+
+It this went through you should now be able to use ABR.
