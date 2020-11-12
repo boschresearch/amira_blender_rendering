@@ -270,7 +270,7 @@ Make the custom scene `discoverable`
 ------------------------------------
 
 As you might have noticed, right before the class definition for your custom scene and 
-its corresponding configurations, we used the following synthax
+its corresponding configurations, we used the following syntax
 
 .. code-block:: python
 
