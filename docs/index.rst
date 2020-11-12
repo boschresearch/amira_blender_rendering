@@ -80,6 +80,7 @@ If you use ABR please make sure to cite our work.
    datasets.rst
    fqa.rst
    troubleshooting.rst
+   tests.rst
    license.rst
 
 .. toctree::
