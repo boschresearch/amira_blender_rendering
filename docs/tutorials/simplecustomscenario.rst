@@ -295,7 +295,7 @@ is that you have to make sure to add such line to your custom code.
 
 The line is internally used to *automatically* register your scene (and its configuration), 
 expose and make it available to ABR.
-If you do not add those lines and you try to run ``abrgen`` with your brend new scene you most 
+If you do not add those lines and you try to run ``abrgen`` with your brand new scene you most 
 likely are going to encounter a 
 
 .. code-block:: bash
