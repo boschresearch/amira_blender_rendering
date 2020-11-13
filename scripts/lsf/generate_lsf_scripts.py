@@ -60,7 +60,7 @@ def parse_args():
     parser.add_argument('--ram', metavar='N', type=int, default=8, help='RAM to allocate (in GB). Default: 8')
     parser.add_argument('--hh', type=int, default=0, help='Number of hours of life for the batch job. Default: 0')
     parser.add_argument('--mm', type=int, default=5, help='Number of mins of life for the batch job. Default: 5')
-    parser.add_argument('--amira-storage', metavar='pa/th', type=str, dest='amira_storage',
+    parser.add_argument('--data-storage', metavar='pa/th', type=str, dest='data_storage',
                         default='/fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA',
                         help='Directory where read data are located. \
                               Default: /fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA')
@@ -69,13 +69,17 @@ def parse_args():
                         help='(Absolute) path to amira_blender_rendering root directory. \
                               Default: $HOME/amira_blender_rendering')
     parser.add_argument('--heavy-duty-dir', metavar='pa/th', type=str, dest='heavy_duty_dir',
-                        default='$HOME/lsf_results',
+                        default='$HOME/HDD/heavy_duty',
                         help='(Absolute) path to base dir used during heavy duty computations (must exists). \
                               Default: $HOME/lsf_results')
     parser.add_argument('--out-dir', metavar='pa/th', type=str, dest='out_dir',
                         default='/fs/scratch/rng_cr_bcai_dl/$USER/lsf_results',
                         help='(Absolute) path where data are moved to for storage after rendering (must exists). \
                               Default: /fs/scratch/rng_cr_bcai_dl/$USER/lsf_results')
+    parser.add_argument('--dataset-name', type=str, dest='dataset_name', default='PhIRM',
+                        help='Name of dataset to store in tar ball. Default: PhIRM')
+    parser.add_argument('--render-mode', type=str, dest='render_mode', default='default',
+                        help='Define render mode [default, multiview]. Default: default')
 
     # parse
     args = parser.parse_args()
@@ -146,10 +150,12 @@ def gen_script(cfgfile: str,
                ram: int = 8,
                hh: int = 0,
                mm: int = 5,
-               amira_storage: str = '/fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA',
+               data_storage: str = '/fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA',
                abr_path: str = '$HOME/amira_blender_rendering',
-               heavy_duty_dir: str = '$HOME/lsf_results',
-               out_dir: str = '/fs/scratch/rng_cr_bcai_dl/$USER/lsf_results'):
+               heavy_duty_dir: str = '$HOME/HDD/heavy_duty',
+               out_dir: str = '/fs/scratch/rng_cr_bcai_dl/$USER/lsf_results',
+               dataset_name: str = 'PhIRM',
+               render_mode: str = 'default'):
     """Generate slurm batch script from configs
 
     Args:
@@ -164,10 +170,12 @@ def gen_script(cfgfile: str,
         ram(int): RAM (in GB) to allocate. Default: 8 GB
         hh(int): hours the job should live. Default: 0
         mm(int): minutes the job should live. Default: 5
-        amira_storage(str): base path where data are read from. Default: /fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA
+        data_storage(str): base path where data are read from. Default: /fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA
         abr_path(str): (absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering
-        heavy_duty_dir(str): (absolute) path to base dir used during heavy duty computations (it must exists). Default: $HOME/lsf_results
+        heavy_duty_dir(str): (absolute) path to base dir used during heavy duty computations (it must exists). Default: $HOME/HDD/heavy_duty
         out_dir(str): (absolute) path where data are moved to for storage after rendering (it must exists). Default: /fs/scratch/rng_cr_bcai_dl/$USER/lsf_results
+        dataset_name(str): Name of dataset to tar
+        render_mode(str): define type of rendering mode ['default', 'multiview']
 
     Returns:
         formatted string corresponding to slurm script
@@ -196,7 +204,7 @@ source activate {py_env_name}
 cd {abr_path}
 
 # setup env variables
-AMIRA_STORAGE={amira_storage}
+DATA_STORAGE={data_storage}
 SSD={heavy_duty_dir}
 HDD={out_dir}
 
@@ -210,17 +218,19 @@ fi
 
 # --- Step 1 --- setup
 SSD_TMP=`mktemp -d -p $SSD`
-# tar -C $SSD_TMP -xf $AMIRA_STORAGE/OpenImagesV4.tar
+# tar -C $SSD_TMP -xf $DATA_STORAGE/OpenImagesV4.tar
 # fix wrong directory name
 # mv $SSD_TMP/OpenImageV4 $SSD_TMP/OpenImagesV4
 # copying data gfx
-# cp -r $AMIRA_STORAGE/amira_data_gfx $SSD_TMP
+# cp -r $DATA_STORAGE/amira_data_gfx $SSD_TMP
 
 # --- Step 2 --- render
-AMIRA_DATASETS=$SSD_TMP AMIRA_DATA_GFX=$AMIRA_STORAGE/amira_data_gfx AMIRA_DATA_STORAGE=$AMIRA_STORAGE scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile}
+AMIRA_DATASETS=$SSD_TMP \
+    AMIRA_DATA_GFX=$DATA_STORAGE/amira_data_gfx \
+        DATA_STORAGE=$DATA_STORAGE scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile} --render-mode {render_mode}
 
 # --- Step 3 --- copy results to user directory
-cd $SSD_TMP && tar cf $HDD/{job_name}-$LSB_JOBID.tar ./PhIRM
+cd $SSD_TMP && tar cf $HDD/{job_name}-$LSB_JOBID.tar ./{dataset_name}
 
 # --- Step 4 --- clean and finalize
 cd $HOME && rm -rf $SSD_TMP
@@ -249,10 +259,12 @@ if __name__ == "__main__":
                             ram=args.ram,
                             hh=args.hh,
                             mm=args.mm,
-                            amira_storage=args.amira_storage,
+                            data_storage=args.data_storage,
                             abr_path=args.abr_path,
                             heavy_duty_dir=args.heavy_duty_dir,
-                            out_dir=args.out_dir)
+                            out_dir=args.out_dir,
+                            dataset_name=args.dataset_name,
+                            render_mode=args.render_mode)
         # write out
         fname = f"tmp-lsfbatch-{cfg.stem}.sh"
 

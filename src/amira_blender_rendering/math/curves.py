@@ -102,8 +102,8 @@ def points_on_bezier(num_points: int, p0: np.array, p1: np.array, p2: np.array, 
         p2(2d/3d array): 2d/3d second control point of curve
 
     Optional Args:
-        start(float): start of curve lenght [0, 1]. Default: 0
-        end(float): end of curve lenght [0, 1]. Default: 1
+        start(float): start of curve length [0, 1]. Default: 0
+        end(float): end of curve length [0, 1]. Default: 1
 
     Returns:
         list of points
@@ -159,6 +159,37 @@ def points_on_wave(num_points, radius: float = 1, center: np.array = np.array([0
     circle = points_on_circle(num_points, radius, center)
     z_wave = np.vstack([np.zeros(T.size), np.zeros(T.size), amplitude * (np.cos(frequency * T) - 1)]).transpose()
     points = circle + z_wave
+    return points
+
+
+def points_on_piecewise_line(num_points: int, control_points: dict):
+    """Generate num_points on a piecewise line defined by a sequence of
+    control points [p0, p1, p2, ...]
+
+    Args:
+        num_points(int): number of points to create
+        cntrl_points(dict): dictionary of control points for the piecwise line
+    
+    Returns:
+        array of points
+    """
+    # directions and norms
+    directions = np.diff(np.asarray(control_points), axis=0)
+    norms = np.linalg.norm(directions, axis=1)
+    length = np.sum(norms)
+    cum_length = np.cumsum(norms)
+    T = np.linspace(0, length, num_points, endpoint=True)
+    points = np.empty((num_points, control_points[0].size))
+
+    j = 0
+    current_length = 0
+    for i, t in enumerate(T):
+        if t >= cum_length[j]:
+            current_length = cum_length[j]
+            j += 1
+        points[i, :] = control_points[j]
+        if j < len(directions):
+            points[i, :] += (t - current_length) * directions[j]
     return points
 
 

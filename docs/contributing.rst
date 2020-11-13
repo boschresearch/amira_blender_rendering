@@ -37,6 +37,6 @@ Contributing Code
 
 In this case we recommend to:
 
-1. Contact us;
+1. Contact us
 2. Open an Issue (as described above)
 3. Open a PR from you feature/branch against the branch you want to contribute (e.g., master or develop)

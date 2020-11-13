@@ -96,9 +96,10 @@ def build_render_setup(cfg):
         render_setup['denoising'] = bool(cfg['denoising'])
         try:
             render_setup['allow_occlusions'] = bool(cfg['allow_occlusions'])
+            render_setup['motion_blur'] = bool(cfg['motion_blur'])
         except KeyError:
             render_setup['allow_occlusions'] = ''
-            logger.warn('Dataset does not contain occlusions info. It might be an old dataset version.')
+            logger.warn('Dataset does not contain occlusions/blur info. It might be an old dataset version.')
     else:
         logger.warn('Loading dataset which have not been rendered with ABR')
     
@@ -161,6 +162,7 @@ def build_directory_info(root: str):
         },
         'images': {
             'rgb': os.path.join(root, 'Images', 'rgb'),
+            'range': os.path.join(root, 'Images', 'range'),
             'depth': os.path.join(root, 'Images', 'depth'),
             'mask': os.path.join(root, 'Images', 'mask'),
             'backdrop': os.path.join(root, 'Images', 'backdrop')

@@ -47,15 +47,34 @@ way to describe parts that we load from an ini file:
     ply.partname = /path/to/partname.ply
     ply_scale.partname = 0.010
 
-Note that some configuration files, such as the WorkstationScenario
+Note that some configuration files, such as the :ref:`Workstation Scenarios`
 configuration, allow additional/extended specifications. Details about these are
 described in their corresponding documentation.
 
 ATTENTION: when scaling objects, the final behavior might be different between
 loading objects from .blend or from .ply since the intrinsic scales might
 be different within the two files. Anyway, for scaling objects load from .blend files
-use the corresponding `blend_scale.partname` config tag. Similarly, loading from ply
-use the `ply_scale.partname` config tag. 
+use the corresponding ``blend_scale.partname`` config tag. Similarly, loading from ply
+use the ``ply_scale.partname`` config tag. 
+
+**Important Notes**.
+
+For this to work properly, make sure that your parts have
+the correct scale, as well as rigid object properties. In particular, do not
+forget to make (in the blender file) the object an active rigid object with 
+appropriate weight and margins for sensitivity.
+
+Also, make sure that the object's center is approximately at its real-world
+physical center. Often, PLY models don't have the object center at the physical
+or geometric center of the object. To quickly change this in blender, select the
+object and, in object mode, go to the toolbar "Object" -> "Set Origin To" and
+select an appropriate variant. Afterwards, it is best to move the object to
+location 0, 0, 0. Note that for the provided objects we moved the center to the
+geometrical center, as this is the most common usage in downward applications
+such as neural networks.
+
+In the provided scenes, we currently use a default weight of **0.01kg** for 
+most (small) objects and a sensitivity margin of **0.0001m** for numerical stability.
 
 
 Setting configuration paramters on the command line
