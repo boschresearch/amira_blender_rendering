@@ -32,7 +32,11 @@ See [NOTICE](./NOTICE) file for an update list of the current holders
 and contributors to AMIRA Blender Rendering.
 
 Also, in case you want to get involve and contribute yourself, please
-refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) file.
+refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) file and to the 
+[documentation](#docs) for more a more in depth description of the workflow.
+
+**Note**: We usually develop against the (default) *develop* branch while *master* 
+is used for "stable" releases. Hence consider doing the same when opening PRs.
 
 
 ## Documentation<a name="docs"></a>

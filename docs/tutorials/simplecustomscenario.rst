@@ -290,8 +290,8 @@ its corresponding configurations, we used the following syntax
 
 In particular, the line ``@abr_scene.register(name=, type=)`` might appear a bit  obscure 
 if you are not familiar with python.
-In any case, it is important to add this line to  your custom code since, internally, it is 
- used to *automatically* register your scene (and its configuration), 
+In any case, it is important to add this line to  your custom code. 
+Internally, it is used to *automatically* register your scene (and its configuration), 
 expose and make it available to ABR.
 If you do not add those lines and you try to run ``abrgen`` with your brand new scene you most 
 likely are going to encounter a 
