@@ -18,11 +18,11 @@
 
 # Script to deploy scripts
 
-# required positional argument to select desired basename for config/slurmbatch.sh scripts
+# required positional argument to select basename deployment scripts to run
 BASENAME=${1?Error: no BASENAME for config and associated slurmbatch .sh script to deploy given}
 
 echo ''
 for f in `ls ./$BASENAME*.sh`; do
     echo "Deploying batch job: $f"
-    sbatch  $f
+    bsub <  $f
 done
