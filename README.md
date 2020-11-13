@@ -35,8 +35,7 @@ Also, in case you want to get involve and contribute yourself, please
 refer to the [CONTRIBUTING.md](./CONTRIBUTING.md) file and to the 
 [documentation](#docs) for more a more in depth description of the workflow.
 
-**NOTE** 
-We usually develop against the (default) *develop* branch. The *master* branch 
+**Note**: We usually develop against the (default) *develop* branch while *master* 
 is used for "stable" releases. Hence consider doing the same when opening PRs.
 
 
