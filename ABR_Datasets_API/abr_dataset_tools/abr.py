@@ -19,7 +19,7 @@
 import os
 import pathlib
 import numpy as np
-from skimage import img_as_float, img_as_int
+from skimage import img_as_float, img_as_ubyte
 
 import imageio
 try:
@@ -44,6 +44,7 @@ Root directory: {root}\n\
     |   └─ OpenGL/\n\
     └─ Images/\n\
         └─ rgb/\n\
+        └─ range/\n\
         └─ depth/\n\
         └─ mask/\n\
         └─ backdrop/"""
@@ -54,7 +55,8 @@ Sample (dict):
     num_objects (int):              # number of objects
     images (dict):                  # collection of images
         rgb (np.array):             # rgb image (float [0, 1])
-        depth (np.array):           # depth values in m
+        range (np.array):           # range values in m
+        depth (np.array):           # depth values (usually) in .1mm (see depth_scale in Dataset.cfg)
         mask (np.array):            # composite seg. mask (int [0, 255])
         backdrop (np.array):        # background mask (inverse of composite mask) (int [0, 255])
     objects (list(dict)):           # objects with their properties. See create_empty_object_sample
@@ -255,16 +257,18 @@ class ABRDataset:
         # work out images
         rgb = imageio.imread(os.path.join(self.dir_info['images']['rgb'], fname_png))
         backdrop = imageio.imread(os.path.join(self.dir_info['images']['backdrop'], fname_png))[:, :, 0]
-        depth = imageio.imread(os.path.join(self.dir_info['images']['depth'], fname_png.replace("png", "exr")))
+        range_img = imageio.imread(os.path.join(self.dir_info['images']['range'], fname_png.replace("png", "exr")))
+        depth = imageio.imread(os.path.join(self.dir_info['images']['depth'], fname_png))
         # collapse depth to single axis
-        depth = depth[:, :, 0]
+        range_img = range_img[:, :, 0]
 
         # assign images
         sample['images'] = {
-            'rgb': img_as_float(rgb).astype(np.float32),
-            'mask': img_as_int((composite_mask / np.max(composite_mask)).astype(np.int16)).astype(np.uint8),
-            'depth': np.asarray(depth, dtype=np.float32),  # keep depth info
-            'backdrop': img_as_int((backdrop / np.max(backdrop)).astype(np.int16)).astype(np.uint8)
+            'rgb': img_as_float(rgb),
+            'mask': img_as_ubyte(composite_mask / np.max(composite_mask)),
+            'range': np.asarray(range_img, dtype=np.float32),  # keep depth info
+            'depth': img_as_float(depth),
+            'backdrop': img_as_ubyte(backdrop / np.max(backdrop))
         }
         return sample
 

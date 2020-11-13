@@ -2,10 +2,10 @@ Using ABR
 =========
 
 ABR was developed to be used in headless fashion to render datasets from
-pre-defined blender files. For this, we provide the single entry point
-``abrgen``, to which a user has to pass a configuration file (see
-:doc:`configs/overview`) and possibly other command line arguments, and which
-will then invoke blender in the correct manner.
+pre-defined blender files. For this, we provide the single (command line) 
+entry point ``abrgen``, to which a user has to pass a configuration file (see
+Configuration :doc:`configs/overview`) and possibly other command line arguments, 
+and which will then invoke blender in the correct manner.
 
 Using ABR with installation
 ---------------------------
@@ -43,6 +43,12 @@ type, and will list all parameters that you can modify for the
 specified scene. More information about specifying scene types can be found in
 :doc:`configs/baseconfiguration`.
 
+Instead, in case you want to discover all available arguments to call ``abrgen``
+with you can run
+
+.. code-block:: bash
+
+  $ abrgen --help
 
 
 Using ABR without installation
@@ -61,8 +67,9 @@ where to find the ABR package using the ``--abr-path`` command line argument:
 
 In the second case, or if you would like to circumvent using ``abrgen``, you can
 also directly invoke blender. For this to work, you need to locate the file
-``render_dataset.py`` inside the ABR source tree, and call blender with the
-following options:
+``render_dataset.py`` inside the ABR source tree 
+(it should be located in ``$ABR/src/amira_blender_rendering/cli`` where ``$ABR`` should
+contain the path to ABR root directory), and call blender with the following options:
 
 .. code-block:: bash
 
@@ -99,13 +106,7 @@ follow good practices and isolate your work into separate virtual environments.
    by ABR, i.e. >=2.80, and copy it to your GPU cluster. Make sure that the
    blender binary is on your PATH.
 
-3. Activate your new conda environment
-
-.. code-block:: bash
-
-    $ conda activate py37
-
-4. Replace blender's python with the conda environment's python as described
+3. Replace blender's python with the conda environment's python as described
    in :doc:`installation`, and run blender to test if it works:
 
 .. code-block:: bash
@@ -117,12 +118,15 @@ follow good practices and isolate your work into separate virtual environments.
    any ALSA errors that might get printed, as we don't consider sound in our
    datasets, and GPU clusters often don't ship with sound cards.
 
-5. Install dependencies for ABR via conda or pip. The example below uses pip.
+4. Activate your new conda environment and install ABR's dependencies via 
+conda or pip. The example below uses pip.
 
 .. code-block:: bash
 
-    $ cd /path/to/amira_blender_rendering
-    $ pip install -r requirements.txt
+    $ conda activate py37
+    (py37) $ cd /path/to/amira_blender_rendering
+    (py37) $ pip install -r requirements.txt
+
 
 6. If you haven't done so already, or if your GPU cluster does not provide a
    certain location for common datasets, you might wish to copy required
@@ -145,3 +149,41 @@ follow good practices and isolate your work into separate virtual environments.
 
     $ abrgen --config config/my_config.cfg
 
+Notice that you do not need to have your environment active to do so. This is
+because abrgen and, in turn, blender, will already point to it.
+
+
+Environment variables
+---------------------
+
+As mentioned in point 6. above, note that some scenes and/or configurations might 
+require you to setup global variables. 
+Here's a non-exhaustive) list of the variables that we usually use (Name | Description):
+
+$AMIRA_DATASETS | Path to datasets, such as the one produced here, or OpenImagesV4
+$AMIRA_BLENDER_RENDERING_ASSETS | Path to additional assets, such as textures
+$AMIRA_DATA_GFX | Path to graphics data
+
+
+.. _RenderingModes:
+
+Rendering modes
+---------------
+
+Currently, for some of the ready available scenes, ABR offers two different
+rendering modes ``(DEFAULT, MULTIVIEW)`` which can be selected at deployment 
+time by running ``abrgen`` with the flag ``--render-mode`` followed by the 
+name of the mode.
+
+``DEFAULT`` refers to the default rendering mode. That is, if no flag is explicitly
+selected, this mode is automatically called.
+In this mode we usually render one camera view (static-camera) per each (random) scene.
+Note that the exact behavior of the render mode depends on the so-called *scene backend*.
+
+``MULTIVIEW`` usually refers to the case when we render multiple camera views for
+the same (random) scene. That is the camera is *moved* around in 3D space and images
+are rendered from each of these camera locations.
+Note that how camera locations are selected depends on specific configuration values
+to be set in the .cfg file abrgen is called with.
+
+For specific behaviors, refer to the :ref:`configurations` docs.

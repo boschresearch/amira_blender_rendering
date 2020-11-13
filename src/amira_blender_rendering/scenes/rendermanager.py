@@ -57,8 +57,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
         super(RenderManager, self).__init__()
         self.unit_conversion = unit_conversion
 
-    def postprocess(self, dirinfo, base_filename, camera, objs, zeroing,
-                    rectify_depth: bool = False, overwrite: bool = False, visibility_from_mask: bool = False):
+    def postprocess(self, dirinfo, base_filename, camera, objs, zeroing, **kwargs):
         """Postprocessing the scene.
 
         This step will compute all the data that is relevant for
@@ -72,13 +71,15 @@ class RenderManager(abr_scenes.BaseSceneManager):
             objs(list): list of target objects
             zeroing(np.array): array for zeroing camera rotation
         
-        Optional Args:
-            rectify_depth(bool): if True, compute rectilinear depth map from pinhole map
-            overwrite(bool): if True, overwrite non-rectified depth map with rectified
-            visibility_from_mask(bool): if True, if mask is found empty even if object
-                                        is visible, visibility info are overwritten and
-                                        set to false
+        Kwargs Args:
+            postprocess_config(Configuration): postprocess specific config.
+                See abr/scenes/baseconfiguration and scene configs for specific configuration values.
         """
+        # get postprocess specific configs
+        postprocess_config = kwargs.get('postprocess_config', abr_scenes.BaseConfiguration().postprocess)
+    
+        # camera matrix
+        K_cam = np.asarray(camera_utils.get_calibration_matrix(bpy.context.scene, camera.data))
 
         # first we update the view-layer to get the updated values in
         # translation and rotation
@@ -89,30 +90,51 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         self.compositor.postprocess()
 
-        # rectify depth map (if requested)
-        if rectify_depth:
-            # get parameters
-            res_x = bpy.context.scene.render.resolution_x
-            res_y = bpy.context.scene.render.resolution_y
-            sensor_width = camera.data.sensor_width
-            f_in_mm = camera.data.lens
-            # filenames
-            fpath = os.path.join(dirinfo.images.depth, f'{base_filename}.exr')
-            outfpath = fpath
-            if not overwrite:
-                dirpath = os.path.join(dirinfo.images.base_path, 'depth_rectilinear')
+        # rectify range map into depth
+        # Blender depth maps asare indeed ranges. Here we convert ranges into depth values
+        fpath_range = os.path.join(dirinfo.images.range, f'{base_filename}.exr')
+
+        # filenames (ranges are stored as true exr values, depth as 16 bit png)
+        if not os.path.exists(dirinfo.images.depth):
+            os.mkdir(dirinfo.images.depth)
+        fpath_depth = os.path.join(dirinfo.images.depth, f'{base_filename}.png')
+
+        # convert
+        camera_utils.project_pinhole_range_to_rectified_depth(
+            fpath_range,
+            fpath_depth,
+            res_x=bpy.context.scene.render.resolution_x,
+            res_y=bpy.context.scene.render.resolution_y,
+            calibration_matrix=K_cam,
+            scale=postprocess_config.depth_scale)
+
+        # NOTE: this assumes the camera(s) for which the disparity is computed
+        # is(are) the correct one(s). That is it has the correct baseline according to
+        # the rendered scene
+        if postprocess_config.compute_disparity:
+            # check whether current camera name contains any of the given
+            # string for parallel setup
+            if any([c for c in postprocess_config.parallel_cameras if c in camera.name]):
+                # use precomputed depth if available, otherwise use range map
+                dirpath = os.path.join(dirinfo.images.base_path, 'disparity')
                 if not os.path.exists(dirpath):
                     os.mkdir(dirpath)
-                outfpath = os.path.join(dirpath, f'{base_filename}.exr')
-            # rectify
-            camera_utils.project_pinhole_depth_to_rectilinear(
-                fpath, outfpath, res_x, res_y, sensor_width, f_in_mm)
+                fpath_disparity = os.path.join(dirpath, f'{base_filename}.png')
+                # compute map
+                camera_utils.compute_disparity_from_z_info(fpath_depth,
+                                                           fpath_disparity,
+                                                           baseline_mm=postprocess_config.parallel_cameras_baseline_mm,
+                                                           calibration_matrix=K_cam,
+                                                           res_x=bpy.context.scene.render.resolution_x,
+                                                           res_y=bpy.context.scene.render.resolution_y,
+                                                           scale=postprocess_config.depth_scale)
 
         # compute bounding boxes and save annotations
         results_gl = ResultsCollection()
         results_cv = ResultsCollection()
         for obj in objs:
-            render_result_gl, render_result_cv = self.build_render_result(obj, camera, zeroing, visibility_from_mask)
+            render_result_gl, render_result_cv = self.build_render_result(
+                obj, camera, zeroing, postprocess_config.visibility_from_mask)
             if obj['visible']:
                 results_gl.add_result(render_result_gl)
                 results_cv.add_result(render_result_cv)
@@ -123,7 +145,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
             results_cv.add_result(render_result_cv)
         self.save_annotations(dirinfo, base_filename, results_gl, results_cv)
 
-    def setup_renderer(self, integrator, enable_denoising, samples):
+    def setup_renderer(self, integrator: str, enable_denoising: bool, samples: int, motion_blur: bool):
         """Setup blender CUDA rendering, and specify number of samples per pixel to
         use during rendering. If the setting render_setup.samples is not set in the
         configuration, the function defaults to 128 samples per image.
@@ -141,6 +163,9 @@ class RenderManager(abr_scenes.BaseSceneManager):
             self.logger.info(f"integrator set to path tracing")
             bpy.context.scene.cycles.progressive = integrator
             bpy.context.scene.cycles.samples = samples
+
+        # set motion blur
+        bpy.context.scene.render.use_motion_blur = motion_blur
 
         # setup denoising option
         bpy.context.scene.view_layers[0].cycles.use_denoising = enable_denoising
@@ -217,6 +242,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
                             f'Overwriting visibility information for obj {obj["object_class_name"]}:{obj["object_id"]}')
                 obj['visible'] = False
             else:
+                self.logger.error('Invalid mask given')
                 raise ValueError('Invalid mask given')
 
         render_result_gl = PoseRenderResult(

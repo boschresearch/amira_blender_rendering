@@ -12,7 +12,7 @@ refer to :ref:`Set Up a Simple Custom Scenario`
 Most of the following configurations are common to other scenarios.
 Hence, please refer to :ref:`Base Configuration` for an overview.
 
-For the SimpleObject scenario refer to the config file config/single_object_toolcap_example.cfg
+For the SimpleObject scenario refer to the config file config/examples/single_object_toolcap_example.cfg
 
 .. code-block::
 

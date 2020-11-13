@@ -31,33 +31,48 @@ The workflow of using ABR is held as simple as possible.
    scneario, you might need to provide what we call a `scenario backend` which
    will take care of setting up the file. For instance, you might wish to
    randomize object locations in every rendered image.
-3. Next, you need to specify rendering information such as camera calbiration
+3. Next, you need to specify rendering information such as camera calibration
    data or the number of images you would like to obtain in a `Configuration`
-   (see :doc:`configs/overview`).
-4. Finally, you commence dataset generation by running ``abrgen``.
+   (see Configuration :doc:`configs/overview`).
+4. Finally, you commence dataset generation by running the provided ``abrgen``
+   command.
 
-Find out more about how to use ABR in :doc:`using`.
+As outlined above, each scene requires what we call a *backend implementation*. 
+This implementation takes care of loading a blender file, setting up everything that 
+is required such as camera information, objects, randomization, etc.
+It also contains a `main loop` which does the rendering for the number of desired images. 
+An exemplary backend implementation can be found in ABR source tree at
+``src/amira_blender_rendering/scenes/workstationscenarios.py``.
+This backend implementation reads all optional configuration parameters either
+from a configuration file that is passed along to the rendering script, or from
+the additional parameters passed during execution.
+
+An example for a configuration that contains documentation for all options can
+be found in ABR source tree at ``config/examples/workstation_scenario01_test.cfg`` .
+Note that configuration options depend on the specified blender scene and backend
+implementation.
+
+Find out more about how to use ABR in :doc:`using` and Configuration :doc:configs/overview`.
 
 
 Citing ABR
 ----------
-If you use ABR or the PhIRM dataset, please make sure to cite our work.
+If you use ABR please make sure to cite our work.
 
 .. code-block:: latex
 
-   @article{phirm2020,
-       authors={},
-       title={},
-       year={},
-       conference={},
-       pages={}
+   @misc{amira_blender_rendering_2020,
+       author={N.Waniek, M.Todescato, M.Spies, M.Buerger},
+       title={AMIRA Blender Rendering},
+       year={2020},
+       url={https://github.com/boschresearch/amira-blender-rendering},
    }
 
 
 
 .. toctree::
    :maxdepth: 3
-   :caption: ABR User's Guide:
+   :caption: ABR User's Guide
 
    installation.rst
    using.rst
@@ -65,32 +80,36 @@ If you use ABR or the PhIRM dataset, please make sure to cite our work.
    datasets.rst
    fqa.rst
    troubleshooting.rst
+   tests.rst
    license.rst
 
 .. toctree::
    :maxdepth: 3
-   :caption: ABR Developer's Guide:
+   :caption: ABR Developer's Guide
 
    contributing.rst
 
 .. toctree::
    :maxdepth: 3
-   :caption: Configurations:
+   :caption: Configurations
+   :name: configurations
 
    configs/overview.rst
    configs/baseconfiguration.rst
    configs/workstation_scenarios.rst
+   configs/pandatable.rst
    configs/simpleobject.rst
+   configs/multiview.rst
 
 .. toctree::
   :maxdepth: 3
-  :caption: Datasets:
+  :caption: Datasets
 
   datasets/phirm.rst
 
 .. toctree::
   :maxdepth: 3
-  :caption: Tutorials:
+  :caption: Tutorials
 
   tutorials/simplecustomscenario.rst
 
@@ -107,6 +126,6 @@ Contacts
 ========
 
 | `Nicolai Waniek <mailto:Nicolai.Waniek@de.bosch.com>`_
-| `Markus Spies <mailto:Markus.Spies2@de.bosch.com>`_
 | `Marco Todescato <mailto:Marco.Todescato@de.bosch.com>`_
+| `Markus Spies <mailto:Markus.Spies2@de.bosch.com>`_
 

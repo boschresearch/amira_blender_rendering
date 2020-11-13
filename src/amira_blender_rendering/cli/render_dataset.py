@@ -54,7 +54,7 @@ def import_abr(path=None):
     # should likely be reflected there
     global abr
     global expandpath
-    global get_logger
+    global configure_logger
 
     if path is None:
         try:
@@ -76,7 +76,7 @@ def import_abr(path=None):
 
     # import additional parts
     from amira_blender_rendering.utils.io import expandpath
-    from amira_blender_rendering.utils.logging import get_logger
+    from amira_blender_rendering.utils.logging import configure_logger
 
 
 def get_argv():
@@ -126,9 +126,12 @@ def get_cmd_argparser():
         help='Print this help message and exit')
 
     parser.add_argument(
-        '--debug-dump',
-        action='store_true',
-        help='Save a blender file for development debugging')
+        '--logging-level',
+        type=str,
+        default='INFO',
+        dest='logging_level',
+        choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        help='Define the logging level of the application')
 
     return parser
 
@@ -158,10 +161,19 @@ def main():
     # parse command arguments
     cmd_parser = get_cmd_argparser()
     cmd_args = cmd_parser.parse_known_args(args=get_argv())[0]  # need to parse to get aps and abr
+
+    # print help if requested
+    # NOTE: we check for config since if config are given also all the avaliable config will be printed.
+    # However, if no configs are given, calling --help will still work
+    if cmd_args.help and 'config' not in cmd_args:
+        cmd_parser.print_help()
+        sys.exit(0)
+
+    # import abr
     import_abr(cmd_args.abr_path)
 
     # get logger instance
-    logger = get_logger()
+    logger = configure_logger(cmd_args.logging_level)
 
     # pretty print available scenarios?
     scene_types = get_scene_types()
@@ -217,11 +229,6 @@ def main():
     success = scene.generate_dataset()
     if not success:
         logger.error("Error while generating dataset")
-
-    if cmd_args.debug_dump:
-        print("saving blender file for debugging to /tmp/abc_debug.blend")
-        import bpy
-        bpy.ops.wm.save_as_mainfile(filepath="/tmp/abc_debug.blend")
 
     # tear down scene. should be handled by blender, but a scene might have
     # other things opened that it should close gracefully

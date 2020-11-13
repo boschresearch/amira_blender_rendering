@@ -20,11 +20,14 @@ import bpy
 from mathutils import Vector, Matrix
 from math import radians, atan2
 import numpy as np
+import cv2
 
 from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.math.curves import points_on_viewsphere, points_on_bezier, points_on_circle, \
-    points_on_wave, random_points
+    points_on_wave, random_points, points_on_piecewise_line
 from amira_blender_rendering.datastructures import Configuration
+
+logger = get_logger()
 
 
 def opengl_to_opencv(v: Vector) -> Vector:
@@ -87,9 +90,6 @@ def set_camera_info(scene, cam, camera_info):
         cam (bpy.types.Camera): camera to modify
         camera_info (Configuration): camera_info configuration block of a configuration file
     """
-
-    logger = get_logger()
-
     # get numpy version of the intrinsics, if possible
     intrinsics = _intrinsics_to_numpy(camera_info)
 
@@ -323,58 +323,132 @@ def get_intrinsics(scene, cam):
     return s_u, s_v, u_0, v_0
 
 
-def project_pinhole_depth_to_rectilinear(filepath: str, outfilepath: str,
-                                         res_x: int = bpy.context.scene.render.resolution_x,
-                                         res_y: int = bpy.context.scene.render.resolution_y,
-                                         sensor_width: float = bpy.context.scene.camera.data.sensor_width,
-                                         f_in_mm: float = bpy.context.scene.camera.data.lens):
+def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str,
+                                             calibration_matrix: np.array,
+                                             res_x: int = bpy.context.scene.render.resolution_x,
+                                             res_y: int = bpy.context.scene.render.resolution_y,
+                                             scale: float = 1e4):
     """
     Given a depth map computed (as standard in ABR setup) using a perfect pinhole model,
-    compute the projected rectilinear depth
+    compute the projected rectified depth
+
+    The function assumes to read-in from an Exr image format (32 bit true range values)
+    and to write-out in PNG image format (16 bit truncated depth values).
+
+    NOTE: depth values that might cause overflow in 16bit (i.e. >65k) are set to 0.
     
     Args:
-        filepath(str): path to file with depth map to load
-        outfilepath(str): path to write rectfied map to
-        res_x(int): render/image x resolution
-        res_y(int): render/image y resolution
-        sensor_width(float): camera sensor width
-        f_in_mm(float): camera focal lenght in mm
+        filepath_in(str): path to (.exr) file with range values (assumed in m) to load
+        filepath_out(str): path to (.png) file where (rectified) depth map is write to.
+                           If None (explicitly given) only return converted image (no save).
+                           NOTE: make sure the filesystem tree exists
+        calibration_matrix(np.array): 3x3 camera calibration matrix
+
+    Optional Args:
+        res_x(int): render/image x resolution (pixel). Default is initial scene resolution_x
+        res_y(int): render/image y resolution (pixel). Default is initial scene resolution_y
+        scale(float): scaling factor to convert range (in m) to depth. Default 1e4 (m to .1 mm)
+
+    Return:
+        np.array<np.uint16>: converted depth
     """
-    import cv2
-    logger = get_logger()
+    # quick check file type
+    if '.exr' not in filepath_in:
+        raise ValueError(f'Given input file {filepath_in} not of type EXR')
+    if '.png' not in filepath_out and filepath_out is not None:
+        raise ValueError(f'Given output file {filepath_out} not of tyep PNG')
 
-    sensor_height = res_y / res_x * sensor_width
+    # read range image (float32 values) in meters
+    # NOTE: the ANYDEPTH flag lead to a offset in the read value
+    # range_exr = (cv2.imread(filepath_in, cv2.IMREAD_ANYDEPTH)).astype(np.float32)
+    range_exr = (cv2.imread(filepath_in, cv2.IMREAD_UNCHANGED))[:, :, 0].astype(np.float32)
 
-    # read image
-    image = (cv2.imread(filepath, cv2.IMREAD_ANYDEPTH)).astype(np.float32)
+    logger.info('Rectifying pinhole range map into depth')
+    grid = np.indices((res_y, res_x))
+    u = grid[1].flatten()
+    v = grid[0].flatten()
+    uv1 = np.array([u, v, np.ones(res_x * res_y)])
 
-    # init array
-    rect_depth = np.zeros(image.shape, dtype=np.float32)
+    K_inv = np.linalg.inv(calibration_matrix)
+    v_dirs_mtx = np.dot(K_inv, uv1).T.reshape(res_y, res_x, 3)
+    v_dirs_mtx_unit_inv = np.reciprocal(np.linalg.norm(v_dirs_mtx, axis=2))
+
+    depth_img = (range_exr * v_dirs_mtx_unit_inv * scale)
+    # remove overflow values
+    depth_img[depth_img > 65000] = 0
+    # cast to 16 bit
+    depth_img = depth_img.astype(np.uint16)
+
+    # write out if requested
+    if filepath_out is not None:
+        cv2.imwrite(filepath_out, depth_img, [cv2.IMWRITE_PNG_STRATEGY, cv2.IMWRITE_PNG_STRATEGY_DEFAULT])
+        logger.info(f'Saved (rectified) depth map at {filepath_out}')
     
-    logger.info('Rectifying pinhole depth map')
-    for u in range(image.shape[1]):
-        for v in range(image.shape[0]):
+    return depth_img
 
-            d = image[v, u]
 
-            # if d > 100.0:
-            #     continue
+def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
+                                  baseline_mm: float,
+                                  calibration_matrix: np.array,
+                                  res_x: int = bpy.context.scene.render.resolution_x,
+                                  res_y: int = bpy.context.scene.render.resolution_y,
+                                  scale: float = 1e4):
+    """Compute disparity map from given z info (depth or range). Values are in .1 mm
+    By convention, disparity is computed from left camera to right camera (even for the right camera).
 
-            # coordinates on camera plane
-            x = (0.5 - float(u) / float(image.shape[1])) * sensor_width / f_in_mm
-            y = (0.5 - float(v) / float(image.shape[0])) * sensor_height / f_in_mm
-            z = 1.0
-            norm = np.linalg.norm([x, y, z])
+    if z = depth, this is assumed to be stored as a PNG image of uint16 (compressed) values in .1 mm
+    If z = range, this is assumed to be stored as a EXR image of float32 (true range) values in meters
 
-            # normalize = project point on unit sphere, then apply depth
-            z = d * z / norm
-            
-            # fill depth map
-            rect_depth[v, u] = z
+    Args:
+        fpath_in(str): path to input file to read in
+        fpath_out(str): path to output file to write out. If None (explicitly given), only return (no save to file).
+                        NOTE: make sure the filesystem tree exists
+        baseline_mm(float): baseline value (in mm) between parallel cameras setup
+        calibration_matrix(np.array): 3x3 camera calibration matrix. Used also to extract the focal lenght in pixel
+
+    NOTE: if z = range, depth must be computed. This requires additional arguments.
+          See  amira_blender_rendering.utils.camera.project_pinhole_range_to_rectified_depth
+
+    Opt Args:
+        res_x(int): render/image x resolution. Default: bpy.context.scene.resolution_x
+        res_y(int): render/image y resolution. Default: bpy.context.scene.resolution_y
+        scale(float): value used to convert range (in m) to depth. Default: 1e4 (.1mm)
+
+    Returns:
+        np.array<np.uint16>: disparity map in pixels
+    """
+    # check filepath_in to read file from
+    if '.png' in filepath_in:
+        logger.info(f'Loading depth from .PNG file {filepath_in}')
+        depth = (cv2.imread(filepath_in, cv2.IMREAD_UNCHANGED)).astype(np.uint16)
     
-    # overwrite file
-    cv2.imwrite(outfilepath, rect_depth, [cv2.IMWRITE_EXR_TYPE, cv2.IMWRITE_EXR_TYPE_FLOAT])
-    logger.info(f'Saved rectified depth map at {outfilepath}')
+    elif '.exr' in filepath_in:
+        # in case of exr file we convert range to depth first
+        logger.info(f'Computing depth from EXR range file {filepath_in}')
+        depth = project_pinhole_range_to_rectified_depth(
+            filepath_in, None, calibration_matrix, res_x, res_y, scale)
+
+    else:
+        logger.error(f'Given file {filepath_in} is neither of type PNG nor EXR. Skipping!')
+        return
+
+    # depth is always converted to mm and to float for precision computations
+    depth = depth.astype(np.float32) / (scale / 1e3)
+
+    logger.info('Computing disparity map')
+    # get focal lenght
+    focal_length_px = calibration_matrix[0, 0]
+    # disparity in pixels
+    disparity = baseline_mm * focal_length_px * np.reciprocal(depth)
+    # cast to uint16 for PNG format
+    disparity = (disparity).astype(np.uint16)
+
+    # write out if requested
+    if filepath_out is not None:
+        cv2.imwrite(filepath_out, disparity, [cv2.IMWRITE_PNG_STRATEGY, cv2.IMWRITE_PNG_STRATEGY_DEFAULT])
+        logger.info(f'Saved disparity map at {filepath_out}')
+
+    return disparity
 
 
 def get_current_cameras_locations(camera_names: list):
@@ -387,7 +461,12 @@ def get_current_cameras_locations(camera_names: list):
 
 def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_names: list, **kw):
     """
-    Generate multiple locations for multiple cameras according to selected mode
+    Generate multiple locations for multiple cameras according to selected mode.
+
+    NOTE: cameras' locations will be offset from their initial location in the scene.
+    This way, the location of a given camera setup (e.g., consisting of multiple cameras) is
+    "rigidly" transformed (notice that cameras will in general rotate), in space.
+    This allow to preserve relative locations within the given setup, e.g., parallel cameras.
 
     Args:
         num_locations(int): number of locations to generate
@@ -396,6 +475,7 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
     
     Keywords Args:
         config(Configuration/dict-like)
+        offset(bool): if False, generated locations are not offset with original camera locations. Default: True
 
     Returns:
         locations(dict(array)): dictionary with list of locations for each camera
@@ -416,12 +496,20 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
         """
         p = cfg.get(name, default)
         if isinstance(p, str):
+            if p == '':
+                return default
             p = np.fromstring(p, sep=',')
         return p
 
-    # get logger
-    logger = get_logger()
+    def get_list_from_str(cfg, name, default):
+        import ast
+        tmp = cfg.get(name, None)
+        if tmp is None:
+            return default
+        alist = ast.literal_eval(tmp)
+        return [np.array(v) for v in alist]
 
+    # camera location
     original_locations = get_current_cameras_locations(camera_names)
 
     # define supported modes
@@ -430,60 +518,62 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
         'bezier': points_on_bezier,
         'circle': points_on_circle,
         'wave': points_on_wave,
-        'viewsphere': points_on_viewsphere
+        'viewsphere': points_on_viewsphere,
+        'piecewiselinear': points_on_piecewise_line,
     }
 
     # early check for selected mode
     if mode not in _available_modes.keys():
         raise ValueError(f'Selected mode {mode} not supported for multiview locations')
 
-    # init container
-    locations = {}
-
-    # loop over cameras
-    for cam_name in camera_names:
-
-        # build dict with available config per each mode
-        mode_cfg = kw.get('config', Configuration())  # get user defined config (if any)
-        _modes_cfgs = {
-            'random': {
-                'base_location': get_array_from_str(mode_cfg, 'base_location', original_locations[cam_name]),
-                'scale': float(mode_cfg.get('scale', 1))
-            },
-            'bezier': {
-                'p0': get_array_from_str(mode_cfg, 'p0', original_locations[cam_name]),
-                'p1': get_array_from_str(
-                    mode_cfg, 'p1',
-                    original_locations[cam_name] + np.random.randn(original_locations[cam_name].size)),
-                'p2': get_array_from_str(
-                    mode_cfg, 'p2',
-                    original_locations[cam_name] + np.random.randn(original_locations[cam_name].size)),
-                'start': float(mode_cfg.get('start', 0)),
-                'stop': float(mode_cfg.get('stop', 1))
-            },
-            'circle': {
-                'radius': float(mode_cfg.get('radius', 1)),
-                'center': get_array_from_str(mode_cfg, 'center', original_locations[cam_name])
-            },
-            'wave': {
-                'radius': float(mode_cfg.get('radius', 1)),
-                'center': get_array_from_str(mode_cfg, 'center', original_locations[cam_name]),
-                'frequency': float(mode_cfg.get('frequency', 1)),
-                'amplitude': float(mode_cfg.get('amplitude', 1))
-            },
-            'viewsphere': {
-                'scale': float(mode_cfg.get('scale', 1)),
-                'bias': tuple(get_array_from_str(mode_cfg, 'bias', [0, 0, 1.5]))
-            }
+    # build dict with available config per each mode
+    mode_cfg = kw.get('config', Configuration())  # get user defined config (if any)
+    _modes_cfgs = {
+        'random': {
+            'base_location': get_array_from_str(mode_cfg, 'base_location', np.zeros(3)),
+            'scale': float(mode_cfg.get('scale', 1))
+        },
+        'bezier': {
+            'p0': get_array_from_str(mode_cfg, 'p0', np.zeros(3)),
+            'p1': get_array_from_str(mode_cfg, 'p1', np.random.randn(3)),
+            'p2': get_array_from_str(mode_cfg, 'p2', np.random.randn(3)),
+            'start': float(mode_cfg.get('start', 0)),
+            'stop': float(mode_cfg.get('stop', 1))
+        },
+        'circle': {
+            'radius': float(mode_cfg.get('radius', 1)),
+            'center': get_array_from_str(mode_cfg, 'center', np.zeros(3))
+        },
+        'wave': {
+            'radius': float(mode_cfg.get('radius', 1)),
+            'center': get_array_from_str(mode_cfg, 'center', np.zeros(3)),
+            'frequency': float(mode_cfg.get('frequency', 1)),
+            'amplitude': float(mode_cfg.get('amplitude', 1))
+        },
+        'viewsphere': {
+            'scale': float(mode_cfg.get('scale', 1)),
+            'bias': tuple(get_array_from_str(mode_cfg, 'bias', [0, 0, 1.5]))
+        },
+        'piecewiselinear': {
+            'control_points': get_list_from_str(mode_cfg, 'points', [np.zeros(3), np.ones(3)])
         }
+    }
+
+    # generate locations according to selected mode
+    locations = _available_modes[mode](num_locations, **_modes_cfgs[mode])
+
+    # iterate over cameras
+    cameras_locations = {}
+    offset = kw.get('offset', True)
+    for cam_name in camera_names:
 
         # log
         logger.info(f'Generating locations for {cam_name} according to {mode} mode')
-
-        # extract camera object
-        camera = bpy.context.scene.objects[cam_name]
         
         # get location
-        locations[cam_name] = _available_modes[mode](num_locations, **_modes_cfgs[mode])
+        # NOTE: need to copy otherwise we overwrite the array being mutable
+        cameras_locations[cam_name] = np.copy(locations)
+        if offset:
+            cameras_locations[cam_name] += np.copy(original_locations[cam_name])
 
-    return locations, original_locations
+    return cameras_locations, original_locations

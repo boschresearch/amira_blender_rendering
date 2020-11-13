@@ -85,7 +85,8 @@ class SimpleObject(interfaces.ABRScene):
         self.renderman.setup_renderer(
             self.config.render_setup.integrator,
             self.config.render_setup.denoising,
-            self.config.render_setup.samples)
+            self.config.render_setup.samples,
+            self.config.render_setup.motion_blur)
 
         # setup environment texture information
         self.setup_environment_textures()
@@ -390,8 +391,7 @@ class SimpleObject(interfaces.ABRScene):
                     bpy.context.scene.camera,
                     self.objs,
                     self.config.camera_info.zeroing,
-                    rectify_depth=self.config.postprocess.rectify_depth,
-                    overwrite=self.config.postprocess.overwrite)
+                    postprocess_config=self.config.postprocess)
             except ValueError:
                 self.logger.warn("ValueError during post-processing, re-generating image index {i}")
             else:

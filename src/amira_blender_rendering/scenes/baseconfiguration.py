@@ -56,11 +56,14 @@ class BaseConfiguration(Configuration):
         self.add_param('render_setup.samples', 128, 'Samples to use during rendering')
         self.add_param('render_setup.color_depth', 16, 'Depth for color (RGB) image [16bit, 8bit]. Default: 16')
         self.add_param('render_setup.allow_occlusions', False, 'If True, allow objects to be occluded from camera')
+        self.add_param('render_setup.motion_blur', False, 'If True, toggle motion blur during rendering. Motion blur specific config must be set directly in the .blend blnderer scene')
 
-        # logging
-        self.add_param('logging.debug', False, 'If True, enable log for debugging')
+        # debug
+        self.add_param('debug.enabled', False, 'If True, enable debugging. For specifc flags refer to single scenes')
 
         # postprocess
-        self.add_param('postprocess.rectify_depth', False, 'If True, from pinhole depth map, compute rectilinear map')
-        self.add_param('postprocess.overwrite', False, 'It True (when computing rectified depth) overwrite depth map')
+        self.add_param('postprocess.depth_scale', 1e4, 'Scale used to convert range to depth. Default: 1e4 (.1mm)')
         self.add_param('postprocess.visibility_from_mask', False, 'If True, if an invalid (empty) mask is found during postprocessing, object visibility info are overwritten to false')
+        self.add_param('postprocess.parallel_cameras', [], 'Pair of parallel stereo cameras (among scene_setup.cameras) to postprocess')
+        self.add_param('postprocess.compute_disparity', False, 'If True, toggle computation of disparity map (from depth) based on given baseline (mm) value')
+        self.add_param('postprocess.parallel_cameras_baseline_mm', 0, 'Baseline value (i.e., translation) between parallel cameras locations (in mm). Default: 0')

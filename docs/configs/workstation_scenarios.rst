@@ -5,7 +5,7 @@ Workstation Scenarios
 
 The workstation scenarios have the following options that you can set in a
 corresponding configuration file. For an example of configuration files that
-were used, have a look at `config/workstation_scenarios*.cfg`.
+were used, have a look at `config/examples/workstation_scenarios*.cfg`.
 
 .. code-block::
 
@@ -170,7 +170,10 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     # Note: Make sure that in your blender files the parts are active rigid objects with
     #       proper weight and sensitivity margin!
     #
-    # Note: We will not automatically add rigid body dynamics to ply-only models!
+    # Note/Attenton: We will not automatically add rigid body dynamics to ply-only models!
+    #               This means that if not actively added, the object will (by default) be
+    #               regarded as passive object (i.e., w/o rigid-body properties), hence not
+    #               subject to the dynamic simulation.
     #
     # ATTENTION: when scaling objects the final behavior might be different between
     #            loading objects from .blend or from .ply since the intrinsic scales might
@@ -249,25 +252,26 @@ were used, have a look at `config/workstation_scenarios*.cfg`.
     # Specify number of random metallic materials to generate for ABC objects
     abc_color_count = 3
     
-
+    # Camera multiview is applied to all cameras selected in scene_setup.cameras and 
+    # it is activated calling abrgen with the --render-mode multiview flag.
+    # For specific multiview modes/configs config refer to "Multiview Configuration" docs.
     [multiview_setup]
-    # List of cameras to use during multiview rendering
-    cameras = []
-    # number of views per camera
-    view_count = 0
     # control how multiview camera locations are generated (bezier curve, circle, viewsphere etc.)
     mode = 
     # mode specific configuration
     mode_config = 
 
-
-    # additional logging configs
-    [logging]
+    # additional debug configs (used is debug.enable=True)
+    [debug]
+    # if in debug mode (see baseconfiguration), produce temporary plot of camera locations (best for multiview rendering)
+    plot = False
     # if in debug mode (see baseconfiguration), plot coordinate axis system for camera
     # poses in before multiview rendering
     plot_axis = False
     # if in debug mode (see baseconfiguration), toggle scatter plot of camera locations
     # before multiview rendering 
     scatter = False
-
-
+    # if in debug mode (see baseconfiguration), enable saving to blender.
+    # The option can be used to e.g., inspect whether multiple camera locations are occluded,
+    # check object occlusions, check the dymanic simulation.
+    save_to_blend = False

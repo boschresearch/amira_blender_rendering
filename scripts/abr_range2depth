@@ -21,7 +21,9 @@ wrapper around blender is not essential, but it is a convenience structure. If
 you don't use this script, you need to manually pass all options to blender as
 well as to render_dataset.py """
 
-import os, sys, subprocess
+import os
+import sys
+import subprocess
 
 
 def err_msg():
@@ -30,7 +32,7 @@ def err_msg():
 or specify a valid path to its location with the --abr-path command line argument.
 
 Example:
-        $ abr_rect_depth --abr-path $HOME/abr/src --additional options
+        $ abr_range2depth --abr-path $HOME/abr/src --additional options
 
 For more help, see documentation, or invoke with --help."""
 
@@ -81,5 +83,5 @@ if __name__ == "__main__":
         path = sys.argv[idx + 1]
     import_abr(path)
     # build command and arguments to run
-    cmd = ['blender', '-b', '-P', os.path.join(abr.__pkgdir__, 'cli', 'rectify_pinhole_depth_map.py'), '--'] + sys.argv[1:]
+    cmd = ['blender', '-b', '-P', os.path.join(abr.__pkgdir__, 'cli', 'convert_pinhole_range_to_depth_map.py'), '--'] + sys.argv[1:]
     subprocess.run(cmd)
