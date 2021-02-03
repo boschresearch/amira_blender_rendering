@@ -25,6 +25,7 @@ This wrapper around blender is not essential, yet convenient to run tests by e.g
 """
 
 import os
+import sys
 import subprocess
 from argparse import ArgumentParser
 
@@ -47,4 +48,5 @@ if __name__ == "__main__":
     if args.abr_path is not None:
         cmd += ['--abr-path', args.abr_path]
  
-    subprocess.run(cmd)
+    ret = subprocess.run(cmd)
+    sys.exit(ret.returncode)

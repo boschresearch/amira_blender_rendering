@@ -22,6 +22,7 @@ import shutil
 import unittest
 import xml.etree.ElementTree as ET
 from amira_blender_rendering.utils import converters
+import tests
 
 
 def are_xml_element_equal(e1, e2):
@@ -39,6 +40,7 @@ def are_xml_element_equal(e1, e2):
     return True
 
 
+@tests.register(name='test_utils')
 class TestConverters(unittest.TestCase):
 
     def setUp(self):

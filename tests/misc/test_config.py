@@ -20,6 +20,7 @@ import os
 import argparse
 import unittest
 from amira_blender_rendering.datastructures import Configuration
+import tests
 
 
 def get_basic_config():
@@ -85,6 +86,7 @@ def parse_args(config):
     return args
 
 
+@tests.register(name='test_misc')
 class TestConfiguration(unittest.TestCase):
 
     def setUp(self):
