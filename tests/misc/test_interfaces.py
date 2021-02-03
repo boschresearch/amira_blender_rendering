@@ -19,6 +19,7 @@
 import unittest
 import numpy as np
 import amira_blender_rendering.interfaces as interfaces
+import tests
 
 """Test file for main functionalities in amira_blender_rendering.interfaces"""
 
@@ -47,6 +48,7 @@ def _build_render_result():
     return result
 
 
+@tests.register(name='test_misc')
 class TestInterfaces(unittest.TestCase):
 
     def setUp(self):

@@ -25,8 +25,10 @@ import numpy.testing as npt
 from amira_blender_rendering.datastructures import DynamicStruct
 from amira_blender_rendering.utils import camera
 from amira_blender_rendering.utils.io import expandpath
+import tests
 
 
+@tests.register(name='test_utils')
 class TestCamera(unittest.TestCase):
 
     def setUp(self):

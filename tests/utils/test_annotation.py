@@ -19,8 +19,10 @@
 
 import unittest
 from amira_blender_rendering.utils import annotation
+import tests
 
 
+@tests.register(name='test_utils')
 class TestAnnotation(unittest.TestCase):
 
     def setUp(self):

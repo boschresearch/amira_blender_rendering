@@ -19,8 +19,10 @@
 
 import unittest
 from amira_blender_rendering.math import conversions
+import tests
 
 
+@tests.register(name='test_math')
 class TestConversions(unittest.TestCase):
 
     def setUp(self):
