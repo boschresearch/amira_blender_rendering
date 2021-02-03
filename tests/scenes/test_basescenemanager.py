@@ -20,10 +20,12 @@ import os
 import unittest
 from amira_blender_rendering.utils.io import expandpath
 import amira_blender_rendering.scenes.basescenemanager as bsm
+import tests
 
 """Test file for main functionalities in amira_blender_rendering.scene.basescenemanager"""
 
 
+@tests.register(name='test_scenes')
 class TestBaseSceneManager(unittest.TestCase):
 
     def setUp(self):
