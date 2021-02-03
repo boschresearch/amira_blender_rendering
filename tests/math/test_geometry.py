@@ -30,8 +30,10 @@ import numpy.testing as npt
 from mathutils import Vector, Euler
 from amira_blender_rendering.math import geometry
 from amira_blender_rendering.utils.io import expandpath
+import tests
 
 
+@tests.register(name='test_math')
 class TestGeometry(unittest.TestCase):
 
     def setUp(self):
