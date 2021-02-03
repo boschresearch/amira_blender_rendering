@@ -97,7 +97,7 @@ def get_cmd_argparser():
     parser.add_argument('path', help='Path to dataset directory to convert')
 
     parser.add_argument('-abr', '--abr-path', dest='abr_path',
-                        default='~/amira_blender_rendering/src',
+                        default=None,
                         help='Path where amira_blender_rendering (abr) can be found')
 
     parser.add_argument('-s', '--scale', type=float, default=1e4, help='Depth scaling factor. Default 1e4 (m to .1mm)')

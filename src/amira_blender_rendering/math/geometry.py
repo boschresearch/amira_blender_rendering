@@ -282,7 +282,11 @@ def test_occlusion(scene, layer, cam, obj, width, height, require_all=True, orig
         direction.normalize()
         # 'repair' the origin by walking along the ray by a little offset
         local_origin = origin + origin_offset * direction
-        hit_record = scene.ray_cast(layer, local_origin, direction)
+        # scene.ray_cast has changed its interface in blender 2.91
+        try:
+            hit_record = scene.ray_cast(layer, local_origin, direction)
+        except TypeError:
+            hit_record = scene.ray_cast(layer.depsgraph, local_origin, direction)
         hit = hit_record[0]
         hit_location = hit_record[1]
         hit_obj = hit_record[4]
