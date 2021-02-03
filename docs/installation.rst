@@ -8,10 +8,13 @@ with blender, it might be necessary to replace the python distribution
 shipped with Blender as below explained.
 We suggest to first try w/o doing so and resort to it if nothing else works.
 
-**Minimal tested requirements**:
+**Tested requirements**
 
-* Blender 2.80
-* python3.7
+The following instructions have been tested for a variety of environements:
+
+* OS: Ubuntu 18.04 (Bionic Beaver) and 20.04 (Focal Fossa)
+* Blender: >=2.80, <=2.91.2
+* python3.7(.x)
 
 Using a more recent version of Blender should be possible but we do not ensure it.
 
@@ -86,12 +89,24 @@ that you have the following layout of files in your `home` folder:
     $ ~/bin/blender-2.80.d      # un-packed blender download
     $ ~/bin/blender             # symlink to ~/bin/blender-2.80.d/blender
 
+To create the symlink run 
+
+.. code-block:: bash
+
+    $ ln -s blender-2.80.d/blender blender
+
 Make sure that ``~/bin`` is on your path (you can add it e.g., through your ``~/.bashrc``). 
 To quickly test if the setup is correct you can try running ``blender`` from your command line
 which should start Blender's 2.80 GUI.
 
 As mentioned above, blender ships its own python binary. This leads to issues
-when trying to install third party libraries due to, e.g., numpy version mismatches.
+when trying to install third party libraries due to, e.g., numpy version mismatches. 
+There are three ways of dealing with this: Replacing blender's python version with your own virtual environment,
+configuring the blender python version to be able to use ``pip`` or using conda. 
+
+Replacing Blender's python version
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 The following replaces the shipped python version with the python of a
 virtualenv. 
 
@@ -135,11 +150,11 @@ messages:
     Fatal Python error: initfsencoding: Unable to get the locale encoding
     ModuleNotFoundError: No module named 'encoding
 
-If this is the case, make sure that your virtualenv was created with a python3
-virtualenv script, and **not** with a python2 virtualenv. This could happen if
-you have a virtualenv script locally installed in ~/.local/bin, which points to
-a python2 environment. One viable workaround is to create a python3 environment
-from which you run the above commands, i.e.
+If this is the case, make sure that your virtualenv was created with a python3.7
+virtualenv script, and **neither** with a python2 **nor** a python3.8 virtualenv. 
+This could happen if you have a virtualenv script locally installed in ~/.local/bin, 
+which points to a python2 environment. 
+One viable workaround is to create a python3 environment from which you run the above commands, i.e.
 
 1. Create a python3 environment with your virtualenv installation, e.g.
    called 'py3bootstrap'
@@ -167,7 +182,47 @@ using an explicit call to the appropriate virtualenv:
 If this still does not solve the issue, please get in contact with us, and we
 try to help you out.
 
-However, if everything worked as it should, you can now install python packages
+Setting up Blender's python to work with pip
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Since version 2.80 blender's python distribution ships with ``ensurepip``. This allows you to setup pip in blender. The
+instructions given here are loosely based on `this StackOverflow
+post <https://blender.stackexchange.com/questions/56011/how-to-install-pip-for-blenders-bundled-python/56013#comment254819_56013>`_
+
+
+.. code-block:: bash
+
+    $ export BLENDER_PYTHON_DIR=path/to/blender/2.80/python/bin
+    $ export BLENDER_PYTHON_PATH=$BLENDER_PYTHON_DIR/python3.7m
+    $ ${BLENDER_PYTHON_PATH} -m ensurepip
+    $ ${BLENDER_PYTHON_PATH} -m pip install -U pip
+    $ # This is just convenience for better usability
+    $ echo "alias pip-blender='${BLENDER_PYTHON_PATH} -m pip'" >> ~/.bashrc
+    $ echo "export PATH=\${PATH}:$BLENDER_PYTHON_DIR" >> ~/.bashrc
+
+You can test this solution by running
+
+.. code-block:: bash
+
+    $ source ~/.bashrc && pip-blender --version
+    $ # Should point to the blender python distribution
+
+**Note**
+
+This procedure has the advantage that you do not need to take care of creating a dedicated python environment
+and struggle with selecting the correct interpreter version.
+On the other hand, it directly modifies the original Blender's python distro. To minimize the risk of potential
+issues we suggest to make a copy of the original python distro.
+
+
+Testing your python installation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. note::  The following instructions assume, that you did the virtualenv setup. If you have reconfigured blender's
+            python version, you do not need to work in a virtual environment. Instead, replace all ``pip`` commands with the pip
+            version of blenders' python distribution. If you followed this tutorial, this should be ``pip-blender``
+
+If everything worked as it should, you can now install python packages
 within the newly created virtual environment with pip, which are then also available 
 from within blender. For instance, to install numpy, imageio, and torch, simply run the following
 
@@ -230,3 +285,8 @@ To check whether this was successfull, run
 
 
 It this went through you should now be able to use ABR.
+
+**Note**
+
+The advantage of using conda rather than virtualenv is that any anaconda3 version allows you
+to select, as interpreter for your environemnt, python3.7.x.
