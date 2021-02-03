@@ -95,12 +95,12 @@ def get_cmd_argparser():
 
     parser.add_argument(
         '--config',
-        default='config/workstation_scenario01_train.cfg',
+        required=True,
         help='Path to configuration file')
 
     parser.add_argument(
         '--abr-path',
-        default='~/amira/amira_blender_rendering/src',
+        default=None,
         help='Path where amira_blender_rendering (abr) can be found')
 
     parser.add_argument(
