@@ -23,6 +23,7 @@ NOTE: Newly implemented tests must be added below in import_and_run_implemented_
 import sys
 import os
 import argparse
+import unittest
 
 
 def err_msg(name):
@@ -107,37 +108,20 @@ def main():
     args = parse_arguments()
     import_abr(args.abr_path)
     import_tests(args.abr_path)
+    suite = create_test_suite()
     # run tests
-    import_and_run_implemented_tests()
+    runner = unittest.TextTestRunner()
+    result = runner.run(suite)
+    sys.exit(not result.wasSuccessful())
 
 
-# new tests should be added here
-def import_and_run_implemented_tests():
-    # math tests
-    from tests.math import test_conversions, test_geometry
-    test_conversions.main()
-    test_geometry.main()
-
-    # misc (aka spare) tests
-    from tests.misc import test_config, test_interfaces, test_postprocessing
-    test_config.main()
-    test_interfaces.main()
-    test_postprocessing.main()
-
-    # node tests
-    # TODO
-
-    # scenes tests
-    from tests.scenes import test_threepointlighting, test_basescenemanager
-    test_threepointlighting.main()
-    test_basescenemanager.main()
-
-    # utils tests
-    from tests.utils import test_annotation, test_converters, test_camera, test_io
-    test_annotation.main()
-    test_converters.main()
-    test_camera.main()
-    test_io.main()
+def create_test_suite():
+    from tests import get_registered as get_registered_tests
+    suite = unittest.TestSuite()
+    for test_group_name, test_group in get_registered_tests().items():
+        for test in test_group:
+            suite.addTest(unittest.makeSuite(test))
+    return suite
 
 
 if __name__ == "__main__":

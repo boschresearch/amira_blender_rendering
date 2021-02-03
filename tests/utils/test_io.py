@@ -21,8 +21,10 @@ import unittest
 import os
 from getpass import getuser
 from amira_blender_rendering.utils import io
+import tests
 
 
+@tests.register(name='test_utils')
 class TestIO(unittest.TestCase):
 
     def setUp(self):

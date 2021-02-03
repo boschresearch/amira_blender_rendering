@@ -18,10 +18,12 @@
 
 import unittest
 import amira_blender_rendering.scenes.threepointlighting as tpl
+import tests
 
 """Test file for main functionalities in amira_blender_rendering.scene.threepointlighting"""
 
 
+@tests.register(name='test_scenes')
 class TestThreePointLighting(unittest.TestCase):
 
     def setUp(self):

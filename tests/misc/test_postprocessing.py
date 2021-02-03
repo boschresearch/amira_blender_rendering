@@ -20,10 +20,13 @@ import unittest
 import numpy as np
 import numpy.testing as npt
 import amira_blender_rendering.postprocessing as pp
+import tests
+
 
 """Test file for main functionalities in amira_blender_rendering.postprocessing"""
 
 
+@tests.register(name='test_misc')
 class TestPostprocessing(unittest.TestCase):
 
     def setUp(self):
