@@ -1,3 +1,5 @@
+![](./media/ABR_rgb_mask.gif)
+
 # amira_blender_rendering
 
 * [About](#about)
