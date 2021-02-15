@@ -1,8 +1,6 @@
 # for abr
 coloredlogs
 numpy
-imageio
-opencv-python
 
 # for docs/sphinx
 sphinx-rtd-theme
