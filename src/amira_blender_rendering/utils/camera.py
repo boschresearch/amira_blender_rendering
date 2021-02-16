@@ -20,12 +20,13 @@ import bpy
 from mathutils import Vector, Matrix
 from math import radians, atan2
 import numpy as np
-import cv2
+import os
 
 from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.math.curves import points_on_viewsphere, points_on_bezier, points_on_circle, \
     points_on_wave, random_points, points_on_piecewise_line
 from amira_blender_rendering.datastructures import Configuration
+from amira_blender_rendering.utils.io import write_numpy_image_buffer, read_numpy_image_buffer
 
 logger = get_logger()
 
@@ -178,7 +179,7 @@ def _setup_render_size_from_intrinsics(scene, intrinsics):
     render.resolution_percentage = scale * 100
     render.pixel_aspect_x = 1.0
     render.pixel_aspect_y = pixel_aspect_ratio
-    
+
 
 def _setup_camera_by_swfl(scene, cam, sensor_width, focal_length):
     """Setup the camera by sensor width and focal length
@@ -323,6 +324,8 @@ def get_intrinsics(scene, cam):
     return s_u, s_v, u_0, v_0
 
 
+
+
 def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str,
                                              calibration_matrix: np.array,
                                              res_x: int = bpy.context.scene.render.resolution_x,
@@ -336,7 +339,7 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
     and to write-out in PNG image format (16 bit truncated depth values).
 
     NOTE: depth values that might cause overflow in 16bit (i.e. >65k) are set to 0.
-    
+
     Args:
         filepath_in(str): path to (.exr) file with range values (assumed in m) to load
         filepath_out(str): path to (.png) file where (rectified) depth map is write to.
@@ -357,12 +360,12 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
         raise ValueError(f'Given input file {filepath_in} not of type EXR')
     if '.png' not in filepath_out and filepath_out is not None:
         raise ValueError(f'Given output file {filepath_out} not of tyep PNG')
+    if not os.path.exists(filepath_in):
+        raise ValueError(f"File {filepath_in} does not exist. Please check path")
 
-    # read range image (float32 values) in meters
-    # NOTE: the ANYDEPTH flag lead to a offset in the read value
-    # range_exr = (cv2.imread(filepath_in, cv2.IMREAD_ANYDEPTH)).astype(np.float32)
-    range_exr = (cv2.imread(filepath_in, cv2.IMREAD_UNCHANGED))[:, :, 0].astype(np.float32)
+    range_exr = read_numpy_image_buffer(filepath_in, True)
 
+    # perform transformation
     logger.info('Rectifying pinhole range map into depth')
     grid = np.indices((res_y, res_x))
     u = grid[1].flatten()
@@ -381,9 +384,11 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
 
     # write out if requested
     if filepath_out is not None:
-        cv2.imwrite(filepath_out, depth_img, [cv2.IMWRITE_PNG_STRATEGY, cv2.IMWRITE_PNG_STRATEGY_DEFAULT])
+        write_numpy_image_buffer(depth_img, filepath_out)
         logger.info(f'Saved (rectified) depth map at {filepath_out}')
-    
+
+
+
     return depth_img
 
 
@@ -420,8 +425,8 @@ def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
     # check filepath_in to read file from
     if '.png' in filepath_in:
         logger.info(f'Loading depth from .PNG file {filepath_in}')
-        depth = (cv2.imread(filepath_in, cv2.IMREAD_UNCHANGED)).astype(np.uint16)
-    
+        depth = read_numpy_image_buffer(filepath_in)
+
     elif '.exr' in filepath_in:
         # in case of exr file we convert range to depth first
         logger.info(f'Computing depth from EXR range file {filepath_in}')
@@ -445,7 +450,7 @@ def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
 
     # write out if requested
     if filepath_out is not None:
-        cv2.imwrite(filepath_out, disparity, [cv2.IMWRITE_PNG_STRATEGY, cv2.IMWRITE_PNG_STRATEGY_DEFAULT])
+        write_numpy_image_buffer(disparity, filepath_out)
         logger.info(f'Saved disparity map at {filepath_out}')
 
     return disparity
@@ -472,7 +477,7 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
         num_locations(int): number of locations to generate
         mode(str): mode used to generate locations
         camera_names(list(str)): list of string with bpy objects camera names
-    
+
     Keywords Args:
         config(Configuration/dict-like)
         offset(bool): if False, generated locations are not offset with original camera locations. Default: True
@@ -490,7 +495,7 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
             cfg(dict-like): configuration struct where to look
             name(str): config parameter to search for
             default(array-like): default array value
-        
+
         Returns:
             array-like: found in cfg or default
         """
@@ -569,7 +574,7 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
 
         # log
         logger.info(f'Generating locations for {cam_name} according to {mode} mode')
-        
+
         # get location
         # NOTE: need to copy otherwise we overwrite the array being mutable
         cameras_locations[cam_name] = np.copy(locations)
