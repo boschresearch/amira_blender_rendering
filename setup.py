@@ -19,6 +19,7 @@
 import os
 import shutil
 import setuptools
+from setuptools import find_packages
 
 __this_dir = os.path.dirname(__file__)
 
@@ -57,7 +58,10 @@ def readme():
 
 setuptools.setup(
     name='AMIRA Blender Rendering',
-    packages=['amira_blender_rendering'],
+    packages=find_packages(
+        where='src',
+        include=['amira_blender_rendering*',]
+    ),
     package_dir={'':'src'},
     version=VERSION,
     description='AMIRA Blender Rendering Pipeline for Dataset Generation',
