@@ -3,6 +3,7 @@
 # amira_blender_rendering
 
 * [About](#about)
+* [Citing ABR](#citing)
 * [Maintainers](#authors)
 * [Contributors and How to Contribute](#contributors)
 * [Documentation](#docs)
@@ -21,6 +22,17 @@ and beginner user.
 
 The project builds upon [Blender](https://www.blender.org) rendering cababilities and its [Python API](https://docs.blender.org/api/current/index.html) (bpy).
 
+## Citing AMIRA Blender Rendering<a name="citing"></a>
+
+```bash
+@misc{AMIRA-Blender-Rendering,
+  author={Waniek, Nicolai and Todescato, Marco},
+  title={{AMIRA} {B}lender {R}endering: a tool for photorealistic rendering with {B}lender},
+  howpublished={\url{https://github.com/boschresearch/amira_blender_rendering}},
+  month={November},
+  year={2020}
+}
+```
 
 ## Original Authors<a name="authors"></a>
 
