@@ -91,7 +91,7 @@ def activate_cuda_devices():
     if not cuda_available:
         get_logger().warn("No CUDA compute device available, will use CPU")
     else:
-        device_set = False  # FIXME: unused variable
+        # device_set = False  # FIXME: unused variable
         for d in prefs.devices:
             if d.type == 'CUDA':
                 get_logger().info(f"Using CUDA device '{d.name}' ({d.id})")
@@ -144,9 +144,8 @@ def select_object(obj_name: str):
     bpy.context.view_layer.objects.active = obj
 
 
-def add_default_material(
-    obj: bpy.types.Object = bpy.context.object,
-    name: str = 'DefaultMaterial') -> bpy.types.Material:
+def add_default_material(obj: bpy.types.Object = bpy.context.object,
+                         name: str = 'DefaultMaterial') -> bpy.types.Material:
 
     """Add a new 'default' Material to an object.
 
@@ -165,7 +164,7 @@ def add_default_material(
     return mat
 
 
-def import_object(blendfile : str, obj : str):
+def import_object(blendfile: str, obj: str):
     """Import an object from a blender Library file to the currently loaded file.
 
     Note: this function is a synonym for append_object.
@@ -173,7 +172,7 @@ def import_object(blendfile : str, obj : str):
     append_object(blendfile, obj)
 
 
-def append_object(blendfile : str, obj : str):
+def append_object(blendfile: str, obj: str):
     """Append an object from a blender Lirbary file to the currently loaded file.
 
     Args:
@@ -196,7 +195,7 @@ def remove_material_nodes(obj: bpy.types.Object = bpy.context.object):
     obj.data.materials.clear()
 
 
-def look_at(obj : bpy.types.Object, target : Vector):
+def look_at(obj: bpy.types.Object, target: Vector):
     """Rotate an object such that it looks at a target.
 
     The object's Y axis will point upwards, and the -Z axis towards the

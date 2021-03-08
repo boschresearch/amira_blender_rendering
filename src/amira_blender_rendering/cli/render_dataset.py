@@ -34,7 +34,8 @@ import argparse
 
 
 def _err_msg():
-    return """Error: Could not import amira_blender_rendering. Either install it as a package, or specify a valid path to its location with the --abr-path command line argument."""
+    return """Error: Could not import amira_blender_rendering. Either install it as a package,
+or specify a valid path to its location with the --abr-path command line argument."""
 
 
 def import_abr(path=None):
@@ -145,7 +146,7 @@ def determine_scene_type(config_file):
     """Determine the scene type given a configuration file."""
     # don't parse the entire ini file, only look for scene_type
     scene_type = None
-    pattern = re.compile('^\s*scene_type\s*=\s*(.*)\s*$', re.IGNORECASE)
+    pattern = re.compile('^\s*scene_type\s*=\s*(.*)\s*$', re.IGNORECASE)    # noqa
     with open(config_file) as f:
         for line in f:
             match = pattern.match(line)

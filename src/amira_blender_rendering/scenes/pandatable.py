@@ -63,17 +63,21 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scene_setup.forward_frames', 25, 'Number of frames in physics forward-simulation')
 
         # scenario: target objects
-        self.add_param('scenario_setup.target_objects', [], 'List of objects to drop in the scene for which annotated info are stored')
-        self.add_param('scenario_setup.distractor_objects', [], 'List of objects to drop in the scene for which info are NOT stored'
+        self.add_param('scenario_setup.target_objects', [],
+                       'List of objects to drop in the scene for which annotated info are stored')
+        self.add_param('scenario_setup.distractor_objects', [],
+                       'List of objects to drop in the scene for which info are NOT stored'
                        'List of objects visible in the scene but of which infos are not stored')
-        self.add_param('scenario_setup.textured_objects', [], 'List of objects whose texture is randomized during rendering')
+        self.add_param('scenario_setup.textured_objects', [],
+                       'List of objects whose texture is randomized during rendering')
         self.add_param('scenario_setup.objects_textures', '', 'Path to images for object textures')
 
         # multiview configuration (if implemented)
         self.add_param('multiview_setup.mode', '',
                        'Selected mode to generate view points, i.e., random, bezier, viewsphere')
         self.add_param('multiview_setup.mode_config', Configuration(), 'Mode specific configuration')
-        self.add_param('multiview_setup.offset', True, 'If False, multi views are not offset with initial camera location. Default: True')
+        self.add_param('multiview_setup.offset', True,
+                       'If False, multi views are not offset with initial camera location. Default: True')
 
         # specific debug config
         self.add_param('debug.plot', False, 'If True, in debug mode, enable simple visual debug')
@@ -445,7 +449,7 @@ class PandaTable(interfaces.ABRScene):
         # long as this was not modified within blender). The scale is the scale
         # along the axis in one direction, i.e. the full extend along this
         # direction is 2 * scale.
-        dropbox = f"Dropbox.000"
+        dropbox = "Dropbox.000"
         drop_location = bpy.data.objects[dropbox].location
         drop_scale = bpy.data.objects[dropbox].scale
 
@@ -481,7 +485,7 @@ class PandaTable(interfaces.ABRScene):
         scene = bpy.context.scene
         for i in range(self.config.scene_setup.forward_frames):
             scene.frame_set(i + 1)
-        self.logger.info(f'forward simulation: done!')
+        self.logger.info('forward simulation: done!')
 
     def activate_camera(self, cam_name: str):
         # first get the camera name. this depends on the scene (blend file)
