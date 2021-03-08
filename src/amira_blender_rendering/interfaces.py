@@ -45,7 +45,7 @@ def _save_data_on_error(scn_str, view_str, rgb_base_path, mask_base_path, logpat
     from shutil import copyfile
     logger.error('Saving to blender on error. Dumping additional image data')
     # copy rgb
-    rgbname = scn_str[1:] + view_str + f'.png'
+    rgbname = scn_str[1:] + view_str + '.png'
     srcpath = os.path.join(rgb_base_path, rgbname)
     dstpath = os.path.join(logpath, rgbname)
     copyfile(srcpath, dstpath)
@@ -187,7 +187,7 @@ class ABRScene():
                     self.objs)
 
             # finally save to blend
-            filename = basefilename + scn_str + view_str + f'.blend'
+            filename = basefilename + scn_str + view_str + '.blend'
             filepath = os.path.join(logpath, filename)
             logger.info(f"Saving current scene/view to blender file {filepath} for debugging")
             bpy.ops.wm.save_as_mainfile(filepath=filepath)
@@ -196,7 +196,6 @@ class ABRScene():
             pathlib.Path(logpath).mkdir(parents=True, exist_ok=True)
             logger.info('Saving current active scene to blender for debugging')
             bpy.ops.wm.save_as_mainfile(filepath=os.path.join(logpath, basefilename + '.blend'))
-
 
 
 # NOTE: the functions and classes below were taken from amira_perception. Make

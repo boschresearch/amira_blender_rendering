@@ -16,22 +16,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-bl_info = {
-    "name"        : "Node Tree Import/Export",
-    "author"      : "",
-    "version"     : (0, 1),
-    "blender"     : (2, 8, 0),
-    "location"    : "Node Editor > View",
-    "description" : "Import and export a node tree",
-    "warning"     : "",
-    "wiki_url"    : "",
-    "category"    : "Node",
-}
-
 import bpy
 import bpy.types
 import bpy.utils
 from mathutils import Vector
+
+bl_info = {
+    "name": "Node Tree Import/Export",
+    "author": "",
+    "version": (0, 1),
+    "blender": (2, 8, 0),
+    "location": "Node Editor > View",
+    "description": "Import and export a node tree",
+    "warning": "",
+    "wiki_url": "",
+    "category": "Node",
+}
 
 
 def export_node_tree(node_tree):
@@ -157,6 +157,7 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     bpy.types.NODE_MT_view.append(_menu_func)
+
 
 def unregister():
     for cls in classes:

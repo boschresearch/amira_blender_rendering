@@ -203,7 +203,7 @@ def plot_points(points, camera=None, plot_axis: bool = False, scatter: bool = Fa
     3D plot of generated points
     """
     import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
+    from mpl_toolkits.mplot3d import Axes3D  # noqa
 
     fig = plt.figure()
     ax = fig.gca(projection='3d')

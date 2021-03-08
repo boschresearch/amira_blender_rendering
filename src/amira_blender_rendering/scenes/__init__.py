@@ -19,12 +19,12 @@
 """The scenes module contains scene managers for various setups."""
 
 # base classes
-from .basescenemanager import BaseSceneManager
-from .baseconfiguration import BaseConfiguration
-from .threepointlighting import ThreePointLighting
+from .basescenemanager import BaseSceneManager  # noqa
+from .baseconfiguration import BaseConfiguration  # noqa
+from .threepointlighting import ThreePointLighting  # noqa
 
 # composition classes, if inheritance should or cannot be used
-from .rendermanager import RenderManager
+from .rendermanager import RenderManager  # noqa
 
 # concrete scenes are autoimported later at the end of the file
 import os

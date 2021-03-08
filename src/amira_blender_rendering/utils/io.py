@@ -23,6 +23,7 @@ import os
 import os.path as osp
 import shutil
 from amira_blender_rendering.utils.logging import get_logger
+import numpy as np
 
 
 def expandpath(path, check_file=False):
@@ -101,7 +102,7 @@ def write_numpy_image_buffer(buf, filepath_out):
     bpy.data.images.new(buf_name, width=width, height=height, alpha=False, float_buffer=False)
 
     # store current color mode and depth
-    prev_color_mode  = bpy.context.scene.render.image_settings.color_mode
+    prev_color_mode = bpy.context.scene.render.image_settings.color_mode
     prev_color_depth = bpy.context.scene.render.image_settings.color_depth
     try:
         # temporarily toggle the render output image format, as we'll use save_render below for writing the PNG
@@ -128,7 +129,7 @@ def write_numpy_image_buffer(buf, filepath_out):
             bpy.data.images.remove(bpy.data.images[buf_name])
 
 
-def read_numpy_image_buffer(filepath_in, check_exr_format = False):
+def read_numpy_image_buffer(filepath_in, check_exr_format=False):
     """Read an image into a numpy buffer.
 
     Note that this method will only return the first channel of the input image,
@@ -171,11 +172,10 @@ def read_numpy_image_buffer(filepath_in, check_exr_format = False):
     height = img_data.size[1]
     buf = np.array(img_data.pixels[:], dtype=np.float32)
     buf = buf.reshape(width, height, img_data.channels)
-    buf = buf[:,:,0]
+    buf = buf[:, :, 0]
 
     # remove the image if it was created
     if image_added:
         bpy.data.images.remove(bpy.data.images[filename_in])
 
     return buf
-

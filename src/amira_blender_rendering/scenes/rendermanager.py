@@ -156,11 +156,11 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         # determine which path tracer is setup in the blender file
         if integrator == 'BRANCHED_PATH':
-            self.logger.info(f"integrator set to branched path tracing")
+            self.logger.info("integrator set to branched path tracing")
             bpy.context.scene.cycles.progressive = integrator
             bpy.context.scene.cycles.aa_samples = samples
         else:
-            self.logger.info(f"integrator set to path tracing")
+            self.logger.info("integrator set to path tracing")
             bpy.context.scene.cycles.progressive = integrator
             bpy.context.scene.cycles.samples = samples
 
@@ -169,7 +169,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
 
         # setup denoising option
         bpy.context.scene.view_layers[0].cycles.use_denoising = enable_denoising
-        self.logger.info(f"Denoising enabled" if enable_denoising else f"Denoising disabled")
+        self.logger.info("Denoising enabled" if enable_denoising else "Denoising disabled")
 
     def setup_compositor(self, objs, **kw):
         """Setup output compositor nodes"""

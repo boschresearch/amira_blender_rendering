@@ -67,8 +67,9 @@ def parse_args():
     # optional arguments
     parser.add_argument('--input-flag', type=str, dest='input_flag', default='',
                         help='one additional input flag (without prefix --) for main script')
-    parser.add_argument('--cudnn', metavar='x.y_vM.N.P', type=str, default='10.0_v7.3.1',
-                        help='Cudnn module version to load (Check available running "module avail"). Default: 10.0_v7.3.1')
+    parser.add_argument(
+        '--cudnn', metavar='x.y_vM.N.P', type=str, default='10.0_v7.3.1',
+        help='Cudnn module version to load (Check available running "module avail"). Default: 10.0_v7.3.1')
     parser.add_argument('--gpu', metavar='N', type=int, default=4,
                         help='Number of required GPUs for batch job. Default: 4')
     parser.add_argument('--cpu', metavar='N', type=int, default=4,
@@ -82,10 +83,12 @@ def parse_args():
     parser.add_argument('--mm', type=int, default=5, help='Number of mins of life for the batch job. Default: 5')
     parser.add_argument('--amira-data', metavar='pa/th', type=str, dest='amira_data', default='$SSD/data',
                         help='path where data are moved/stored during job execution')
-    parser.add_argument('--abr-path', metavar='pa/th', type=str, dest='abr_path', default='$HOME/amira_blender_rendering',
-                        help='(Absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering')
-    parser.add_argument('--out-path', metavar='pa/th', type=str, dest='out_path', default='/data/Employees/$USER/slurm_results/',
-                        help='(Absolute) path where data are moved to for storage after rendering. Default: /data/Employees/$USER/slurm_results')
+    parser.add_argument(
+        '--abr-path', metavar='pa/th', type=str, dest='abr_path', default='$HOME/amira_blender_rendering',
+        help='(Absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering')
+    parser.add_argument(
+        '--out-path', metavar='pa/th', type=str, dest='out_path', default='/data/Employees/$USER/slurm_results/',
+        help='(Absolute) path where output data are moved to for storage. Default: /data/Employees/$USER/slurm_results')
     parser.add_argument('--dset-name', metavar='name', type=str, dest='dset_name', default='PhIRM',
                         help='Name of directory with dataset to pack')
 
@@ -185,7 +188,8 @@ def gen_script(user: str,
         mm(int): minutes the job should live. Default: 5
         amira_data(str): base path where to store data. Default: $HDD/data
         abr_path(str): (absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering
-        out_path(str): (absolute) path where data are moved to for storage after rendering. Default: /data/Employees/$USER/slurm_results
+        out_path(str): (absolute) path where data are moved to for storage after rendering.
+                        Default: /data/Employees/$USER/slurm_results
         dset_name(str): name of directory with dataset to pack. Default: PhIRM
 
     Returns:
@@ -219,7 +223,9 @@ AMIRA_DATA={amira_data}
 AMIRA_DATA=$AMIRA_DATA sh scripts/sh/setup_render_env_cluster.sh
 
 # --- Step 2 --- rendering
-AMIRA_DATASETS=$AMIRA_DATA AMIRA_DATA_GFX={os.path.join(amira_data, 'amira_data_gfx')} scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile} {'--' + input_flag if input_flag else ''}
+AMIRA_DATASETS=$AMIRA_DATA \\
+AMIRA_DATA_GFX={os.path.join(amira_data, 'amira_data_gfx')} \\
+scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile} {'--' + input_flag if input_flag else ''}
 
 # --- Step 3 --- copy results to user directory
 cd $AMIRA_DATA && tar -cf {os.path.join(out_path, job_name)}-$SLURM_JOB_ID.tar ./{dset_name}

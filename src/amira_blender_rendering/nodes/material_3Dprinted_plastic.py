@@ -42,8 +42,8 @@ def setup_material(material: bpy.types.Material):
 
     # procedural roughness  setup
     n_noise_rough = nodes.new('ShaderNodeTexNoise')
-    n_noise_rough.inputs['Scale'].default_value      = 5.0
-    n_noise_rough.inputs['Detail'].default_value     = 2.0
+    n_noise_rough.inputs['Scale'].default_value = 5.0
+    n_noise_rough.inputs['Detail'].default_value = 2.0
     n_noise_rough.inputs['Distortion'].default_value = 0.0
 
     n_ramp_rough = nodes.new('ShaderNodeValToRGB')
@@ -67,9 +67,9 @@ def setup_material(material: bpy.types.Material):
 
     # normal / bump map
     n_noise_bump = nodes.new('ShaderNodeTexNoise')
-    n_noise_bump.inputs['Scale'].default_value      = 800.0
-    n_noise_bump.inputs['Detail'].default_value     =  16.0
-    n_noise_bump.inputs['Distortion'].default_value =   0.0
+    n_noise_bump.inputs['Scale'].default_value = 800.0
+    n_noise_bump.inputs['Detail'].default_value = 16.0
+    n_noise_bump.inputs['Distortion'].default_value = 0.0
     n_bump = nodes.new('ShaderNodeBump')
     n_bump.inputs['Strength'].default_value = 0.100
     n_bump.inputs['Distance'].default_value = 0.100
@@ -77,24 +77,24 @@ def setup_material(material: bpy.types.Material):
     tree.links.new(n_bump.outputs['Normal'], n_bsdf.inputs['Normal'])
 
     # displacement map
-    n_texcoord       = nodes.new('ShaderNodeTexCoord')
-    n_mapping        = nodes.new('ShaderNodeMapping')
-    n_sepxyz         = nodes.new('ShaderNodeSeparateXYZ')
-    n_combxyz_ease   = nodes.new('ShaderNodeCombineXYZ')
+    n_texcoord = nodes.new('ShaderNodeTexCoord')
+    n_mapping = nodes.new('ShaderNodeMapping')
+    n_sepxyz = nodes.new('ShaderNodeSeparateXYZ')
+    n_combxyz_ease = nodes.new('ShaderNodeCombineXYZ')
     n_combxyz_spline = nodes.new('ShaderNodeCombineXYZ')
 
     n_noise_disp = nodes.new('ShaderNodeTexNoise')
-    n_noise_disp.inputs['Scale'].default_value      = 15.2
-    n_noise_disp.inputs['Detail'].default_value     =  5.0
-    n_noise_disp.inputs['Distortion'].default_value =  0.0
+    n_noise_disp.inputs['Scale'].default_value = 15.2
+    n_noise_disp.inputs['Detail'].default_value = 5.0
+    n_noise_disp.inputs['Distortion'].default_value = 0.0
 
     n_wave = nodes.new('ShaderNodeTexWave')
     n_wave.wave_type = 'BANDS'
     n_wave.wave_profile = 'SIN'
-    n_wave.inputs['Scale'].default_value        = 50.0
-    n_wave.inputs['Distortion'].default_value   =  5.0
-    n_wave.inputs['Detail'].default_value       =  1.0
-    n_wave.inputs['Detail Scale'].default_value =  1.0
+    n_wave.inputs['Scale'].default_value = 50.0
+    n_wave.inputs['Distortion'].default_value = 5.0
+    n_wave.inputs['Detail'].default_value = 1.0
+    n_wave.inputs['Detail Scale'].default_value = 1.0
 
     n_ramp_ease = nodes.new('ShaderNodeValToRGB')
     n_ramp_ease.color_ramp.color_mode = 'RGB'
