@@ -17,7 +17,6 @@
 # limitations under the License.
 
 import os
-import shutil
 import setuptools
 from setuptools import find_packages
 
@@ -60,9 +59,9 @@ setuptools.setup(
     name='AMIRA Blender Rendering',
     packages=find_packages(
         where='src',
-        include=['amira_blender_rendering*',]
+        include=['amira_blender_rendering*', ]
     ),
-    package_dir={'':'src'},
+    package_dir={'': 'src'},
     version=VERSION,
     description='AMIRA Blender Rendering Pipeline for Dataset Generation',
     long_description=readme(),

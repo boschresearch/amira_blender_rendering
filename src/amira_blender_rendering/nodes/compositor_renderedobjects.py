@@ -145,7 +145,7 @@ class CompositorNodesOutputRenderedObjects():
         n_id_mask.use_antialiasing = True
         tree.links.new(n_render_layers.outputs['IndexOB'], n_id_mask.inputs['ID value'])
 
-        mask_name = f"Backdrop"
+        mask_name = "Backdrop"
         n_output_file.file_slots.new(mask_name)
         s_obj_mask = n_output_file.file_slots[mask_name]
         s_obj_mask.use_node_format = True

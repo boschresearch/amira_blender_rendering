@@ -200,7 +200,7 @@ def main():
     remove_material_nodes()
     clear_orphaned_materials()
     mat = add_default_material()
-    setup_material_metal_tool_cap(mat)
+    setup_material(mat)
 
 
 if __name__ == "__main__":

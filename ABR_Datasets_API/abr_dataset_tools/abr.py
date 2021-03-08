@@ -49,7 +49,7 @@ Root directory: {root}\n\
         └─ mask/\n\
         └─ backdrop/"""
 
-___str_sample_struct__ = f"""
+___str_sample_struct__ = """
 Sample (dict):
     image_id (numeric):             # id for image related to sample
     num_objects (int):              # number of objects

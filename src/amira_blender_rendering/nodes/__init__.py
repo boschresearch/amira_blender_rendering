@@ -23,8 +23,8 @@
 #
 
 # compositor nodes
-from .compositor_renderedobjects import CompositorNodesOutputRenderedObjects
+from .compositor_renderedobjects import CompositorNodesOutputRenderedObjects  # noqa
 
 # material nodes
-from . import material_metal_tool_cap
-from . import material_3Dprinted_plastic
+from . import material_metal_tool_cap  # noqa
+from . import material_3Dprinted_plastic  # noqa
