@@ -70,16 +70,16 @@ def build_directory_info(base_path: str, **kwargs):
     dir_info.annotations = DynamicStruct()
 
     # setup all path related information
-    dir_info.base_path             = expandpath(base_path)
-    dir_info.annotations.base_path = os.path.join(dir_info.base_path             , 'Annotations')
-    dir_info.annotations.opengl    = os.path.join(dir_info.annotations.base_path , 'OpenGL')
-    dir_info.annotations.opencv    = os.path.join(dir_info.annotations.base_path , 'OpenCV')
-    dir_info.images.base_path      = os.path.join(dir_info.base_path             , 'Images')
-    dir_info.images.rgb            = os.path.join(dir_info.images.base_path      , 'rgb')
-    dir_info.images.range          = os.path.join(dir_info.images.base_path      , 'range')
-    dir_info.images.depth          = os.path.join(dir_info.images.base_path      , 'depth')
-    dir_info.images.mask           = os.path.join(dir_info.images.base_path      , 'mask')
-    dir_info.images.backdrop       = os.path.join(dir_info.images.base_path      , 'backdrop')
+    dir_info.base_path = expandpath(base_path)
+    dir_info.annotations.base_path = os.path.join(dir_info.base_path, 'Annotations')
+    dir_info.annotations.opengl = os.path.join(dir_info.annotations.base_path, 'OpenGL')
+    dir_info.annotations.opencv = os.path.join(dir_info.annotations.base_path, 'OpenCV')
+    dir_info.images.base_path = os.path.join(dir_info.base_path, 'Images')
+    dir_info.images.rgb = os.path.join(dir_info.images.base_path, 'rgb')
+    dir_info.images.range = os.path.join(dir_info.images.base_path, 'range')
+    dir_info.images.depth = os.path.join(dir_info.images.base_path, 'depth')
+    dir_info.images.mask = os.path.join(dir_info.images.base_path, 'mask')
+    dir_info.images.backdrop = os.path.join(dir_info.images.base_path, 'backdrop')
 
     dense_features = kwargs.get('dense_features', False)
     if dense_features:

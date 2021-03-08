@@ -22,6 +22,7 @@ import shutil
 import unittest
 import xml.etree.ElementTree as ET
 from amira_blender_rendering.utils import converters
+from amira_blender_rendering.utils.io import expandpath
 import tests
 
 
@@ -31,7 +32,7 @@ def are_xml_element_equal(e1, e2):
         return False
     if e1.tag != e2.tag:
         return False
-    if e1.text != e2.text:
+    if expandpath(e1.text) != expandpath(e2.text):
         return False
     if e1.tail != e2.tail:
         return False
@@ -44,6 +45,8 @@ def are_xml_element_equal(e1, e2):
 class TestConverters(unittest.TestCase):
 
     def setUp(self):
+        self.environ_cwd = os.environ.get('CWD', None)
+        os.environ['CWD'] = os.getcwd()
         self._fname_json = 'test.json'
         self._fname_xml = 'test.xml'
         self._datadir = os.path.join(os.getcwd(), 'tests', 'data')
@@ -62,6 +65,9 @@ class TestConverters(unittest.TestCase):
     def tearDown(self):
         # cleaning directory tree
         shutil.rmtree(os.path.join(self._datadir, 'xml'))
+        os.environ.pop('CWD')
+        if self.environ_cwd is not None:
+            os.environ['CWD'] = self.environ_cwd
 
 
 def main():

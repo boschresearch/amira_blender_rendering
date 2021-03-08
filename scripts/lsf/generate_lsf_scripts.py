@@ -172,8 +172,10 @@ def gen_script(cfgfile: str,
         mm(int): minutes the job should live. Default: 5
         data_storage(str): base path where data are read from. Default: /fs/scratch/rng_cr_bcai_dl/BoschData/AMIRA
         abr_path(str): (absolute) path to amira_blender_rendering root directory. Default: $HOME/amira_blender_rendering
-        heavy_duty_dir(str): (absolute) path to base dir used during heavy duty computations (it must exists). Default: $HOME/HDD/heavy_duty
-        out_dir(str): (absolute) path where data are moved to for storage after rendering (it must exists). Default: /fs/scratch/rng_cr_bcai_dl/$USER/lsf_results
+        heavy_duty_dir(str): (absolute) path to base dir used during heavy duty computations (it must exists).
+                             Default: $HOME/HDD/heavy_duty
+        out_dir(str): (absolute) path where data are moved to for storage after rendering (it must exists).
+                      Default: /fs/scratch/rng_cr_bcai_dl/$USER/lsf_results
         dataset_name(str): Name of dataset to tar
         render_mode(str): define type of rendering mode ['default', 'multiview']
 
@@ -225,9 +227,10 @@ SSD_TMP=`mktemp -d -p $SSD`
 # cp -r $DATA_STORAGE/amira_data_gfx $SSD_TMP
 
 # --- Step 2 --- render
-AMIRA_DATASETS=$SSD_TMP \
-    AMIRA_DATA_GFX=$DATA_STORAGE/amira_data_gfx \
-        DATA_STORAGE=$DATA_STORAGE scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile} --render-mode {render_mode}
+AMIRA_DATASETS=$SSD_TMP \\
+AMIRA_DATA_GFX=$DATA_STORAGE/amira_data_gfx \\
+DATA_STORAGE=$DATA_STORAGE \\
+    scripts/abrgen --abr-path {os.path.join(abr_path, 'src')} --config {cfgfile} --render-mode {render_mode}
 
 # --- Step 3 --- copy results to user directory
 cd $SSD_TMP && tar cf $HDD/{job_name}-$LSB_JOBID.tar ./{dataset_name}

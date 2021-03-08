@@ -2,5 +2,8 @@
 coloredlogs
 numpy
 
+# for linting
+flake8
+
 # for docs/sphinx
 sphinx-rtd-theme

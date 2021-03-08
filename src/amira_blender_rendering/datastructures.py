@@ -35,9 +35,9 @@ import ast
 # NOTE: We do not use the logging classes in here
 
 
-def flatten(l):
+def flatten(lst):
     """Flatten a nested list lst"""
-    return [i for subl in l for i in subl]
+    return [i for subl in lst for i in subl]
 
 
 def strbool(s: str):

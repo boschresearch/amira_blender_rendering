@@ -77,8 +77,10 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
 
         # specific scenario configuration
         self.add_param('scenario_setup.scenario', 0, 'Scenario to render')
-        self.add_param('scenario_setup.target_objects', [], 'List of objects to drop in the scene for which annotated info are stored')
-        self.add_param('scenario_setup.distractor_objects', [], 'List of objects to drop in the scene for which info are NOT stored')
+        self.add_param('scenario_setup.target_objects', [],
+                       'List of objects to drop in the scene for which annotated info are stored')
+        self.add_param('scenario_setup.distractor_objects', [],
+                       'List of objects to drop in the scene for which info are NOT stored')
         self.add_param('scenario_setup.abc_objects', [], 'List of all ABC-Dataset objects to drop in environment')
         self.add_param('scenario_setup.num_abc_colors', 3, 'Number of random metallic materials to generate')
     
@@ -86,7 +88,8 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('multiview_setup.mode', '',
                        'Selected mode to generate view points, i.e., random, bezier, viewsphere')
         self.add_param('multiview_setup.mode_config', Configuration(), 'Mode specific configuration')
-        self.add_param('multiview_setup.offset', True, 'If False, multi views are not offset with initial camera location. Default: True')
+        self.add_param('multiview_setup.offset', True,
+                       'If False, multi views are not offset with initial camera location. Default: True')
         
         # specific debug config
         self.add_param('debug.plot', False, 'If True, in debug mode, enable simple visual debug')

@@ -27,9 +27,7 @@ but to correctly write data to file.
 """
 
 import bpy
-import os
 import pathlib
-from mathutils import Vector
 import numpy as np
 import random
 from math import ceil, log
@@ -67,15 +65,18 @@ class StaticSceneConfiguration(abr_scenes.BaseConfiguration):
                         'Camera.FrontoParallel.Right'], 'Cameras to render')
 
         # scenario: target objects
-        self.add_param('scenario_setup.target_objects', [], 'List of objects to drop in the scene for which annotated info are stored')
-        self.add_param('scenario_setup.textured_objects', [], 'List of objects whose texture is randomized during rendering')
+        self.add_param('scenario_setup.target_objects', [],
+                       'List of objects to drop in the scene for which annotated info are stored')
+        self.add_param('scenario_setup.textured_objects', [],
+                       'List of objects whose texture is randomized during rendering')
         self.add_param('scenario_setup.objects_textures', '', 'Path to images for object textures')
 
         # multiview configuration (if implemented)
         self.add_param('multiview_setup.mode', '',
                        'Selected mode to generate view points, i.e., random, bezier, viewsphere')
         self.add_param('multiview_setup.mode_config', Configuration(), 'Mode specific configuration')
-        self.add_param('multiview_setup.offset', True, 'If False, multi views are not offset with initial camera location. Default: True')
+        self.add_param('multiview_setup.offset', True,
+                       'If False, multi views are not offset with initial camera location. Default: True')
         
         # specific debug config
         self.add_param('debug.plot', False, 'If True, in debug mode, enable simple visual debug')
@@ -521,7 +522,8 @@ class StaticScene(interfaces.ABRScene):
             # if we need to repeat (change static scene) we skip one iteration
             # without increasing the counter
             if repeat_frame:
-                self.logger.error(f'Something wrong (possibly due to visibility configurations). Make sure your static scene and config are correct. Exiting!')
+                self.logger.error('Something wrong (possibly due to visibility configurations).'
+                                  ' Make sure your static scene and config are correct. Exiting!')
                 exit(-1)
 
             # loop over cameras
@@ -535,7 +537,7 @@ class StaticScene(interfaces.ABRScene):
                     # retry at most 'max_retry' times then exit
                     if retry < MAX_RETRY:
                         break
-                    self.logger.error(f'Max number of {MAX_RETRY} retry reached. Make sure your static scene is correct. Exiting!')
+                    self.logger.error(f'Max num of {MAX_RETRY} retry reached. Check your static scene is correct. Exit')
                     exit(-1)
         
                 # extract camera locations

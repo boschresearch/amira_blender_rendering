@@ -19,7 +19,6 @@
 
 import unittest
 import os
-from getpass import getuser
 from amira_blender_rendering.utils import io
 import tests
 
@@ -30,7 +29,7 @@ class TestIO(unittest.TestCase):
     def setUp(self):
         self._env_var = 'TESTVAR'
         self._var_value = '~/tmp/testdir'
-        self._test_path = os.path.join('/home', getuser(), 'tmp', 'testdir', 'test')
+        self._test_path = os.path.join(os.path.expanduser('~'), 'tmp', 'testdir', 'test')
         os.environ[self._env_var] = self._var_value
 
     def test_expandpath(self):

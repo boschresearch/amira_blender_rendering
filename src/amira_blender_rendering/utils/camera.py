@@ -111,7 +111,7 @@ def set_camera_info(scene, cam, camera_info):
         if (width == 0 or height == 0):
             if intrinsics is None:
                 raise RuntimeError(
-                    "Please specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
+                    "Specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
             else:
                 _setup_render_size_from_intrinsics(scene, intrinsics)
         logger.info("Setting camera information from sensor_width and focal_length")
@@ -125,7 +125,7 @@ def set_camera_info(scene, cam, camera_info):
         if (width == 0 or height == 0):
             if intrinsics is None:
                 raise RuntimeError(
-                    "Please specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
+                    "Specify camera_info.width and camera_info.height or camera_info.intrinsics to set image sizes.")
             else:
                 _setup_render_size_from_intrinsics(scene, intrinsics)
         logger.info("Setting camera information from hFOV")
@@ -152,7 +152,7 @@ def set_camera_info(scene, cam, camera_info):
     # raise RuntimeError("Encountered invalid value for camera_info.intrinsic")
     elif (width == 0) or (height == 0):
         raise RuntimeError(
-            "Encountered invalid value camera_info setup. Please specify intrinsics, sensor_width + focal length, hfov, or width + height")
+            "Invalid value camera_info setup. Specify intrinsics, sensor_width + focal length, hfov, or width + height")
 
 
 def _setup_render_size_from_intrinsics(scene, intrinsics):
@@ -235,9 +235,9 @@ def _setup_camera_intrinsics_to_mm(scene, cam, intrinsics):
 
     # compute focal lengths s_u, s_v
     resolution_x = cx * 2.0
-    resolution_y = cy * 2.0
+    # resolution_y = cy * 2.0
     s_u = resolution_x / sensor_size_mm
-    s_v = resolution_y / 1.0
+    # s_v = resolution_y / 1.0
 
     # compute camera focal length in mm
     f_in_mm = fx / s_u
@@ -258,13 +258,14 @@ def _setup_camera_intrinsics_to_fov(scene, cam, intrinsics):
         cam (bpy.types.Camera): camera to modify
         intrinsics (np.array): camera intrinsics in the order fx, fy, cx, cy
     """
-    fx, fy, cx, cy = intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]
+    # fx, fy, cx, cy = intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]
+    fx, _, cx, _ = intrinsics[0], intrinsics[1], intrinsics[2], intrinsics[3]
 
     # extract field of view
     resolution_x = cx * 2.0
-    resolution_y = cy * 2.0
+    # resolution_y = cy * 2.0
     fovx = atan2(cx, fx) + atan2(resolution_x - cx, fx)
-    fovy = atan2(cy, fy) + atan2(resolution_y - cy, fy)
+    # fovy = atan2(cy, fy) + atan2(resolution_y - cy, fy)
 
     # set render output size
     _setup_render_size_from_intrinsics(scene, intrinsics)
@@ -322,8 +323,6 @@ def get_intrinsics(scene, cam):
 
     # finalize K
     return s_u, s_v, u_0, v_0
-
-
 
 
 def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str,
@@ -386,8 +385,6 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
     if filepath_out is not None:
         write_numpy_image_buffer(depth_img, filepath_out)
         logger.info(f'Saved (rectified) depth map at {filepath_out}')
-
-
 
     return depth_img
 

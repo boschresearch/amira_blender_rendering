@@ -126,7 +126,7 @@ def get_relative_rotation_to_cam_deg(obj, cam, zeroing=Vector((90, 0, 0))):
     return get_relative_rotation_to_cam_rad(obj, cam, zeroing * pi / 180)
 
 
-def get_relative_rotation_to_cam_rad(obj, cam, zeroing=Vector((pi/2, 0, 0))):
+def get_relative_rotation_to_cam_rad(obj, cam, zeroing=Vector((pi / 2, 0, 0))):
     """Get the relative rotation between an object and a camera in the camera's
     frame of reference.
 
@@ -288,7 +288,7 @@ def test_occlusion(scene, layer, cam, obj, width, height, require_all=True, orig
         except TypeError:
             hit_record = scene.ray_cast(layer.depsgraph, local_origin, direction)
         hit = hit_record[0]
-        hit_location = hit_record[1]
+        # hit_location = hit_record[1]
         hit_obj = hit_record[4]
 
         # assume hit
