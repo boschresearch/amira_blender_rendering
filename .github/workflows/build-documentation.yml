@@ -10,5 +10,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2  # checkout code
-      - run: apt-get install python3-sphinx
+      - run: sudo apt-get install python3-sphinx
       - run: cd docs && make html
