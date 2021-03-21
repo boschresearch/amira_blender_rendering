@@ -11,5 +11,5 @@ jobs:
     steps:
       - uses: actions/checkout@v2  # checkout code
       - run: python3 -m pip install -r requirements.txt
-      - run: cd docs
+      - run: cd docs && ls -la
       - run: make html && ls -la _build/
