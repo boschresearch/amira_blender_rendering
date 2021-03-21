@@ -4,7 +4,7 @@ name: build ABR documentation
 on: 
   push:
     branches:
-      - feature/build-documentation
+      - feature/actions
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
