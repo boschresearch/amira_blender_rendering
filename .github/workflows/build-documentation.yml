@@ -1,0 +1,17 @@
+
+# Workflow to build and publish latest documentation from abr/feature/build-documentation
+
+name: build documentation
+on: 
+  push:
+    branches:
+      - feature/build-documentation
+
+  jobs:
+    build-and-publish:
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v2  # checkout code
+        - run: python3 -m pip install -r requirements.txt
+        - run: python3 -m pip list
+
