@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2  # checkout code
-      - run: sudo apt-get install python3-sphinx
+      - run: python3 -m pip install Sphinx
       - run: python3 -m pip install -r requirements.txt
       - run: cd docs && make html
+      - run: ls -la ./_build/
