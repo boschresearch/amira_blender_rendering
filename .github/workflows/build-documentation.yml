@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2  # checkout code
+      - run: which python
+      - run: python --version
+      - run: which pip
+      - run: pip --version
+      - run: python3 -m pip --version
       - run: python3 -m pip install Sphinx  # install sphinx to compile doc
       - run: python3 -m pip install -r requirements.txt  # install additional requirements (among which sphinx theme)
       - run: cd docs && make html  # build documentation
