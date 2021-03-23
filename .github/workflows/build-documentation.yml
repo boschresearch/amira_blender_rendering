@@ -18,9 +18,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2  # checkout code
       
+      - run: echo $USER
+      - run: echo $PATH
+
       - name: Install sphinx
         run: pip install -U Sphinx && export PATH=$PATH:/home/$USER/.local
-        
+      
+      - run: echo $PATH
+      
       - name: Install requirements
         run: pip install -r requirements.txt  # install additional requirements (among which sphinx theme)
       
