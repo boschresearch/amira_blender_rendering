@@ -62,5 +62,5 @@ markdown_extensions:
 
 plugins:
   - search
-#   - mkdocs-versioning:
-#       version: 0.2.5
+  # - mkdocs-versioning:
+  #     version: 1.0.0
