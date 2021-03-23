@@ -3,4 +3,9 @@ coloredlogs
 numpy
 
 # for docs/sphinx
-sphinx-rtd-theme
+# sphinx-rtd-theme
+
+# documentation
+mkdocs
+mkdocs-material
+
