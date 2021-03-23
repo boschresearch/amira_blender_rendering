@@ -17,15 +17,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2  # checkout code
-
-      - name: Install sphinx
-        run: pip install -U Sphinx
       
-      - name: Install requirements
+      - name: Setup project
         run: pip install -r requirements.txt  # install additional requirements (among which sphinx theme)
       
-      - name: Build documentation
-        run:  export PATH=$PATH:/home/$USER/.local/bin && cd docs && make html  # build documentation
+      - name: Build-Docs
+        run: mkdocs build
       
-      - name: Deploy to Pages
-        run: echo "Fake deploy"
+      - name: Deploy Pages
+        # env:
+        #   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: mkdocs deploy --force
