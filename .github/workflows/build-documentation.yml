@@ -5,14 +5,27 @@ on:
   push:
     branches:
       - feature/abr-documentation
+      
+defaults:
+  run:
+    shell: bash
+
 jobs:
   build-and-publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    
     steps:
-      - uses: actions/checkout@v2  # checkout code
-      - run: pip install -U Sphinx  # install sphinx to compile doc
-      - run: find /usr -iname sphinx
-      - run: find /home/$USER/ -iname sphinx
-      - run: pip install -r requirements.txt  # install additional requirements (among which sphinx theme)
-      - run: cd docs && make html  # build documentation
-      - run: ls -la
+      - name: Checkout
+        uses: actions/checkout@v2  # checkout code
+      
+      - name: Install sphinx
+        run: pip install -U Sphinx && export PATH=$PATH:/home/$USER/.local
+        
+      - name: Install requirements
+        run: pip install -r requirements.txt  # install additional requirements (among which sphinx theme)
+      
+      - name: Build documentation
+        run: cd docs && make html  # build documentation
+      
+      - name: Deploy to Pages
+        run: echo "Fake deploy"
