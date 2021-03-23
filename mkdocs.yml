@@ -1,10 +1,10 @@
 site_name: 'AMIRA Blender Rendering Documentation'
 site_description: 'AMIRA Blender Rendering Documentation'
-# site_url: 'https://pages.github.boschdevcloud.com/bios-bcai/copier-click/'
-# repo_url: 'https://github.boschdevcloud.com/bios-bcai/copier-click'
+site_url: 'https://boschresearch.github.io/amira_blender_rendering/'
+repo_url: 'https://github.com/boschresearch/amira_blender_rendering'
 repo_name: 'boschresearch/amira_blender_rendering'
 site_author: BCAI
-copyright: Robert Bosch GmbH 2021
+copyright: Apache-2.0
 
 nav:
   - ABR User's Guide:

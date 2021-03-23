@@ -2,10 +2,7 @@
 coloredlogs
 numpy
 
-# for docs/sphinx
-# sphinx-rtd-theme
-
 # documentation
 mkdocs
+mkdocs-versioning
 mkdocs-material
-
