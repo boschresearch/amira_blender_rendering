@@ -17,20 +17,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2  # checkout code
-      
-      - run: echo $USER
-      - run: echo $PATH
 
       - name: Install sphinx
-        run: pip install -U Sphinx && export PATH=$PATH:/home/$USER/.local
-      
-      - run: echo $PATH
+        run: pip install -U Sphinx
       
       - name: Install requirements
         run: pip install -r requirements.txt  # install additional requirements (among which sphinx theme)
       
       - name: Build documentation
-        run: cd docs && make html  # build documentation
+        run:  export PATH=$PATH:/home/$USER/.local/bin && cd docs && make html  # build documentation
       
       - name: Deploy to Pages
         run: echo "Fake deploy"
