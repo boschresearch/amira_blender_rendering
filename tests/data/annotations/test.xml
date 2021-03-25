@@ -1,7 +1,7 @@
 <annotation>
   <folder>xml</folder>
   <filename>test</filename>
-  <path>/home/tma2rng/amira_blender_rendering/tests/data/xml</path>
+  <path>$CWD/tests/data/xml</path>
   <source>
     <database>blender_industrial_dataset_2020_06</database>
   </source>

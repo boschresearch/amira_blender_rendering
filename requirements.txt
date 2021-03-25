@@ -2,7 +2,10 @@
 coloredlogs
 numpy
 
+# for linting
+flake8
+
 # documentation
 mkdocs
-mkdocs-versioning
+#mkdocs-versioning
 mkdocs-material
