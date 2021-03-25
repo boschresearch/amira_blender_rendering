@@ -1,5 +1,4 @@
-Troubleshooting
-===============
+# Troubleshooting
 
 1. I get a "CUDA out of memory" exception when rendering, what shall I do?
 
@@ -41,8 +40,9 @@ Troubleshooting
    I get a "Runtime" error telling that ABR does not know my scenario!
 
     Most likely you forgot to let ABR automatically register your scenario by using
-    ``abr_scenes.register(name=, type=)``. Please refer to :ref:`discover_scene` for
-    more details.
+    `abr_scenes.register(name=, type=)`.
+    Please refer to our [tutorial](./tutorials/simplecustomscenario.md)
 
     If the above is not the case, in your configuration .cfg file make sure that
-    ``dataset.scene_type`` is set to be exactly equal to your selected ``_scene_name``.
+    `dataset.scene_type` is set to be exactly equal to your selected `_scene_name`
+    (see our [tutorial](./tutorials/simplecustomscenario.md)).
