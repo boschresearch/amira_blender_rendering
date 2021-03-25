@@ -1,13 +1,6 @@
-.. amira_blender_rendering documentation master file, created by
-   sphinx-quickstart on Wed Apr 22 09:17:29 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-.. _blender: https://www.blender.org
 
 
-Welcome to AMIRA Blender Rendering (ABR)'s documentation!
-=========================================================
+# Welcome to AMIRA Blender Rendering (ABR)'s documentation!
 
 ABR is a pipeline for rendering large photo-realistic datasets, and is built
 around blender_. By using blender_ to model scenes, we allow users to address
@@ -20,8 +13,7 @@ Note that, currently, ABR is operated mostly from the command line. The primary
 reason for this is that ABR's intended purpose is also to be used on headless
 GPU clusters or rendering farms.
 
-Workflow
---------
+## Workflow
 
 The workflow of using ABR is held as simple as possible.
 
@@ -32,9 +24,9 @@ The workflow of using ABR is held as simple as possible.
    will take care of setting up the file. For instance, you might wish to
    randomize object locations in every rendered image.
 3. Next, you need to specify rendering information such as camera calibration
-   data or the number of images you would like to obtain in a `Configuration`
-   (see Configuration :doc:`configs/overview`).
-4. Finally, you commence dataset generation by running the provided ``abrgen``
+   data or the number of images you would like to obtain in a 
+   [Configuration](./configs/overview.md)).
+4. Finally, you commence dataset generation by running the provided `abrgen`
    command.
 
 As outlined above, each scene requires what we call a *backend implementation*. 
@@ -42,89 +34,34 @@ This implementation takes care of loading a blender file, setting up everything 
 is required such as camera information, objects, randomization, etc.
 It also contains a `main loop` which does the rendering for the number of desired images. 
 An exemplary backend implementation can be found in ABR source tree at
-``src/amira_blender_rendering/scenes/workstationscenarios.py``.
+`src/amira_blender_rendering/scenes/workstationscenarios.py`.
 This backend implementation reads all optional configuration parameters either
 from a configuration file that is passed along to the rendering script, or from
 the additional parameters passed during execution.
 
 An example for a configuration that contains documentation for all options can
-be found in ABR source tree at ``config/examples/workstation_scenario01_test.cfg`` .
+be found in ABR source tree at `config/examples/workstation_scenario01_test.cfg` .
 Note that configuration options depend on the specified blender scene and backend
 implementation.
 
-Find out more about how to use ABR in :doc:`using` and Configuration :doc:configs/overview`.
+Find out more about [how to use ABR](./using.md) and [Configuration](./configs/overview.md).
 
+## Citing ABR
 
-Citing ABR
-----------
 If you use ABR please make sure to cite our work.
 
-.. code-block:: latex
+```latex
+@misc{amira_blender_rendering_2020,
+    author={N.Waniek, M.Todescato, M.Spies, M.Buerger},
+    title={AMIRA Blender Rendering},
+    year={2020},
+    url={https://github.com/boschresearch/amira-blender-rendering},
+}
+```
 
-   @misc{amira_blender_rendering_2020,
-       author={N.Waniek, M.Todescato, M.Spies, M.Buerger},
-       title={AMIRA Blender Rendering},
-       year={2020},
-       url={https://github.com/boschresearch/amira-blender-rendering},
-   }
+## Contacts<a name="contacts"></a>
 
-
-
-.. toctree::
-   :maxdepth: 3
-   :caption: ABR User's Guide
-
-   installation.rst
-   using.rst
-   formats.rst
-   datasets.rst
-   fqa.rst
-   troubleshooting.rst
-   tests.rst
-   license.rst
-
-.. toctree::
-   :maxdepth: 3
-   :caption: ABR Developer's Guide
-
-   contributing.rst
-
-.. toctree::
-   :maxdepth: 3
-   :caption: Configurations
-   :name: configurations
-
-   configs/overview.rst
-   configs/baseconfiguration.rst
-   configs/workstation_scenarios.rst
-   configs/pandatable.rst
-   configs/simpleobject.rst
-   configs/multiview.rst
-
-.. toctree::
-  :maxdepth: 3
-  :caption: Datasets
-
-
-.. toctree::
-  :maxdepth: 3
-  :caption: Tutorials
-
-  tutorials/simplecustomscenario.rst
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
-
-Contacts
-========
-
-| `Nicolai Waniek <mailto:Nicolai.Waniek@de.bosch.com>`_
-| `Marco Todescato <mailto:Marco.Todescato@de.bosch.com>`_
-| `Markus Spies <mailto:Markus.Spies2@de.bosch.com>`_
+- [Nicolai Waniek](mailto:n@rochus.net)
+- [Marco Todescato](mailto:Marco.Todescato@de.bosch.com)
+- [Markus Spies](mailto:Markus.Spies2@de.bosch.com)
 

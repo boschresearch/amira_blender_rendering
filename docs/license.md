@@ -1,5 +1,4 @@
-License
-=======
+# License
 
 AMIRA Blender Rendering is released under the Apache-2.0 license.
 
