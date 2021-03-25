@@ -4,7 +4,7 @@ name: build ABR documentation
 on: 
   push:
     branches:
-      - feature/abr-documentation
+      - master
       
 defaults:
   run:
