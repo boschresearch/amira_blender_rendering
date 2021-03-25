@@ -5,5 +5,7 @@ numpy
 # for linting
 flake8
 
-# for docs/sphinx
-sphinx-rtd-theme
+# documentation
+mkdocs
+#mkdocs-versioning
+mkdocs-material
