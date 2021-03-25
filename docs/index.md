@@ -61,7 +61,7 @@ If you use ABR please make sure to cite our work.
 
 ## Contacts<a name="contacts"></a>
 
-- [Nicolai Waniek](mailto:Nicolai.Waniek@de.bosch.com)
+- [Nicolai Waniek](mailto:n@rochus.net)
 - [Marco Todescato](mailto:Marco.Todescato@de.bosch.com)
 - [Markus Spies](mailto:Markus.Spies2@de.bosch.com)
 
