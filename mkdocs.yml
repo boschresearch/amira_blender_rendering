@@ -1,0 +1,66 @@
+site_name: 'AMIRA Blender Rendering Documentation'
+site_description: 'AMIRA Blender Rendering Documentation'
+site_url: 'https://boschresearch.github.io/amira_blender_rendering/'
+repo_url: 'https://github.com/boschresearch/amira_blender_rendering'
+repo_name: 'boschresearch/amira_blender_rendering'
+site_author: BCAI
+copyright: Apache-2.0
+
+nav:
+  - ABR User's Guide:
+      - Overview: index.md
+      - Installation: installation.md
+      - Using: using.md
+      - Formats: formats.md
+      - Datasets: datasets.md
+      - FAQs: fqa.md
+      - Troubleshooting: troubleshooting.md
+      - Tests: tests.md
+  - Contributing: contributing.md
+  - Configurations:
+    - Overview: configs/overview.md
+    - Base Config: configs/baseconfiguration.md
+    - Workstation : configs/workstation_scenarios.md
+    - Panda Table: configs/pandatable.md
+    - Simple Object: configs/simpleobject.md
+    - Multi view rendering: configs/multiview.md
+  # - Datasets:
+  - Tutorials: 
+    - Simple scenario: tutorials/simplecustomscenario.md
+  - License: license.md
+
+
+theme:
+  name: 'material'
+  # Disable fonts because of GDPR (https://squidfunk.github.io/mkdocs-material/setup/changing-the-fonts/#disabling-font-loading)
+  font: false
+  palette:
+    scheme: default
+    primary: dark-blue
+
+  highlightjs: true
+  hljs_languages:
+    - yaml
+    - rust
+    - python
+    - java
+    - go
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.emoji
+  - pymdownx.snippets:
+      check_paths: true
+  - pymdownx.tabbed
+  - pymdownx.tasklist
+  - codehilite
+  - smarty
+  - toc:
+      permalink: true
+
+plugins:
+  - search
+  # - mkdocs-versioning:
+  #     version: 1.0.0

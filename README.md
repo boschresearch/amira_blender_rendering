@@ -55,14 +55,21 @@ is used for "stable" releases. Hence consider doing the same when opening PRs.
 
 ## Documentation<a name="docs"></a>
 
-From within amira_blender_rendering/docs/ folder run
+All the [documentation](https://boschresearch.github.io/amira_blender_rendering/) 
+is available online hosted as GitHub page.
+
+If you want to access it offline, you can also build it yourself.
+Assuming `mkdocs` is available, simply issue, from a_blender_rendering root directory,
 
 ```bash
-make html
+mkdocs build
 ```
 
-This will build the documentation under `docs/_build` and can be conveniently
-browsed by opening `docs/_build/html/index.html` into you preferred browers.
+This will build the documentation under `site` and can be conveniently
+browsed by opening `site/index.html` into you preferred browers.
+
+In case you encounter any issue, make sure that all necessary dependencies (see `requitements.txt`)
+are correctly installed.
 
 **Notes**: as explained in the documentation, running ABR *might* require to create
 and work with a custom python3.7 environemnt. Hence, it is suggested to create 
