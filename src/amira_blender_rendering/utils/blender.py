@@ -142,6 +142,7 @@ def select_object(obj_name: str):
     obj = bpy.data.objects[obj_name]
     obj.select_set(True)
     bpy.context.view_layer.objects.active = obj
+    return obj
 
 
 def add_default_material(obj: bpy.types.Object = bpy.context.object,
