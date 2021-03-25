@@ -374,6 +374,8 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
     K_inv = np.linalg.inv(calibration_matrix)
     v_dirs_mtx = np.dot(K_inv, uv1).T.reshape(res_y, res_x, 3)
     v_dirs_mtx_unit_inv = np.reciprocal(np.linalg.norm(v_dirs_mtx, axis=2))
+    # transpose since depth is in WxH
+    v_dirs_mtx_unit_inv = v_dirs_mtx_unit_inv.transpose()
 
     depth_img = (range_exr * v_dirs_mtx_unit_inv * scale)
     # remove overflow values
