@@ -101,7 +101,7 @@ follow good practices and isolate your work into separate virtual environments.
    blender binary is on your PATH.
 
 3. Replace blender's python with the conda environment's python as described
-   in [installation(./installation.md), and run blender to test if it works:
+   in [installation](./installation.md), and run blender to test if it works:
 
     ```bash
     $ blender -b --python-console
