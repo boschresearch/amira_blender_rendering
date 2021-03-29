@@ -22,6 +22,7 @@
 from .basescenemanager import BaseSceneManager  # noqa
 from .baseconfiguration import BaseConfiguration  # noqa
 from .threepointlighting import ThreePointLighting  # noqa
+from .basescene import BaseABRScene  # noqa
 
 # composition classes, if inheritance should or cannot be used
 from .rendermanager import RenderManager  # noqa
