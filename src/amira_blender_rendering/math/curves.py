@@ -17,6 +17,40 @@
 # limitations under the License.
 
 import numpy as np
+from amira_blender_rendering.datastructures import Configuration
+
+
+class MultiviewModeConfiguration(Configuration):
+
+    def __init__(self, name='multiview_modes'):
+        super(MultiviewModeConfiguration, self).__init__(name=name)
+
+        self.add_param('random.offset', [0., 0., 0.], 'Origin for random (i.e., normal) numbers (see random_points)')
+        self.add_param('random.scale', 1., 'Scale factor (std) for random (i.e., normal) numbers (see random_points)')
+
+        self.add_param('bezier.p0', [0., 0., 0.], '1st control point for curve (see points_on_bezier)')
+        self.add_param('bezier.p1', np.random.randn(3).tolist(), '2nd control point for curve (see points_on_bezier)')
+        self.add_param('bezier.p2', np.random.randn(3).tolist(), '3rd control point for curve (see points_on_bezier)')
+        self.add_param('bezier.start', 0., 'Starting point along the curve (see points_on_bezier)')
+        self.add_param('bezier.stop', 1., 'Ending point along the curve (see points_on_bezier)')
+
+        self.add_param('circle.radius', 1., 'Radius (see points_on_circle)')
+        self.add_param('circle.center', [0., 0., 0.], 'Center (see points_on_circle)')
+
+        self.add_param('wave.radius', 1., 'Radius (see points_on_wave)')
+        self.add_param('wave.center', [0., 0., 0.], 'Center (see points_on_wave)')
+        self.add_param('wave.frequency', 1., 'Frequency of sinusoidal curve (see points_on_wave)')
+        self.add_param('wave.amplitude', 1., 'Amplitude of sinusoidal curve (see points_on_wave)')
+
+        self.add_param('viewsphere.scale', 1., 'Viewsphere scale (see points_on_viewsphere)')
+        self.add_param('viewsphere.bias', [0, 0, 1.5], 'Viewsphere bias (see points_on_viewsphere)')
+
+        self.add_param('piecewiselinear.control_points',
+                       [0., 0., 0., 1., 1., 1.],
+                       'List of control points (see points_on_piecewise_line)')
+        self.add_param('piecewiselinear.dimension',
+                       3,
+                       'Whether the points are in 1d, 2d or 3d etc. (see points_on_piecewise_line)')
 
 
 def spherical_coordinate(x, y):
@@ -113,7 +147,10 @@ def points_on_bezier(num_points: int, p0: np.array, p1: np.array, p2: np.array, 
     T1 = 3 * (1 - T)**2 * T
     T2 = 3 * (1 - T) * T**2
     T3 = T**3
-    points = np.outer(T0, p0) + np.outer(T1, p1) + np.outer(T2, p2) + np.outer(T3, p0)
+    points = np.outer(T0, np.asarray(p0)) + \
+        np.outer(T1, np.asarray(p1)) + \
+        np.outer(T2, np.asarray(p2)) + \
+        np.outer(T3, np.asarray(p0))
     return points
 
 
@@ -132,7 +169,7 @@ def points_on_circle(num_points: int, radius: float = 1, center: np.array = np.a
         np.ndarray of points
     """
     T = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
-    points = center + radius * np.vstack([np.cos(T), np.sin(T), np.zeros(T.size)]).transpose()
+    points = np.asarray(center) + radius * np.vstack([np.cos(T), np.sin(T), np.zeros(T.size)]).transpose()
     return points
 
 
@@ -156,25 +193,28 @@ def points_on_wave(num_points, radius: float = 1, center: np.array = np.array([0
         list of points
     """
     T = np.linspace(0, 2 * np.pi, num_points, endpoint=False)
-    circle = points_on_circle(num_points, radius, center)
+    circle = points_on_circle(num_points, radius, np.asarray(center))
     z_wave = np.vstack([np.zeros(T.size), np.zeros(T.size), amplitude * (np.cos(frequency * T) - 1)]).transpose()
     points = circle + z_wave
     return points
 
 
-def points_on_piecewise_line(num_points: int, control_points: dict):
+def points_on_piecewise_line(num_points: int, control_points: list, dimension: int = 3):
     """Generate num_points on a piecewise line defined by a sequence of
     control points [p0, p1, p2, ...]
 
     Args:
         num_points(int): number of points to create
-        cntrl_points(dict): dictionary of control points for the piecwise line
-    
+        cntrl_points(list): flat list of control points for the piecwise line
+        dimension(int): specifiy points dimension. 1 -> 1d, 2 -> 2d, 3 -> 3d .... Default: 3
+
     Returns:
         array of points
     """
+    # reshape according to dimension
+    control_points = np.asarray(control_points).reshape(-1, dimension)
     # directions and norms
-    directions = np.diff(np.asarray(control_points), axis=0)
+    directions = np.diff(control_points, axis=0)
     norms = np.linalg.norm(directions, axis=1)
     length = np.sum(norms)
     cum_length = np.cumsum(norms)
@@ -193,8 +233,18 @@ def points_on_piecewise_line(num_points: int, control_points: dict):
     return points
 
 
-def random_points(num_points, base_location, scale):
-    points = base_location + scale * np.random.randn(num_points, base_location.size)
+def random_points(num_points, offset, scale):
+    """Generate an array of random points with normal distibution
+
+    Args:
+        num_points(int): how many points to generate
+        offset(list/array): offset for the random points
+        scale(float): std for normal distribution
+    Returns:
+        array of points
+    """
+    offset = np.asarray(offset)
+    points = offset + scale * np.random.randn(num_points, offset.size)
     return points
 
 
