@@ -21,14 +21,94 @@ from mathutils import Vector, Matrix
 from math import radians, atan2
 import numpy as np
 import os
+import cv2
 
 from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.math.curves import points_on_viewsphere, points_on_bezier, points_on_circle, \
-    points_on_wave, random_points, points_on_piecewise_line
+    points_on_wave, random_points, points_on_piecewise_line, MultiviewModeConfiguration
 from amira_blender_rendering.datastructures import Configuration
-from amira_blender_rendering.utils.io import write_numpy_image_buffer, read_numpy_image_buffer
+import amira_blender_rendering.utils.blender as blnd
+# from amira_blender_rendering.utils.io import write_numpy_image_buffer, read_numpy_image_buffer
 
 logger = get_logger()
+
+
+class CameraGroupConfiguration(Configuration):
+    """Class to handle camera group configurations"""
+
+    def __init__(self, name='default_camera_group'):
+        super(CameraGroupConfiguration, self).__init__(name=name)
+
+        self.add_param(
+            'model',
+            'pinhole',
+            'Camera model type'
+        )
+        self.add_param(
+            'zeroing',
+            [0.0, 0.0, 0.0],
+            'Default camera zeroing rotation in degrees'
+        )
+        self.add_param(
+            'intrinsic',
+            [],
+            'camera intrinsics fx, fy, cx, cy, possible altered via blender during runtime.',
+        )
+        self.add_param(
+            'sensor_width',
+            0.0,
+            'Sensor width in mm (if not available, set to 0.0)'
+        )
+        self.add_param(
+            'focal_length',
+            0.0,
+            'Focal length in mm (if not available, set to 0.0)'
+        )
+        self.add_param(
+            'hfov',
+            0.0,
+            'Horizontal Field-of-View of the camera in degrees (if not available, set to 0.0)'
+        )
+        self.add_param(
+            'intrinsics_conversion_mode',
+            'mm',
+            'Determine how to compute camera setup from intrinsics. One of "fov", "mm". Default: "mm"'
+        )
+        self.add_param(
+            'type',
+            'default',
+            'Type of camera group. Based on this cameara operations are handled differently'
+        )
+        self.add_param(
+            'names',
+            ['Camera'],
+            'List of names of bpy camera objects in the group'
+        )
+        self.add_param(
+            'center',
+            '',
+            'Name of blender "empty" object used as center location for the group. If not given, use camera location'
+        )
+        self.add_param(
+            'aim',
+            '',
+            'Name of blender "empty" object used as camera aim for the group (where to look at)'
+        )
+        self.add_param(
+            'displacements_mm',
+            [0.0],
+            '(List of) relative x-axis (left, right) displacements (in mm) from center in local coordinate'
+        )
+        self.add_param(
+            'compute_disparity',
+            False,
+            'If True, compute disparity map during postprocessing'
+        )
+        self.add_param(
+            'baseline_mm',
+            0.0,
+            'Baseline distance between camera for disparity computation'
+        )
 
 
 def opengl_to_opencv(v: Vector) -> Vector:
@@ -78,30 +158,31 @@ def _intrinsics_to_numpy(camera_info):
         return None
 
 
-def set_camera_info(scene, cam, camera_info):
+def set_camera_info(scene, cam, camera_info, width: int = 0, height: int = 0):
     """Set the camera information of camera `cam` in scene `scene`.
 
     Note that this might set the render information, too. That is, resolution_x,
     resolution_y, resolution_percentage, pixel_aspect_x, and pixel_aspect_y will
     be affected by calling this function if intrinsics, stored in camera_info,
-    is not None.
+    is not None and no explicit values (>0) for width and height are specified.
 
     Args:
         scene (bpy.types.Scene): scene to operate in
         cam (bpy.types.Camera): camera to modify
         camera_info (Configuration): camera_info configuration block of a configuration file
+
+    Opt Args:
+        width(int): render resolution along x axis. Default: 0
+        height(int): render resolution along y axis. Default: 0
     """
     # get numpy version of the intrinsics, if possible
     intrinsics = _intrinsics_to_numpy(camera_info)
 
     # get all other values that might be of interest to shorten variable names
-    width = camera_info.width
-    height = camera_info.height
     sensor_width = camera_info.sensor_width
     focal_length = camera_info.focal_length
     hfov = camera_info.hfov
 
-    #
     # "Heuristically" determine how the user wants to set the camera
     # information.
     #
@@ -193,7 +274,7 @@ def _setup_camera_by_swfl(scene, cam, sensor_width, focal_length):
     cam.type = 'PERSP'
     cam.sensor_fit = 'HORIZONTAL'
     cam.lens_unit = 'MILLIMETERS'
-    cam.lens = focal_length
+    cam.lens = focal_length  # 1 is the min possible value
     cam.sensor_width = sensor_width
 
 
@@ -357,12 +438,13 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
     # quick check file type
     if '.exr' not in filepath_in:
         raise ValueError(f'Given input file {filepath_in} not of type EXR')
-    if '.png' not in filepath_out and filepath_out is not None:
+    if filepath_out is not None and '.png' not in filepath_out:
         raise ValueError(f'Given output file {filepath_out} not of tyep PNG')
     if not os.path.exists(filepath_in):
         raise ValueError(f"File {filepath_in} does not exist. Please check path")
 
-    range_exr = read_numpy_image_buffer(filepath_in, True)
+    # range_exr = read_numpy_image_buffer(filepath_in, True)
+    range_exr = cv2.imread(filepath_in, cv2.IMREAD_ANYDEPTH)
 
     # perform transformation
     logger.info('Rectifying pinhole range map into depth')
@@ -375,20 +457,24 @@ def project_pinhole_range_to_rectified_depth(filepath_in: str, filepath_out: str
     v_dirs_mtx = np.dot(K_inv, uv1).T.reshape(res_y, res_x, 3)
     v_dirs_mtx_unit_inv = np.reciprocal(np.linalg.norm(v_dirs_mtx, axis=2))
     # transpose since depth is in WxH
-    v_dirs_mtx_unit_inv = v_dirs_mtx_unit_inv.transpose()
-
+    # v_dirs_mtx_unit_inv = v_dirs_mtx_unit_inv.transpose()
     depth_img = (range_exr * v_dirs_mtx_unit_inv * scale)
-    # remove overflow values
-    depth_img[depth_img > 65000] = 0
-    # cast to 16 bit
-    depth_img = depth_img.astype(np.uint16)
+    # clip values in uint16 range
+    depth_img = np.clip(depth_img, 0, np.iinfo(np.uint16).max)
+    # compute normalized
+    # depth_img_normalized = depth_img / np.iinfo(np.uint16).max
+    # cast
+    depth_img_uint16 = depth_img.astype(np.uint16)
 
     # write out if requested
     if filepath_out is not None:
-        write_numpy_image_buffer(depth_img, filepath_out)
+        # write takes care of casting to uint16 from a normalized buffer
+        cv2.imwrite(filepath_out, depth_img_uint16)
+        # write_numpy_image_buffer(depth_img_normalized, filepath_out)
         logger.info(f'Saved (rectified) depth map at {filepath_out}')
 
-    return depth_img
+    # cast unnormalized to uint16
+    return depth_img_uint16
 
 
 def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
@@ -424,7 +510,8 @@ def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
     # check filepath_in to read file from
     if '.png' in filepath_in:
         logger.info(f'Loading depth from .PNG file {filepath_in}')
-        depth = read_numpy_image_buffer(filepath_in)
+        # depth = read_numpy_image_buffer(filepath_in)
+        depth = cv2.imread(filepath_in)
 
     elif '.exr' in filepath_in:
         # in case of exr file we convert range to depth first
@@ -444,79 +531,70 @@ def compute_disparity_from_z_info(filepath_in: str, filepath_out: str,
     focal_length_px = calibration_matrix[0, 0]
     # disparity in pixels
     disparity = baseline_mm * focal_length_px * np.reciprocal(depth)
-    # cast to uint16 for PNG format
-    disparity = (disparity).astype(np.uint16)
+    # clip to 16 bit value range
+    disparity = np.clip(disparity, 0, np.iinfo(np.uint16).max)
+    # normalized buffer
+    # disparity_normalized = disparity / disparity.max()
+    # cast
+    disparity_uint16 = disparity.astype(np.uint16)
 
     # write out if requested
     if filepath_out is not None:
-        write_numpy_image_buffer(disparity, filepath_out)
+        # write takes care of casting to 16 bit from a normalize buffer
+        # write_numpy_image_buffer(disparity, filepath_out)
+        cv2.imwrite(filepath_out, disparity_uint16)
         logger.info(f'Saved disparity map at {filepath_out}')
 
-    return disparity
+    # cast and return
+    return disparity_uint16
 
 
-def get_current_cameras_locations(camera_names: list):
-    locations = {}
-    for cam_name in camera_names:
-        camera = bpy.context.scene.objects[cam_name]
-        locations[cam_name] = np.asarray(camera.matrix_world.to_translation())
-    return locations
-
-
-def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_names: list, **kw):
+def get_camera_location(cam_name: str):
     """
-    Generate multiple locations for multiple cameras according to selected mode.
+    Return 3d location of selected camera
 
-    NOTE: cameras' locations will be offset from their initial location in the scene.
-    This way, the location of a given camera setup (e.g., consisting of multiple cameras) is
-    "rigidly" transformed (notice that cameras will in general rotate), in space.
-    This allow to preserve relative locations within the given setup, e.g., parallel cameras.
+    Args:
+        cam_name(str): name of camera blender object
+
+    Returns:
+        array with location
+    """
+    camera = bpy.context.scene.objects[cam_name]
+    return np.asarray(camera.matrix_world.to_translation())
+
+
+def get_camera_pose(cam_name: str):
+    """
+    Return 3d pose of selected camera
+
+    Args:
+        cam_name(str): name of camera blender object
+
+    Returns:
+        array with 4-dim pose matrix
+    """
+    camera = bpy.context.scene.objects[cam_name]
+    return np.asarray(camera.matrix_world)
+
+
+def generate_multiview_locations(num_locations: int, mode: str, **kw):
+    """
+    Generate multiple 3d locations based on the selected mode
 
     Args:
         num_locations(int): number of locations to generate
         mode(str): mode used to generate locations
-        camera_names(list(str)): list of string with bpy objects camera names
 
     Keywords Args:
         config(Configuration/dict-like)
-        offset(bool): if False, generated locations are not offset with original camera locations. Default: True
+        offset(array(3,)): if given, it is addedd to all generated locations. Default [0, 0, 0]
 
     Returns:
-        locations(dict(array)): dictionary with list of locations for each camera
-        original_locations(dict(array)): dictionary with original camera locations
+        locations(array-like): generated locations
     """
 
-    def get_array_from_str(cfg, name, default):
-        """
-        Get array from a csv string or fallback to default
-
-        Args:
-            cfg(dict-like): configuration struct where to look
-            name(str): config parameter to search for
-            default(array-like): default array value
-
-        Returns:
-            array-like: found in cfg or default
-        """
-        p = cfg.get(name, default)
-        if isinstance(p, str):
-            if p == '':
-                return default
-            p = np.fromstring(p, sep=',')
-        return p
-
-    def get_list_from_str(cfg, name, default):
-        import ast
-        tmp = cfg.get(name, None)
-        if tmp is None:
-            return default
-        alist = ast.literal_eval(tmp)
-        return [np.array(v) for v in alist]
-
-    # camera location
-    original_locations = get_current_cameras_locations(camera_names)
-
     # define supported modes
+    # TODO: register functions
     _available_modes = {
         'random': random_points,
         'bezier': points_on_bezier,
@@ -531,53 +609,170 @@ def generate_multiview_cameras_locations(num_locations: int, mode: str, camera_n
         raise ValueError(f'Selected mode {mode} not supported for multiview locations')
 
     # build dict with available config per each mode
-    mode_cfg = kw.get('config', Configuration())  # get user defined config (if any)
-    _modes_cfgs = {
-        'random': {
-            'base_location': get_array_from_str(mode_cfg, 'base_location', np.zeros(3)),
-            'scale': float(mode_cfg.get('scale', 1))
-        },
-        'bezier': {
-            'p0': get_array_from_str(mode_cfg, 'p0', np.zeros(3)),
-            'p1': get_array_from_str(mode_cfg, 'p1', np.random.randn(3)),
-            'p2': get_array_from_str(mode_cfg, 'p2', np.random.randn(3)),
-            'start': float(mode_cfg.get('start', 0)),
-            'stop': float(mode_cfg.get('stop', 1))
-        },
-        'circle': {
-            'radius': float(mode_cfg.get('radius', 1)),
-            'center': get_array_from_str(mode_cfg, 'center', np.zeros(3))
-        },
-        'wave': {
-            'radius': float(mode_cfg.get('radius', 1)),
-            'center': get_array_from_str(mode_cfg, 'center', np.zeros(3)),
-            'frequency': float(mode_cfg.get('frequency', 1)),
-            'amplitude': float(mode_cfg.get('amplitude', 1))
-        },
-        'viewsphere': {
-            'scale': float(mode_cfg.get('scale', 1)),
-            'bias': tuple(get_array_from_str(mode_cfg, 'bias', [0, 0, 1.5]))
-        },
-        'piecewiselinear': {
-            'control_points': get_list_from_str(mode_cfg, 'points', [np.zeros(3), np.ones(3)])
-        }
-    }
+    mode_cfg = MultiviewModeConfiguration()[mode].right_merge(kw.get('config', Configuration()))
+    # check for given offest
+    offset = kw.get('offset', np.array([0, 0, 0]))
+    # repeat along axis
+    offset = np.repeat(offset.reshape(1, -1), num_locations, axis=0)
+    # generate locations according to selected mode and add offset
+    locations = offset + _available_modes[mode](num_locations, **mode_cfg.todict())
+    return locations
 
-    # generate locations according to selected mode
-    locations = _available_modes[mode](num_locations, **_modes_cfgs[mode])
 
-    # iterate over cameras
-    cameras_locations = {}
-    offset = kw.get('offset', True)
-    for cam_name in camera_names:
+def compute_cameras_poses(camera_groups, config, locations, offset: bool = True):
+    """Given a list of absoluted locations compute camera poses
+    for given list of camera groups
 
-        # log
-        logger.info(f'Generating locations for {cam_name} according to {mode} mode')
+    The methods works differently depending on the camera group type.
+    Currently we support computations for the following types:
+        - `standalone`: floating cameras that are supposed to work on their own (monocular view).
+            In this case, users can specify a center object which is used to track the given list
+            of 3d locations while aiming at the specificed aim object.
+            In addition, diplacement_mm can be used to move the camera left/right wrt to the center location.
+            In this case, if a center object is not given, each camera is used as its center.
 
-        # get location
-        # NOTE: need to copy otherwise we overwrite the array being mutable
-        cameras_locations[cam_name] = np.copy(locations)
-        if offset:
-            cameras_locations[cam_name] += np.copy(original_locations[cam_name])
+        - `non_parallel_stereo`: stereo setup not subject to epipolar constraints.
+            The stero cameras are rotated inwards towards a common aim object.
+            In this case users *must* specify a center object for the group.
+            Camera locations are set relative to the center location. In particular, each camera is displaced along
+            the local x-axis (left-right) of the center object according to the value stored in displacement_mm.
+            Camera rotations track the given aim so that each camera always "look-at" it.
 
-    return cameras_locations, original_locations
+        - `parallel_stereo`: stereo setup subject to epipolar constraints
+            In this case users *must* specify a center for the camera group.
+            The center is used to track the given list of 3d locations while aiming at the specified aim object.
+            Camera rotations are set equal to the center rotation to ensure epipolar constraint between cameras.
+
+        NOTE: `standalone` and `non_parallel_stereo` types behaves similarly. However, while standalone cameras
+        are logically treated as separate, stereo cameras are logically considered as part of the same setup.
+
+    Args:
+        camera_grops([str]): list with names of camera groups
+        config(Configuration): structure with camera config for each group
+        locations([array]): list of absolute 3d location for the center of the camera group
+
+    Opt Args:
+        offset(bool): if True (default), locations are offset by the center group original location
+
+    Returns:
+        cameras_poses(dict): dictionary of poses for each camera in all groups
+
+    NOTE: be careful since the method affects active constraints on the cameras
+    """
+
+    def _apply():
+        # apply constraint
+        dg = bpy.context.evaluated_depsgraph_get()
+        dg.update()
+
+    # init poses dict
+    cameras_poses = {}
+
+    # loop over each camera group
+    for grp in camera_groups:
+        grp_cfg = config[grp]
+
+        cam_aim = grp_cfg.aim
+        cam_type = grp_cfg.type
+        cam_names = grp_cfg.names
+        displacements_mm = grp_cfg.displacements_mm  # This needs to be adjusted
+
+        # init center object container
+        cnt_obj_original = None
+
+        # loop over cameras in group
+        for cam_idx, cam_name in enumerate(cam_names):
+
+            # init list of poses for camera
+            if cam_name not in cameras_poses:
+                cameras_poses[cam_name] = []
+
+            # get center object, if none given (depending on the type),
+            # create an empty and place it on the current camera location
+            cam_center = grp_cfg.center
+            if cam_center == '':
+                if cam_type in ['parallel_stereo', 'non_parallel_stereo']:
+                    raise ValueError(f'Camera group of type "{cam_type}" requires a center object')
+                cam_center = f'Tmp{cam_name}Center'
+                # see if already created otherwise create
+                cnt_obj = blnd.select_object(cam_center)
+                if cnt_obj is None:
+                    # get camera
+                    cam_obj = blnd.select_object(cam_name)
+                    # create empty at camera location
+                    bpy.ops.object.empty_add(
+                        type='PLAIN_AXES',
+                        align='WORLD',
+                        location=cam_obj.matrix_world.to_translation().copy(),
+                        scale=(.1, .1, .1))
+                    bpy.context.active_object.name = cam_center
+                    cnt_obj = blnd.select_object(cam_center)
+                    _apply()
+
+            # select
+            cnt_obj = blnd.select_object(cam_center)
+
+            # clear constraints from camera to allow correct positioning afterwards
+            blnd.select_object(cam_name).constraints.clear()
+
+            # add "track to" constraint to make center "look at" corresponding aim
+            cnt_obj.constraints.clear()  # clear all constraints first
+            cnt_obj.constraints.new(type='TRACK_TO')
+            cnt_obj.constraints['Track To'].target = bpy.data.objects[cam_aim]
+            cnt_obj.constraints['Track To'].track_axis = 'TRACK_NEGATIVE_Z'
+            cnt_obj.constraints['Track To'].up_axis = 'UP_Y'
+            _apply()
+
+            # copy center to avoid overwriting information
+            if cnt_obj_original is None:
+                blnd.select_object(cam_center)
+                bpy.ops.object.duplicate()
+                cnt_obj_original = bpy.context.object
+            else:
+                cnt_obj.matrix_world.col[3][:3] = cnt_obj_original.matrix_world.to_translation().copy()
+                _apply()
+
+            # get center pose
+            M_wld2cnt = cnt_obj.matrix_world
+
+            # get origin offset
+            origin = np.asarray(M_wld2cnt.to_translation().copy()) if offset else np.zeros(3,)
+
+            # loop over all desired locations
+            for location in locations:
+
+                # move center to desired location
+                M_wld2cnt.col[3][:3] = origin + location
+                _apply()
+
+                # for each location, compute the absolute camera pose depending on cam_type
+                if cam_type in ['standalone', 'non_parallel_stereo']:
+                    # get displacement in center coordinats
+                    M_cnt2cam = Matrix()
+                    M_cnt2cam[0][3] = 1e-3 * displacements_mm[cam_idx]
+                    # compute translation
+                    t_wld2cam = (M_wld2cnt @ M_cnt2cam).to_translation()
+                    # shift camera: this modifies also the rotations since the center tracks the aim
+                    M_wld2cnt.col[3][:3] = t_wld2cam
+                    _apply()
+                    # save pose
+                    cameras_poses[cam_name].append(M_wld2cnt.copy())
+
+                elif cam_type == 'parallel_stereo':
+                    # get camera pose in center coordinate system
+                    M_cnt2cam = Matrix()
+                    M_cnt2cam[0][3] = 1e-3 * displacements_mm[cam_idx]
+                    # compute camera pose in world coordiante system
+                    M_wld2cam = M_wld2cnt @ M_cnt2cam
+                    # save camera pose
+                    cameras_poses[cam_name].append(M_wld2cam)
+
+                else:
+                    raise ValueError(f'Given camera type "{cam_type}" is not supported.')
+
+        # make sure to clear the constraints
+        # This is needed since in case cnt_obj == camera the active constraint could
+        # compromise positioning of the camera
+        cnt_obj.constraints.clear()
+
+    return cameras_poses
