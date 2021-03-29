@@ -53,7 +53,7 @@ class SimpleObjectConfiguration(abr_scenes.BaseConfiguration):
 
 
 @abr_scenes.register(name=_scene_name, type='scene')
-class SimpleObject(interfaces.ABRScene):
+class SimpleObject(interfaces.IScene):
     """Simple scene with a single object in which we have three point lighting and can set
     some background image.
     """

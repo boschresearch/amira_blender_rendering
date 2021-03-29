@@ -86,7 +86,7 @@ class StaticSceneConfiguration(abr_scenes.BaseConfiguration):
 
 
 @abr_scenes.register(name=_scene_name, type='scene')
-class StaticScene(interfaces.ABRScene):
+class StaticScene(interfaces.IScene):
 
     def __init__(self, **kwargs):
         super(StaticScene, self).__init__()

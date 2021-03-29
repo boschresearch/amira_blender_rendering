@@ -100,7 +100,7 @@ class WorkstationScenariosConfiguration(abr_scenes.BaseConfiguration):
 
 
 @abr_scenes.register(name=_scene_name, type='scene')
-class WorkstationScenarios(interfaces.ABRScene):
+class WorkstationScenarios(interfaces.IScene):
     """base class for all workstation scenarios"""
 
     def __init__(self, **kwargs):
