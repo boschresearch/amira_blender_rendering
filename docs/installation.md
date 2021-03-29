@@ -8,7 +8,7 @@ We suggest to first try w/o doing so and resort to it if nothing else works.
 
 **Tested requirements**
 
-The following instructions have been tested for a variety of environements:
+The following instructions have been tested for a variety of environments:
 
 * OS: Ubuntu 18.04 (Bionic Beaver) and 20.04 (Focal Fossa)
 * Blender: >=2.80, <=2.91.2

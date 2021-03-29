@@ -4,7 +4,7 @@ Want to contribute? That's great! Any contribution is welcome!
 You can do that by:
 
 * [Submitting Issues](#issues) in the GitHub issue tracking system
-* [Contributing Code`](#code) using the standard GitHub pull request model
+* [Contributing Code](#code) using the standard GitHub pull request model
 
 For large contributions we do encourage you to file a [ticket](#issues)
 in the GitHub issue tracking system prior to any development to coordinate with
