@@ -152,7 +152,7 @@ class BaseABRScene(IScene):
         NOTE: do this after setting up the scene otherwise values here will be ignored
         """
         self.renderman.setup_renderer(
-            'CYCLES',  # TODO: this should not be hardcoded
+            self.config.render_setup.backend,
             self.config.render_setup.integrator,
             self.config.render_setup.denoising,
             self.config.render_setup.samples,

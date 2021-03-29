@@ -146,7 +146,7 @@ class RenderManager(abr_scenes.BaseSceneManager):
             results_cv.add_result(render_result_cv)
         self.save_annotations(dirinfo, base_filename, results_gl, results_cv)
 
-    def setup_renderer(self, engine: str, integrator: str, enable_denoising: bool, samples: int, motion_blur: bool):
+    def setup_renderer(self, backend: str, integrator: str, enable_denoising: bool, samples: int, motion_blur: bool):
         """Setup blender CUDA rendering, and specify number of samples per pixel to
         use during rendering. If the setting render_setup.samples is not set in the
         configuration, the function defaults to 128 samples per image.
@@ -159,11 +159,14 @@ class RenderManager(abr_scenes.BaseSceneManager):
             motion_blur(bool): toggle motion blur
         """
         blnd.activate_cuda_devices()
-        
-        if engine != "CYCLES":
-            raise ValueError('Currently we support only CYCLES as render engine')
 
-        bpy.context.scene.render.engine = engine
+        if 'cycles' in backend.lower():
+            backend = 'CYCLES'
+
+        if backend != 'CYCLES':
+            raise ValueError('Currently we support only CYCLES as render backend')
+
+        bpy.context.scene.render.engine = backend
 
         # determine which path tracer is setup in the blender file
         if integrator == 'BRANCHED_PATH':
