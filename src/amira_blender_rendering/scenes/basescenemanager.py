@@ -67,6 +67,36 @@ class BaseSceneManager():
 
         # setup link (doesn't matter if already exists, won't duplicate)
         tree.links.new(n_envtex.outputs['Color'], nodes['Background'].inputs['Color'])
+    
+    def set_environment_texture_finite_world(self, obj_name, filepath):
+        """Set a specific environment texture for the scene on a 'finite' world
+        identified but a given object name.
+        That is, instead of setting the texture to the world node, the texture is
+        set to the internal surface of the given object (usually being a sphere, or a cube-like shape)
+        """
+        # TODO: finish implementation
+        raise NotImplementedError
+
+        # check if path exists or not
+        if not os.path.exists(filepath):
+            self.logger.error(f"Path {filepath} to environment texture does not exist.")
+            return
+
+        # TODO: currently the texture is added to the external surface
+        tree = bpy.data.objects[obj_name].active_material.node_tree
+        nodes = tree.nodes
+        if 'Finite World Image Texture' not in nodes:
+            n_objtex = nodes.new('ShaderNodeTexImage')
+            # change default name
+            n_objtex.name = 'Finite World Image Texture'
+        n_objtex = nodes['Finite World Image Texture']
+
+        # load and assign image
+        img = blnd.load_img(filepath)
+        n_objtex.image = img
+
+        # link to color output
+        tree.links.new(n_objtex.outputs['Color'], nodes['Principled BSDF'].inputs['Base Color'])
 
     def set_object_texture(self, obj_name: str, filepath: str):
         """Set a specific (image) texture for the specified object.
