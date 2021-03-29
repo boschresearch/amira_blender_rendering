@@ -26,6 +26,7 @@ import copy
 import argparse
 import configparser
 import ast
+import numpy as np
 
 
 # NOTE: the functions and classes below were taken from amira_perception. Make
@@ -33,6 +34,34 @@ import ast
 #       restricted to such functionality
 #
 # NOTE: We do not use the logging classes in here
+
+
+def get_array_from_str(cfg, name, default):
+    """
+    Get array from a csv string or fallback to default
+
+    Args:
+        cfg(dict-like): configuration struct where to look
+        name(str): config parameter to search for
+        default(array-like): default array value
+
+    Returns:
+        array-like: found in cfg or default
+    """
+    p = cfg.get(name, default)
+    if isinstance(p, str):
+        if p == '':
+            return default
+        p = np.fromstring(p, sep=',')
+    return p
+
+
+def get_list_from_str(cfg, name, default):
+    tmp = cfg.get(name, None)
+    if tmp is None:
+        return default
+    alist = ast.literal_eval(tmp)
+    return [np.array(v) for v in alist]
 
 
 def flatten(lst):
@@ -731,6 +760,9 @@ class Configuration():
             else:
                 self[k] = right[k]
         return self
+
+    def todict(self):
+        return self._dict.copy()
 
 
 class Filter:
