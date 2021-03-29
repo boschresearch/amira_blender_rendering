@@ -24,6 +24,7 @@ from mathutils import Vector
 
 import os
 import numpy as np
+import cv2
 
 try:
     import ujson as json
@@ -41,7 +42,7 @@ from amira_blender_rendering.math.conversions import bu_to_mm
 from amira_blender_rendering.interfaces import PoseRenderResult, ResultsCollection
 from amira_blender_rendering.postprocessing import boundingbox_from_mask
 from amira_blender_rendering.utils.logging import get_logger
-from amira_blender_rendering.utils.io import read_numpy_image_buffer
+# from amira_blender_rendering.utils.io import read_numpy_image_buffer
 # from amira_blender_rendering.utils.converters import to_PASCAL_VOC
 
 logger = get_logger()
@@ -57,7 +58,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
         super(RenderManager, self).__init__()
         self.unit_conversion = unit_conversion
 
-    def postprocess(self, dirinfo, base_filename, camera, objs, zeroing, **kwargs):
+    def postprocess(self, dirinfo, base_filename: str, camera, objs: list, zeroing, depth_scale: float,
+                    visibility_from_mask: bool, **kwargs):
         """Postprocessing the scene.
 
         This step will compute all the data that is relevant for
@@ -70,13 +72,16 @@ class RenderManager(abr_scenes.BaseSceneManager):
             camera(bpy.types.Camera): active camera object
             objs(list): list of target objects
             zeroing(np.array): array for zeroing camera rotation
+            depth_scale(flaot): scale factor for depth map
+            visibility_from_mask(bool): if True, visibility information for objects are adjusted
+                                        based on mask information. See self.build_render_result
 
-        Kwargs Args:
-            postprocess_config(Configuration): postprocess specific config.
-                See abr/scenes/baseconfiguration and scene configs for specific configuration values.
+        KwArgs:
+            camera_group_config(Configuration): configuration for group to which given camera owns.
+                                                See abr/utils/camera/CameraGroupConfiguration.
         """
         # get postprocess specific configs
-        postprocess_config = kwargs.get('postprocess_config', abr_scenes.BaseConfiguration().postprocess)
+        camera_config = kwargs.get('camera_config', None)
 
         # camera matrix
         K_cam = np.asarray(camera_utils.get_calibration_matrix(bpy.context.scene, camera.data))
@@ -106,35 +111,31 @@ class RenderManager(abr_scenes.BaseSceneManager):
             res_x=bpy.context.scene.render.resolution_x,
             res_y=bpy.context.scene.render.resolution_y,
             calibration_matrix=K_cam,
-            scale=postprocess_config.depth_scale)
+            scale=depth_scale)
 
-        # NOTE: this assumes the camera(s) for which the disparity is computed
-        # is(are) the correct one(s). That is it has the correct baseline according to
-        # the rendered scene
-        if postprocess_config.compute_disparity:
-            # check whether current camera name contains any of the given
-            # string for parallel setup
-            if any([c for c in postprocess_config.parallel_cameras if c in camera.name]):
-                # use precomputed depth if available, otherwise use range map
-                dirpath = os.path.join(dirinfo.images.base_path, 'disparity')
-                if not os.path.exists(dirpath):
-                    os.mkdir(dirpath)
-                fpath_disparity = os.path.join(dirpath, f'{base_filename}.png')
-                # compute map
-                camera_utils.compute_disparity_from_z_info(fpath_depth,
-                                                           fpath_disparity,
-                                                           baseline_mm=postprocess_config.parallel_cameras_baseline_mm,
-                                                           calibration_matrix=K_cam,
-                                                           res_x=bpy.context.scene.render.resolution_x,
-                                                           res_y=bpy.context.scene.render.resolution_y,
-                                                           scale=postprocess_config.depth_scale)
+        # NOTE: it is assumed that each camera group contains the correct setup
+        # to compute disparity information
+        if camera_config.compute_disparity:
+            # use precomputed depth if available, otherwise use range map
+            dirpath = os.path.join(dirinfo.images.base_path, 'disparity')
+            if not os.path.exists(dirpath):
+                os.mkdir(dirpath)
+            fpath_disparity = os.path.join(dirpath, f'{base_filename}.png')
+            # compute map
+            camera_utils.compute_disparity_from_z_info(fpath_depth,
+                                                       fpath_disparity,
+                                                       baseline_mm=camera_config.baseline_mm,
+                                                       calibration_matrix=K_cam,
+                                                       res_x=bpy.context.scene.render.resolution_x,
+                                                       res_y=bpy.context.scene.render.resolution_y,
+                                                       scale=depth_scale)
 
         # compute bounding boxes and save annotations
         results_gl = ResultsCollection()
         results_cv = ResultsCollection()
         for obj in objs:
             render_result_gl, render_result_cv = self.build_render_result(
-                obj, camera, zeroing, postprocess_config.visibility_from_mask)
+                obj, camera, zeroing, visibility_from_mask)
             if obj['visible']:
                 results_gl.add_result(render_result_gl)
                 results_cv.add_result(render_result_cv)
@@ -145,14 +146,24 @@ class RenderManager(abr_scenes.BaseSceneManager):
             results_cv.add_result(render_result_cv)
         self.save_annotations(dirinfo, base_filename, results_gl, results_cv)
 
-    def setup_renderer(self, integrator: str, enable_denoising: bool, samples: int, motion_blur: bool):
+    def setup_renderer(self, engine: str, integrator: str, enable_denoising: bool, samples: int, motion_blur: bool):
         """Setup blender CUDA rendering, and specify number of samples per pixel to
         use during rendering. If the setting render_setup.samples is not set in the
         configuration, the function defaults to 128 samples per image.
+
+        Args:
+            engine(str): engine name
+            integrator(str): integrator type
+            enable_denoising(bool): toggle denoising
+            samples(int): number of light samples
+            motion_blur(bool): toggle motion blur
         """
         blnd.activate_cuda_devices()
-        # TODO: this hardcodes cycles, but we want a user to specify this
-        bpy.context.scene.render.engine = "CYCLES"
+        
+        if engine != "CYCLES":
+            raise ValueError('Currently we support only CYCLES as render engine')
+
+        bpy.context.scene.render.engine = engine
 
         # determine which path tracer is setup in the blender file
         if integrator == 'BRANCHED_PATH':
@@ -346,7 +357,8 @@ class RenderManager(abr_scenes.BaseSceneManager):
         Raises:
             ValueError if an empty mask is given
         """
-        mask = read_numpy_image_buffer(fname_mask)
+        # mask = read_numpy_image_buffer(fname_mask)
+        mask = cv2.imread(fname_mask, cv2.IMREAD_GRAYSCALE)
         return boundingbox_from_mask(mask)
 
     def reorder_bbox(self, aabb, order=[1, 0, 2, 3, 5, 4, 6, 7]):

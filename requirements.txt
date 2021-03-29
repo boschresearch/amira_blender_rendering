@@ -9,3 +9,6 @@ flake8
 mkdocs
 #mkdocs-versioning
 mkdocs-material
+
+# temporary for read/write
+opencv-python
