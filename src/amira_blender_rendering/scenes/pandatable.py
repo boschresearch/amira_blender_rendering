@@ -545,7 +545,6 @@ class PandaTable(abr_scenes.BaseABRScene):
         if self.config.debug.enabled:
             self._debug_plot(camera_names, cameras_poses)
 
-        exit()
         # control loop for the number of static scenes to render
         scn_counter = 0
         while scn_counter < self.config.dataset.scene_count:
