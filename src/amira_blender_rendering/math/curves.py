@@ -198,36 +198,41 @@ def random_points(num_points, base_location, scale):
     return points
 
 
-def plot_points(points, camera=None, plot_axis: bool = False, scatter: bool = False):
+def plot_transforms(transforms, plot_axis: bool = False, scatter: bool = False):
     """
-    3D plot of generated points
+    Plot list of given transforms.
+    Depending on given arguments, the method plots:
+        - only the 3d location of the transform
+        - a coordinate system representing the entire transform (rot+loc)
+
+    Args:
+        transforms(list(array)): list containing 3d transform (4-dim Matrix)
+        plot_axis(bool): if true, plot coordinate system representing complete transform
+        scatter(bool): if true, generate only a scatter plot of points. Defatul: False
+
+    NOTE: this function will not show if using blender python distro since matplotlib is installed
+    in headless mode.
+    For debugging purposes and making this function work, it is necessary to setup ABR using a
+    dedicated virtualenvironemnt.
     """
     import matplotlib.pyplot as plt
+    # This is not directly called but needed for the 3d plot
     from mpl_toolkits.mplot3d import Axes3D  # noqa
+
+    # collect tranforms
+    rotations = []
+    translations = []
+    for transform in transforms:
+        # extract transform
+        R = np.asarray(transform.to_3x3().normalized())
+        t = np.asarray(transform.to_translation())
+        rotations.append(R)
+        translations.append(t)
 
     fig = plt.figure()
     ax = fig.gca(projection='3d')
-    if scatter:
-        ax.scatter(points[:, 0], points[:, 1], points[:, 2])
-    else:
-        ax.plot(points[:, 0], points[:, 1], points[:, 2])
 
-    # collect tranforms
-    if camera is not None and plot_axis:
-        import bpy
-        rotations = []
-        translations = []
-        for loc in points:
-            # set location
-            camera.location = loc
-            # update graph
-            bpy.context.evaluated_depsgraph_get().update()
-            # extract transform
-            R = np.asarray(camera.matrix_world.to_3x3().normalized())
-            t = np.asarray(camera.matrix_world.to_translation())
-            rotations.append(R)
-            translations.append(t)
-
+    if plot_axis:
         length = 0.05
         x_axis_0 = np.float32([length, 0, 0])
         y_axis_0 = np.float32([0, length, 0])
@@ -247,4 +252,12 @@ def plot_points(points, camera=None, plot_axis: bool = False, scatter: bool = Fa
             ax.plot([t[0], z_axis[0]], [t[1], z_axis[1]], [t[2], z_axis[2]], color='b')
             # virtual neg z
             ax.plot([t[0], neg_z_axis[0]], [t[1], neg_z_axis[1]], [t[2], neg_z_axis[2]], color='b', linestyle='--')
+    
+    else:
+        points = np.asarray(translations)
+        if scatter:
+            ax.scatter(points[:, 0], points[:, 1], points[:, 2])
+        else:
+            ax.plot(points[:, 0], points[:, 1], points[:, 2])
+
     plt.show()
