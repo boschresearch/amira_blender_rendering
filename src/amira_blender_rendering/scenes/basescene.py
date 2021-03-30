@@ -230,6 +230,32 @@ class BaseABRScene(IScene):
         # first get the camera name. this depends on the scene (blend file)
         bpy.context.scene.camera = bpy.context.scene.objects[cam_name]
 
+    def set_camera_pose(self, name, pose):
+        """
+        Set world pose for selected camera
+
+        Args:
+            name(str): name of bpy camera object
+            location(Matrix): camera pose in world frame
+        """
+        # select camera
+        cam = blnd.select_object(name)
+        # set pose
+        cam.matrix_world = pose
+
+    def set_camera_location(self, name, location):
+        """
+        Set locations for selected cameras
+
+        Args:
+            name(str): camera name
+            location(array-like): camera location
+        """
+        # select camera
+        cam = blnd.select_object(name)
+        # set pose
+        cam.location = location
+
     def dump_config(self):
         """Dump configuration to a file in the output folder(s).
         
@@ -246,7 +272,7 @@ class BaseABRScene(IScene):
     def generate_dataset(self):
         raise NotImplementedError()
 
-    def teardown():
+    def teardown(self):
         """Tear down scene. By default we do nothing.
         NOTE: overwrite as necessary in your custom scene
         """
