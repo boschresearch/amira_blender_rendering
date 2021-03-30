@@ -35,7 +35,6 @@ from amira_blender_rendering.dataset import get_environment_textures
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 import amira_blender_rendering.utils.blender as blnd
-from amira_blender_rendering.datastructures import Configuration
 from amira_blender_rendering.utils.annotation import ObjectBookkeeper
 
 
@@ -73,9 +72,6 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
         # multiview configuration (if implemented)
         self.add_param('multiview_setup.mode', '',
                        'Selected mode to generate view points, i.e., random, bezier, viewsphere')
-        self.add_param('multiview_setup.mode_config', Configuration(), 'Mode specific configuration')
-        self.add_param('multiview_setup.offset', True,
-                       'If False, multi views are not offset with initial camera location. Default: True')
 
         # specific debug config
         self.add_param('debug.plot', False, 'If True, in debug mode, enable simple visual debug')
@@ -95,7 +91,7 @@ class PandaTable(abr_scenes.BaseABRScene):
         self.config = kwargs.get('config', PandaTableConfiguration())
         # this check that the given configuration is (or inherits from) of the correct type
         if not isinstance(self.config, PandaTableConfiguration):
-            raise RuntimeError(f"Invalid configuration of type {type(self.config)} for class PandaTable")
+            raise RuntimeError(f"Invalid configuration of type {type(self.config)} for class {_scene_name}")
                 
         # determine if we are rendering in multiview mode
         self.render_mode = kwargs.get('render_mode', 'default')
@@ -440,19 +436,6 @@ class PandaTable(abr_scenes.BaseABRScene):
             obj_txt_filepath = expandpath(random.choice(self.objects_textures))
             self.renderman.set_object_texture(obj_name, obj_txt_filepath)
 
-    def set_camera_pose(self, name, pose):
-        """
-        Set world pose for selected camera
-
-        Args:
-            name(str): name of bpy camera object
-            location(Matrix): camera pose in world frame
-        """
-        # select camera
-        cam = blnd.select_object(name)
-        # set pose
-        cam.matrix_world = pose
-
     def test_visibility(self, cam_name: str, cam_poses: list):
         """Test whether given camera sees target objects from a given (list of) pose(s)
         and store visibility level/label for each target object
@@ -665,10 +648,6 @@ class PandaTable(abr_scenes.BaseABRScene):
 
         return True
 
-    def teardown(self):
-        """Tear down the scene"""
-        # nothing to do
-        pass
 
     def _debug_plot(self, camera_names, cameras_poses):
         """Support method to plot during debug
