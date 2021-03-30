@@ -57,7 +57,7 @@ class PandaTableConfiguration(abr_scenes.BaseConfiguration):
         self.add_param('scene_setup.finite_world_object', '',
                        'If given, the selected object, usually a sphere- or cube-like mesh '
                        'is used to "simulate" a finite world instead of HDR lighting')
-        self.add_param('scene_setup.camera_groups', [], 'List of camera groups, each of which with its own config params')
+        self.add_param('scene_setup.camera_groups', [], 'List of camera groups, each of which with its own configs')
         self.add_param('scene_setup.forward_frames', 25, 'Number of frames in physics forward-simulation')
 
         # scenario: target objects

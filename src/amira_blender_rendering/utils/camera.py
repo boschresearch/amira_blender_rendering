@@ -76,7 +76,7 @@ class CameraGroupConfiguration(Configuration):
         )
         self.add_param(
             'type',
-            'default',
+            'standalone',
             'Type of camera group. Based on this cameara operations are handled differently'
         )
         self.add_param(
@@ -770,6 +770,10 @@ def compute_cameras_poses(camera_groups, config, locations, offset: bool = True)
                 else:
                     raise ValueError(f'Given camera type "{cam_type}" is not supported.')
 
+        # restore center object (since it could be the camera)
+        cnt_obj.matrix_world.col[3][:3] = cnt_obj_original.matrix_world.to_translation().copy()
+        _apply()
+        
         # make sure to clear the constraints
         # This is needed since in case cnt_obj == camera the active constraint could
         # compromise positioning of the camera
