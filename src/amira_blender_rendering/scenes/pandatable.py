@@ -648,7 +648,6 @@ class PandaTable(abr_scenes.BaseABRScene):
 
         return True
 
-
     def _debug_plot(self, camera_names, cameras_poses):
         """Support method to plot during debug
 

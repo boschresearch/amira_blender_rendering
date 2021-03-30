@@ -34,13 +34,10 @@ from math import ceil, log
 
 from amira_blender_rendering.utils import camera as camera_utils
 from amira_blender_rendering.utils.io import expandpath
-from amira_blender_rendering.utils.logging import get_logger
 from amira_blender_rendering.dataset import get_environment_textures, build_directory_info, dump_config
 import amira_blender_rendering.scenes as abr_scenes
 import amira_blender_rendering.math.geometry as abr_geom
 import amira_blender_rendering.utils.blender as blnd
-import amira_blender_rendering.interfaces as interfaces
-from amira_blender_rendering.datastructures import Configuration
 from amira_blender_rendering.utils.annotation import ObjectBookkeeper
 
 
@@ -60,9 +57,7 @@ class StaticSceneConfiguration(abr_scenes.BaseConfiguration):
                        'Path to .blend file with modeled scene')
         self.add_param('scene_setup.environment_textures', '$AMIRA_DATASETS/OpenImagesV4/Images',
                        'Path to background images / environment textures')
-        self.add_param('scene_setup.cameras',
-                       ['Camera', 'StereoCamera.Left', 'StereoCamera.Right', 'Camera.FrontoParallel.Left',
-                        'Camera.FrontoParallel.Right'], 'Cameras to render')
+        self.add_param('scene_setup.camera_groups', [], 'List if camera groups to render, each with its own configs')
 
         # scenario: target objects
         self.add_param('scenario_setup.target_objects', [],
@@ -74,10 +69,7 @@ class StaticSceneConfiguration(abr_scenes.BaseConfiguration):
         # multiview configuration (if implemented)
         self.add_param('multiview_setup.mode', '',
                        'Selected mode to generate view points, i.e., random, bezier, viewsphere')
-        self.add_param('multiview_setup.mode_config', Configuration(), 'Mode specific configuration')
-        self.add_param('multiview_setup.offset', True,
-                       'If False, multi views are not offset with initial camera location. Default: True')
-        
+
         # specific debug config
         self.add_param('debug.plot', False, 'If True, in debug mode, enable simple visual debug')
         self.add_param('debug.plot_axis', False, 'If True, in debug-plot mode, plot camera coordinate systems')
@@ -86,16 +78,10 @@ class StaticSceneConfiguration(abr_scenes.BaseConfiguration):
 
 
 @abr_scenes.register(name=_scene_name, type='scene')
-class StaticScene(interfaces.IScene):
+class StaticScene(abr_scenes.BaseABRScene):
 
     def __init__(self, **kwargs):
         super(StaticScene, self).__init__()
-        self.logger = get_logger()
-
-        # we do composition here, not inheritance anymore because it is too
-        # limiting in its capabilities. Using a render manager is a better way
-        # to handle compositor nodes
-        self.renderman = abr_scenes.RenderManager()
 
         # extract configuration, then build and activate a split config
         self.config = kwargs.get('config', StaticSceneConfiguration())
@@ -105,15 +91,18 @@ class StaticScene(interfaces.IScene):
         
         # determine if we are rendering in multiview mode
         self.render_mode = kwargs.get('render_mode', 'default')
-        if self.render_mode not in ['default', 'multiview']:
-            self.logger.warn(f'render mode "{self.render_mode}" not supported. Falling back to "default"')
-            self.render_mode = 'default'
+        self.check_supported_render_modes(self.render_mode, ['default', 'multiview'])
         
         # we might have to post-process the configuration
         self.postprocess_config()
 
-        # setup directory information for each camera
-        self.setup_dirinfo()
+        # handle multiple camera groups
+        self.load_camera_group_configs()
+
+        # setup directory information for each camera in each grop
+        for cam_grp in self.config.scene_setup.camera_groups:
+            for cam_name in self.config[cam_grp].names:
+                self.setup_dirinfo(cam_name)
 
         # setup the scene, i.e. load it from file
         self.setup_scene()
@@ -121,11 +110,7 @@ class StaticScene(interfaces.IScene):
         # setup the renderer. do this _AFTER_ the file was loaded during
         # setup_scene(), because otherwise the information will be taken from
         # the file, and changes made by setup_renderer ignored
-        self.renderman.setup_renderer(
-            self.config.render_setup.integrator,
-            self.config.render_setup.denoising,
-            self.config.render_setup.samples,
-            self.config.render_setup.motion_blur)
+        self.setup_renderer()
 
         # grab environment textures
         self.setup_environment_textures()
@@ -143,7 +128,7 @@ class StaticScene(interfaces.IScene):
         self.objs = self.setup_objects(self.config.scenario_setup.target_objects)
 
         # finally, setup the compositor
-        self.setup_compositor()
+        self.setup_compositor(self.objs, color_depth=self.config.render_setup.color_depth)
 
     def postprocess_config(self):
 
@@ -188,31 +173,21 @@ class StaticScene(interfaces.IScene):
 
         _convert_scaling('ply_scale', self.config.parts)
         _convert_scaling('blend_scale', self.config.parts)
-
-    def setup_dirinfo(self):
-        """Setup directory information for all cameras.
-
-        This will be required to setup all path information in compositor nodes
+    
+    def setup_cameras(self):
+        """Setup all cameras in all selected camera groups.
+        Each camera group has the same config.
         """
-        # compute directory information for each of the cameras
-        self.dirinfos = list()
-        for cam in self.config.scene_setup.cameras:
-            # paths are set up as: base_path + CameraName
-            camera_base_path = f"{self.config.dataset.base_path}/{cam}"
-            dirinfo = build_directory_info(camera_base_path)
-            self.dirinfos.append(dirinfo)
-
-    def setup_scene(self):
-        """Set up the entire scene.
-
-        Here, we simply load the main blender file from disk.
-        """
-        bpy.ops.wm.open_mainfile(filepath=expandpath(self.config.scene_setup.blend_file))
-        # we need to hide all dropboxes and dropzones in the viewport, otherwise
-        # occlusion testing will not work, because blender's ray_cast method
-        # returns hits no empties!
-        self.logger.info("Hiding all dropzones from viewport")
-        bpy.data.collections['Dropzones'].hide_viewport = True
+        for grp_name in self.config.scene_setup.camera_groups:
+            # get config for the group
+            grp_config = self.config[grp_name]
+            # loop over each camera in the group
+            for cam_name in grp_config.names:
+                # use default method from parent to setup camera
+                self.setup_camera(cam_name,
+                                  grp_config,
+                                  width=self.config.render_setup.width,
+                                  height=self.config.render_setup.height)
 
     def setup_render_output(self):
         """setup render output dimensions. This is not set for a specific camera,
@@ -223,54 +198,37 @@ class StaticScene(interfaces.IScene):
         """
 
         # first set the resolution if it was specified in the configuration
-        if (self.config.camera_info.width > 0) and (self.config.camera_info.height > 0):
-            bpy.context.scene.render.resolution_x = self.config.camera_info.width
-            bpy.context.scene.render.resolution_y = self.config.camera_info.height
+        if (self.config.render_setup.width > 0) and (self.config.render_setup.height > 0):
+            bpy.context.scene.render.resolution_x = self.config.render_setup.width
+            bpy.context.scene.render.resolution_y = self.config.render_setup.height
 
         # Setting the resolution can have an impact on the calibration matrix
         # that was used for rendering. Hence, we will store the effective
         # calibration matrix K alongside. Because we use identical cameras, we
         # can extract this from one of the cameras
         self.get_effective_intrinsics()
-
+    
     def get_effective_intrinsics(self):
-        """Get the effective intrinsics that were used during rendering.
+        """Get the effective intrinsics (for each camera grop) that were used during rendering.
 
         This function will copy original values for intrinsic, sensor_width, and
         focal_length, and fov, to the configuration an prepend them with 'original_'. This
         way, they are available in the dataset later on
         """
-
-        cam_str = self.config.scene_setup.cameras[0]
-        cam_name = self.get_camera_name(cam_str)
-        cam = bpy.data.objects[cam_name].data
-
-        # get the effective intrinsics
-        effective_intrinsic = camera_utils.get_intrinsics(bpy.context.scene, cam)
-        # store in configuration (and backup original values)
-        if self.config.camera_info.intrinsic is not None:
-            self.config.camera_info.original_intrinsic = self.config.camera_info.intrinsic
-        else:
-            self.config.camera_info.original_intrinsic = ''
-        self.config.camera_info.intrinsic = list(effective_intrinsic)
-
-    def setup_cameras(self):
-        """Set up all cameras.
-
-        Note that this does not select a camera for which to render. This will
-        be selected elsewhere.
-        """
-        scene = bpy.context.scene
-        for cam in self.config.scene_setup.cameras:
-            # first get the camera name. This depends on the scene (blend file)
-            cam_name = self.get_camera_name(cam)
-            # select the camera. Blender often operates on the active object, to
-            # make sure that this happens here, we select it
-            blnd.select_object(cam_name)
-            # modify camera according to the intrinsics
-            blender_camera = bpy.data.objects[cam_name].data
-            # set the calibration matrix
-            camera_utils.set_camera_info(scene, blender_camera, self.config.camera_info)
+        for cam_group in self.config.scene_setup.camera_groups:
+            # get group configs
+            grp_config = self.config[cam_group]
+            # pick one camera from the group. They all have the same intrinsics
+            cam_name = grp_config.names[0]
+            cam = bpy.data.objects[cam_name].data
+            # get the effective intrinsics
+            effective_intrinsic = camera_utils.get_intrinsics(bpy.context.scene, cam)
+            # store in configuration (and backup original values)
+            if grp_config.intrinsic is not None:
+                grp_config.original_intrinsic = grp_config.intrinsic
+            else:
+                grp_config.original_intrinsic = ''
+            grp_config.intrinsic = list(effective_intrinsic)
 
     def setup_objects(self, objects: list):
         """This method retrieves objects info from the loaded bledner file.
@@ -346,13 +304,6 @@ class StaticScene(interfaces.IScene):
         
         return objs
 
-    def setup_compositor(self):
-        self.renderman.setup_compositor(self.objs, color_depth=self.config.render_setup.color_depth)
-
-    def setup_environment_textures(self):
-        # get list of environment textures
-        self.environment_textures = get_environment_textures(self.config.scene_setup.environment_textures)
-
     def setup_textured_objects(self):
         # get list of textures
         self.objects_textures = get_environment_textures(self.config.scenario_setup.objects_textures)
@@ -363,6 +314,7 @@ class StaticScene(interfaces.IScene):
                 self.config.scenario_setup.textured_objects.remove(name)
 
     def randomize_environment_texture(self):
+        # TODO: finit world object (also in PandaTable)
         # set some environment texture, randomize, and render
         env_txt_filepath = expandpath(random.choice(self.environment_textures))
         self.renderman.set_environment_texture(env_txt_filepath)
@@ -372,49 +324,33 @@ class StaticScene(interfaces.IScene):
             obj_txt_filepath = expandpath(random.choice(self.objects_textures))
             self.renderman.set_object_texture(obj_name, obj_txt_filepath)
 
-    def activate_camera(self, cam_name: str):
-        # first get the camera name. this depends on the scene (blend file)
-        bpy.context.scene.camera = bpy.context.scene.objects[f"{cam_name}"]
-
-    def set_camera_location(self, name, location):
-        """
-        Set locations for selected cameras
-
-        Args:
-            name(str): camera name
-            location(array-like): camera location
-        """
-        # select camera
-        blnd.select_object(name)
-        # set pose
-        bpy.data.objects[name].location = location
-
-    def get_camera_name(self, cam_str):
-        """Get bpy camera name from camera string in config. This depends on the loaded blend file"""
-        return f"{cam_str}"
-
-    def test_visibility(self, camera_name: str, locations: np.array):
-        """Test whether given camera sees all target objects
+    def test_visibility(self, cam_name: str, cam_poses: list):
+        """Test whether given camera sees target objects from a given (list of) pose(s)
         and store visibility level/label for each target object
         
         Args:
-            camera(str): selected camera name
-            locations(list): list of locations to check. If None, check current camera location
+            cam_name(str): selected camera name
+            cam_poses([Matrix]): list of poses to check.
+
+        Returns:
+            bool: True if all objects are visible from all viewpoints, False otherwise.
+        
+        NOTE: objects information are also updated
         """
-
         # grep camera object from name
-        camera = bpy.context.scene.objects[camera_name]
+        camera = bpy.context.scene.objects[cam_name]
 
-        # make sure to work with multi-dim array
-        if locations.shape == (3,):
-            locations = np.reshape(locations, (1, 3))
+        # if a single pose if given, convert to list
+        cam_poses = [cam_poses] if not isinstance(cam_poses, list) else cam_poses
         
         # loop over locations
-        for i_loc, location in enumerate(locations):
-            camera.location = location
+        for pose in cam_poses:
+            camera.matrix_world = pose
 
             any_not_visible_or_occluded = False
             for obj in self.objs:
+                # NOTE: the dependency graph is updates inside the test
+                # to make sure the pose takes effect
                 not_visible_or_occluded = abr_geom.test_occlusion(
                     bpy.context.scene,
                     bpy.context.scene.view_layers['View Layer'],
@@ -436,7 +372,7 @@ class StaticScene(interfaces.IScene):
             if any_not_visible_or_occluded:
                 return False
 
-        # --> all objects are visible (from all locations): return True
+        # --> all objects are visible (from all view points): return True
         return True
 
     def generate_dataset(self):
@@ -462,47 +398,25 @@ class StaticScene(interfaces.IScene):
             return False
         scn_format_width = int(ceil(log(self.config.dataset.scene_count, 10)))
         
-        camera_names = [self.get_camera_name(cam_str) for cam_str in self.config.scene_setup.cameras]
-        if self.render_mode == 'default':
-            cameras_locations = camera_utils.get_current_cameras_locations(camera_names)
-            for cam_name, cam_location in cameras_locations.items():
-                cameras_locations[cam_name] = np.reshape(cam_location, (1, 3))
-        
-        elif self.render_mode == 'multiview':
-            cameras_locations, _ = camera_utils.generate_multiview_cameras_locations(
-                num_locations=self.config.dataset.view_count,
-                mode=self.config.multiview_setup.mode,
-                camera_names=camera_names,
-                config=self.config.multiview_setup.mode_config,
-                offset=self.config.multiview_setup.offset)
+        # get names of all the cameras to render
+        camera_names = []
+        camera_groups = []
+        for cam_grp in self.config.scene_setup.camera_groups:
+            for cam_name in self.config[cam_grp].names:
+                camera_groups.append(cam_grp)
+                camera_names.append(cam_name)
 
-        else:
-            raise ValueError(f'Selected render mode {self.render_mode} not currently supported')
-       
+        # generate poses according to render mode and configs
+        cameras_poses = self.get_cameras_poses(camera_names)
+
         # some debug options
         # NOTE: at this point the object of interest have been loaded in the blender
         # file but their positions have not yet been randomized..so they should all be located
         # at the origin
         if self.config.debug.enabled:
-            # simple plot of generated camera locations
-            if self.config.debug.plot:
-                from amira_blender_rendering.math.curves import plot_points
+            self._debug_plot(camera_names, cameras_poses)
 
-                for cam_name in camera_names:
-                    plot_points(np.array(cameras_locations[cam_name]),
-                                bpy.context.scene.objects[cam_name],
-                                plot_axis=self.config.debug.plot_axis,
-                                scatter=self.config.debug.scatter)
-
-            # save all generated camera locations to .blend for later debug
-            if self.config.debug.save_to_blend:
-                for i_cam, cam_name in enumerate(camera_names):
-                    self.save_to_blend(
-                        self.dirinfos[i_cam],
-                        camera_name=cam_name,
-                        camera_locations=cameras_locations[cam_name],
-                        basefilename='robottable_camera_locations')
-
+        # TODO: below (this is different from pandatable)
         # control loop for the number of static scenes to render
         scn_counter = 0
         retry = 0
@@ -516,8 +430,8 @@ class StaticScene(interfaces.IScene):
             # check visibility
             repeat_frame = False
             if not self.config.render_setup.allow_occlusions:
-                for cam_name, cam_locations in cameras_locations.items():
-                    repeat_frame = not self.test_visibility(cam_name, cam_locations)
+                for cam_name, cam_poses in cameras_poses.items():
+                    repeat_frame = not self.test_visibility(cam_name, cam_poses)
 
             # if we need to repeat (change static scene) we skip one iteration
             # without increasing the counter
@@ -527,9 +441,7 @@ class StaticScene(interfaces.IScene):
                 exit(-1)
 
             # loop over cameras
-            for i_cam, cam_str in enumerate(self.config.scene_setup.cameras):
-                # get bpy object camera name
-                cam_name = self.get_camera_name(cam_str)
+            for i_cam, (cam_name, cam_poses) in enumerate(cameras_poses.items()):
 
                 # check whether we broke the for-loop responsible for image generation for
                 # multiple camera views and repeat the frame by re-generating the static scene
@@ -539,20 +451,17 @@ class StaticScene(interfaces.IScene):
                         break
                     self.logger.error(f'Max num of {MAX_RETRY} retry reached. Check your static scene is correct. Exit')
                     exit(-1)
-        
-                # extract camera locations
-                cam_locations = cameras_locations[cam_name]
-                
+
                 # compute format width
-                view_format_width = int(ceil(log(len(cam_locations), 10)))
+                view_format_width = int(ceil(log(len(cam_poses), 10)))
                 
                 # activate camera
                 self.activate_camera(cam_name)
 
                 # loop over locations
-                for view_counter, cam_loc in enumerate(cam_locations):
+                for view_counter, cam_pose in enumerate(cam_poses):
 
-                    self.logger.info(f"Generating image for camera {cam_str}: "
+                    self.logger.info(f"Generating image for camera {cam_name}: "
                                      f"scene {scn_counter + 1}/{self.config.dataset.scene_count}, "
                                      f"view {view_counter + 1}/{self.config.dataset.view_count}")
 
@@ -560,13 +469,13 @@ class StaticScene(interfaces.IScene):
                     base_filename = f"s{scn_counter:0{scn_format_width}}_v{view_counter:0{view_format_width}}"
 
                     # set camera location
-                    self.set_camera_location(cam_name, cam_loc)
+                    self.set_camera_pose(cam_name, cam_pose)
 
                     # at this point all the locations have already been tested for visibility
                     # according to allow_occlusions config.
                     # Here, we re-run visibility to set object visibility level as well as to update
                     # the depsgraph needed to update translation and rotation info
-                    all_visible = self.test_visibility(cam_name, cam_loc)
+                    all_visible = self.test_visibility(cam_name, cam_pose)
 
                     if not all_visible:
                         # if debug is enabled save to blender for debugging
@@ -591,17 +500,21 @@ class StaticScene(interfaces.IScene):
                             base_filename,
                             bpy.context.scene.camera,
                             self.objs,
-                            self.config.camera_info.zeroing,
-                            postprocess_config=self.config.postprocess)
+                            self.config[camera_groups[i_cam]].zeroing,
+                            depth_scale=self.config.postprocess.depth_scale,
+                            visibility_from_mask=self.config.postprocess.visibility_from_mask,
+                            camera_config=self.config[camera_groups[i_cam]])
                         
                         if self.config.debug.enabled and self.config.debug.save_to_blend:
                             # reset frame to 0 and save
+                            current_frame = bpy.context.scene.frame_current
                             bpy.context.scene.frame_set(0)
                             self.save_to_blend(
                                 self.dirinfos[i_cam],
                                 scene_index=scn_counter,
                                 view_index=view_counter,
                                 basefilename='robottable')
+                            bpy.context.scene.frame_set(current_frame)
 
                     except ValueError:
                         self.logger.error(
@@ -629,16 +542,71 @@ class StaticScene(interfaces.IScene):
 
         return True
 
-    def dump_config(self):
-        """Dump configuration to a file in the output folder(s)."""
-        # dump config to each of the dir-info base locations, i.e. for each
-        # camera that was rendered we store the configuration
-        for dirinfo in self.dirinfos:
-            output_path = dirinfo.base_path
-            pathlib.Path(output_path).mkdir(parents=True, exist_ok=True)
-            dump_config(self.config, output_path)
+    def _debug_plot(self, camera_names, cameras_poses):
+        """Support method to plot during debug
 
-    def teardown(self):
-        """Tear down the scene"""
-        # nothing to do
-        pass
+        Args:
+            camera_names(list(str)): list with names of blender camera objects
+            cameras_poses(dict(list)): dictionary with list of 3d Matrix poses for each camera
+        
+        Returns: None
+
+            The behavior depends on the debug flags set in the configuration.
+             - if debug.plot is True:
+                generate simple plot of multiple camera locations
+            
+             - if debug.plot.save_to_blend is True:
+                save for each camera in a separate .blend file a copy of the camera
+                in each given pose
+        """
+        from amira_blender_rendering.math.curves import plot_transforms
+        # iterate over cameras
+        for i_cam, cam_name in enumerate(camera_names):
+            # simple plot of generated camera locations
+            if self.config.debug.plot:
+                plot_transforms(cameras_poses[cam_name],
+                                plot_axis=self.config.debug.plot_axis,
+                                scatter=self.config.debug.scatter)
+
+            # save all generated camera locations to .blend for later debug
+            if self.config.debug.save_to_blend:
+                self.save_to_blend(
+                    self.dirinfos[i_cam],
+                    camera_name=cam_name,
+                    camera_poses=cameras_poses[cam_name],
+                    basefilename='robottable_camera_poses')
+
+    def get_cameras_poses(self, camera_names):
+        """Generate camera poses according to render mode and given configuration values
+
+        Args:
+            camera_names(list(str)): list of blender camera object names
+        
+        Returns:
+            cameras_poses(dist(list)): dictionary with list of poses for each camera
+        """
+        # Default mode uses blender file setup.
+        # We assume all necessary/desired constraints are already set.
+        # We simply get the current poses
+        if self.render_mode == 'default':
+            cameras_poses = {}
+            for cam_name in camera_names:
+                cameras_poses[cam_name] = [camera_utils.get_camera_pose(cam_name)]
+        
+        # in multiview rendering, we generate first a list of locations for the given
+        # center group and then, add constraints to track a desired aim and move the cameras
+        # around compute relative poses depending on their group type
+        elif self.render_mode == 'multiview':
+            locations = camera_utils.generate_multiview_locations(
+                num_locations=self.config.dataset.view_count,
+                mode=self.config.multiview_setup.mode,
+                config=self.config.multiview_setup[self.config.multiview_setup.mode])
+
+            # compute poses
+            cameras_poses = camera_utils.compute_cameras_poses(
+                self.config.scene_setup.camera_groups, self.config, locations)
+
+        else:
+            raise ValueError(f'Selected render mode {self.render_mode} not currently supported')
+
+        return cameras_poses
