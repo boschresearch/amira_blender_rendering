@@ -96,8 +96,8 @@ def get_scheduler_directives(job_name: str = 'AMIRA-Blender-Rendering',
 #BSUB -J {job_name}
 #
 # output configuration
-#BSUB -o /home/%u/lsf_out/%x.%j.out
-#BSUB -e /home/%u/lsf_out/%x.%j.err
+#BSUB -o /home/%u/.lsf_out/%x.%j.out
+#BSUB -e /home/%u/.lsf_out/%x.%j.err
 #
 # CPU, MEM, GPU, GPU type configuration
 #BSUB -n {cpu}
