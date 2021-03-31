@@ -1,0 +1,86 @@
+name: Build Docker Image
+
+on:
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: amira-ci-blender
+
+jobs:
+  blender:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Download blender
+        run: curl -o blender.tar.xz https://download.blender.org/release/Blender2.91/blender-2.91.2-linux64.tar.xz
+
+      - name: Store blender
+        uses: actions/upload-artifact@v2
+        with:
+          name: blender_archive
+          path: blender.tar.xz
+
+    # Run tests.
+  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
+  test:
+    needs: blender
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get Blender artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: blender_archive
+          path: docker/
+
+      - name: Run tests
+        run:
+          docker build docker/
+
+  # Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  push:
+    # Ensure test job passes before pushing image.
+    needs: test
+
+    runs-on: ubuntu-20.04
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get Blender artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: blender_archive
+          path: docker/
+      
+      - name: Build image
+        run: docker build docker/ --tag $IMAGE_NAME
+
+      - name: Log into registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Push image
+        run: |
+          IMAGE_ID=ghcr.io/${{ github.repository }}/$IMAGE_NAME
+
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "master" ] && VERSION=latest
+
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+
+          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$VERSION
