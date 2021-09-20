@@ -10,7 +10,7 @@ were used, have a look at `config/pandatable_example.cfg`.
 # Specify how many images should be rendered
 image_count = 5
 # Specify the base path where data will be written to.
-base_path = $AMIRA_DATASETS/PandaTable-Train
+base_path = $OUTDIR/PandaTable-Train
 # specify the scene type
 scene_type = PandaTable
 
@@ -83,10 +83,10 @@ allow_occlusions = False
 
 [scene_setup]
 # specify the blender file from which to load the scene
-blend_file = $AMIRA_DATA_GFX/modeling/robottable_empty.blend
+blend_file = $DATA_GFX/modeling/robottable_empty.blend
 # specify where background / environment images will be taken from during
 # rendering. This can be a single file, or a directory containing images
-environment_texture = $AMIRA_DATASETS/OpenImagesV4/Images
+environment_texture = $DATA/OpenImagesV4/Images
 # specify which cameras to use for rendering. The names here follow the names in
 # the blender file, i.e. Camera, StereoCamera.Left, StereoCamera.Right
 cameras = Camera
@@ -104,7 +104,7 @@ forward_frames = 15
 #       part_name = blend_file
 #
 #   Example:
-#       hammerschraube = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
+#       hammerschraube = $DATA_GFX/cad/rexroth/hammerschraube.blend
 #
 #   Note: If no further configs are set, the object name *must* correspond 
 #   to the name that the object has in the blender file. 
@@ -115,7 +115,7 @@ forward_frames = 15
 #   different scale factors (see below for the use of blend_scale).
 #
 #   Example:
-#       my_cool_name = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
+#       my_cool_name = $DATA_GFX/cad/rexroth/hammerschraube.blend
 #       name.my_cool_name = hammerschraube
 #
 #   The `name.part_name` tag *must* correspond to the name the object has in the
@@ -142,8 +142,8 @@ forward_frames = 15
 #   dimensions.
 #
 #   Example:
-#       hammerschraube = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
-#       ply.hammerschraube = $AMIRA_DATA_PERCEPTION/CADModels/rexroth/
+#       hammerschraube = $DATA_GFX/cad/rexroth/hammerschraube.blend
+#       ply.hammerschraube = $DATA_PERCEPTION/CADModels/rexroth/
 #       ply_scale.hammerschraube = 0.001, 0.001, 0.001
 #
 #   However we also allow to scale objects loaded directly from .blend files.
@@ -155,7 +155,7 @@ forward_frames = 15
 #
 #   Example:
 #       hammerschraube =
-#       ply.hammerschraube = $AMIRA_DATA_PERCEPTION/CADModels/rexroth/
+#       ply.hammerschraube = $DATA_PERCEPTION/CADModels/rexroth/
 #       scale.hammerschraube = 0.001, 0.001, 0.001
 #
 #   Important: Do *not* forget to add 'part_name =', despite not giving a
@@ -175,35 +175,35 @@ forward_frames = 15
 #            be different within the two files.
 
 # The first example is a "hammerschraube" (hammer head screw)
-hammerschraube = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.blend
-ply.hammerschraube = $AMIRA_DATA_GFX/cad/rexroth/hammerschraube.ply
+hammerschraube = $DATA_GFX/cad/rexroth/hammerschraube.blend
+ply.hammerschraube = $DATA_GFX/cad/rexroth/hammerschraube.ply
 ply_scale.hammerschraube = 0.001
 
 # The second example is a 60x60 angle element.
-winkel_60x60 = $AMIRA_DATA_GFX/cad/rexroth/winkel_60x60.blend
-ply.winkel_60x60 = $AMIRA_DATA_GFX/cad/rexroth/winkel_60x60.ply
+winkel_60x60 = $DATA_GFX/cad/rexroth/winkel_60x60.blend
+ply.winkel_60x60 = $DATA_GFX/cad/rexroth/winkel_60x60.ply
 ply_scale.winkel_60x60 = 0.001
 
 # this is a star knob
-sterngriff = $AMIRA_DATA_GFX/cad/rexroth/sterngriff.blend
-ply.sterngriff = $AMIRA_DATA_GFX/cad/rexroth/sterngriff.ply
+sterngriff = $DATA_GFX/cad/rexroth/sterngriff.blend
+ply.sterngriff = $DATA_GFX/cad/rexroth/sterngriff.ply
 ply_scale.sterngriff = 0.001
 
 # a cube-like connection
-wuerfelverbinder_40x40 = $AMIRA_DATA_GFX/cad/rexroth/wuerfelverbinder_40x40.blend
-ply.wuerfelverbinder_40x0 = $AMIRA_DATA_GFX/cad/rexroth/wuerfelverbinder_40x40_3.ply
+wuerfelverbinder_40x40 = $DATA_GFX/cad/rexroth/wuerfelverbinder_40x40.blend
+ply.wuerfelverbinder_40x0 = $DATA_GFX/cad/rexroth/wuerfelverbinder_40x40_3.ply
 ply_scale.wuerfelverbinder_40x40 = 0.001
 
 # a flanged nut
-bundmutter_m8 = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.blend
-ply.bundmutter_m8 = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.ply
+bundmutter_m8 = $DATA_GFX/cad/rexroth/bundmutter_m8.blend
+ply.bundmutter_m8 = $DATA_GFX/cad/rexroth/bundmutter_m8.ply
 ply_scale.bundmutter_m8 = 0.001
 
 # it is also possible to load objects from the same blend file
 # but using a different class name. This will be treated as different
 # objects in the annotations. Useful for e.g., loading same objects
 # with different scales
-bundmutter_m8_A = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.blend
+bundmutter_m8_A = $DATA_GFX/cad/rexroth/bundmutter_m8.blend
 name.bundmutter_m8_A = bundmutter_m8
 blend_scale.bundmutter_m8_A = 0.7
 
@@ -211,22 +211,22 @@ blend_scale.bundmutter_m8_A = 0.7
 # necessary to define a source name with the `name` tag since
 # when loading from PLY we are not binded to object names
 bundmutter_m8_B =
-ply.bundmutter_m8_B = $AMIRA_DATA_GFX/cad/rexroth/bundmutter_m8.ply
+ply.bundmutter_m8_B = $DATA_GFX/cad/rexroth/bundmutter_m8.ply
 ply_scale.bundmutter_m8_B = 0.003
 
 # object 01 from the T-Less dataset
-tless_obj_01 = $AMIRA_DATA_GFX/cad/tless/blender/obj_01.blend
-ply.tless_obj_01 = $AMIRA_DATA_GFX/cad/tless/models/obj_01.ply
+tless_obj_01 = $DATA_GFX/cad/tless/blender/obj_01.blend
+ply.tless_obj_01 = $DATA_GFX/cad/tless/models/obj_01.ply
 ply_scale.tless_obj_01 = 0.001
 
 # object 06 from the T-Less dataset
-tless_obj_06 = $AMIRA_DATA_GFX/cad/tless/blender/obj_06.blend
-ply.tless_obj_06 = $AMIRA_DATA_GFX/cad/tless/models/obj_06.ply
+tless_obj_06 = $DATA_GFX/cad/tless/blender/obj_06.blend
+ply.tless_obj_06 = $DATA_GFX/cad/tless/models/obj_06.ply
 ply_scale.tless_obj_06 = 0.001
 
 # object 06 from the T-Less dataset
-tless_obj_13 = $AMIRA_DATA_GFX/cad/tless/blender/obj_13.blend
-ply.tless_obj_13 = $AMIRA_DATA_GFX/cad/tless/models/obj_13.ply
+tless_obj_13 = $DATA_GFX/cad/tless/blender/obj_13.blend
+ply.tless_obj_13 = $DATA_GFX/cad/tless/models/obj_13.ply
 ply_scale.tless_obj_13 = 0.001
 
 [scenario_setup]

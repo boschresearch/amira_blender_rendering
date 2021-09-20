@@ -24,7 +24,7 @@ image_count = 5
 # differently to more complex scenarios, e.g., see :ref:`Workstation Scenarios`,
 # here there is only one configuration and one camera.
 # Hence hence the base path coincides with the location where data are actually written.
-base_path = $AMIRA_DATASETS/SimpleToolCap-Train
+base_path = $OUTDIR/SimpleToolCap-Train
 
 # specify the scene type
 scene_type = SimpleObject
@@ -79,7 +79,7 @@ samples = 8
 # we also specify where to load environment textures from
 #
 # For this simple case, this is the only scene-specific configuration value
-environment_textures = $AMIRA_DATASETS/OpenImagesV4/Images
+environment_textures = $DATA/OpenImagesV4/Images
 
 [parts]
 # here we use the 'ply only' version to load objects. Fore more documentation,
@@ -87,7 +87,7 @@ environment_textures = $AMIRA_DATASETS/OpenImagesV4/Images
 ToolCap =
 
 # this scene loads a tool cap mesh. This is loaded from the corresponding mesh
-ply.ToolCap = $AMIRA_DATA_GFX/cad/parts/tool_cap_x10.ply
+ply.ToolCap = $DATA_GFX/cad/parts/tool_cap_x10.ply
 
 # ply models often have a different scale than what is used in blender. Here, we
 # have to scale down the model to match blender units (which are treated to be
@@ -96,7 +96,7 @@ ply_scale.ToolCap = 0.001, 0.001, 0.001
 
 # another single object to try
 LetterB =
-ply.LetterB = $AMIRA_DATA_GFX/cad/parts/B.ply
+ply.LetterB = $DATA_GFX/cad/parts/B.ply
 ply_scale.LetterB = 0.001, 0.001, 0.001
 
 [scenario_setup]

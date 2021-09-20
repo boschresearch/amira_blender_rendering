@@ -49,7 +49,7 @@ $ abrgen --help
 ```
 
 
-## Using ABR without installation
+## Using ABR without installation<a name="using-wo-installation"></a>
 
 Sometimes you might not want to or cannot install ABR, or you cannot even run
 `abrgen` due to permission issues on the target system. As long as you can
@@ -149,10 +149,11 @@ because abrgen and, in turn, blender, will already point to it.
 
 As mentioned in point 6. above, note that some scenes and/or configurations might 
 require you to setup global variables. 
-Here's a non-exhaustive) list of the variables that we usually use (Name | Description):
+Here's a non-exhaustive list of the variables that we usually use (Name | Description):
 
-- `$AMIRA_DATASETS`: Path to datasets, such as the one produced here, or OpenImagesV4
-- `$AMIRA_DATA_GFX`: Path to graphics data
+- `$OUTDIR`: path to output directory where results are stored
+- `$AMIRA_DATASETS` or `DATA`: Path to datasets, such as the one produced here, or OpenImagesV4
+- `$AMIRA_DATA_GFX` or `$DATA_GFX`: Path to graphics data
 - `$AMIRA_BLENDER_RENDERING_ASSETS`: Path to additional assets, such as textures
 
 
