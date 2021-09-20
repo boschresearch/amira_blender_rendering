@@ -9,7 +9,7 @@ In order to setup your custom scenario few necessary requirements
 must be met.
 
 1. [custom classes](#custom-classe)
-2. [discove scenes](#discover-scene)
+2. [discover scenes](#discover-scene)
 
 **NOTE** Adding custom scenes requires ABR to be installed as `editable` (see [installation](../installation.md)).
 
