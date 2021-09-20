@@ -3,7 +3,7 @@
 # Welcome to AMIRA Blender Rendering (ABR)'s documentation!
 
 ABR is a pipeline for rendering large photo-realistic datasets, and is built
-around [blender](www.blender.org). By using [blender](www.blender.org) to model scenes, 
+around [blender](https://www.blender.org). By using [blender](https://www.blender.org) to model scenes, 
 we allow users to address
 their specific requirements with respect to scenarios and model properties with
 capabilities of a major and free 3D creation suite. Afterwards, ABR can be used
@@ -18,8 +18,8 @@ GPU clusters or rendering farms.
 
 The workflow of using ABR is held as simple as possible.
 
-1. First, in [blender](www.blender.org), you either develop your own scenario for which you would
-   like to generate a dataset or adapt one of the existing scenarios.
+1. First, in [blender](https://www.blender.org), you either develop your own scenario
+   for which you would like to generate a dataset or adapt one of the existing scenarios.
 2. If you decided on your own scenario, or if you heavily modified an existing
    scneario, you might need to provide what we call a `scenario backend` which
    will take care of setting up the file. For instance, you might wish to
