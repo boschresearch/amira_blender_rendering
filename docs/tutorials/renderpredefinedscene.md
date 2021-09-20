@@ -80,7 +80,7 @@ def generate_dataset(self):
 
 ## Data<a name="data"></a>
 
-Make sure the files `B.ply` and `tool_capp_x10.ply` are placed in `/data/cad/parts`.
+Make sure the files `B.ply` and `tool_cap_x10.ply` are placed in `/data/cad/parts`.
 Also, as background textures we use images from *Open Images* a publicly available
 large dataset of various images. Make sure to download they images and store them
 locally, e.g., in a dedicated folder in `$HOME/data/OpenImagesV4/Images`.
