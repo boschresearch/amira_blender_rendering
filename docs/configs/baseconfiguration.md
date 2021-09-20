@@ -22,7 +22,7 @@ view_count =
 # Specify the base path where data will be written to. Note that this is a base
 # path, to which additional information will be added such as Scenario-Number
 # and Camera-Name
-base_path = $AMIRA_DATASETS/WorkstationScenarios-Train
+base_path = $OUTDIR/WorkstationScenarios-Train
 # specify the scene type
 scene_type = WorkstationScenarios
 ```
