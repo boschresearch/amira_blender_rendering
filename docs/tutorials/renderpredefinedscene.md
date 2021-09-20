@@ -23,15 +23,18 @@ For a more in depth explanation refer to the following tutorial on
 [set up a simple custom sceneario](./simplecustomscenario.md)
 
 Assuming you are familiar with python, a few explanations are in order:
-- the class `SimpleObjectConfiguration` is used to manage scene specific config values
-- the class `SimpleObject` is used to control the logic of the desired scene.
-More specifically, at runtime, after setting up a class object, blender calls `generate_dataset`
-which, in turn, takes care of:
-    * randomizing the environment (background) textures
-    * randomizing the pose of the target object (in this case a metal cap)
-    * adjust the file paths through the *rendermanager*
-    * calling the rendering
-    * performing some post processing steps
+
+* the class `SimpleObjectConfiguration` is used to manage scene specific config values
+* the class `SimpleObject` is used to control the logic of the desired scene.
+
+More specifically, at runtime, after setting up a class object, blender calls the 
+`generate_dataset` which, in turn, takes care of:
+
+* randomizing the environment (background) textures
+* randomizing the pose of the target object (in this case a metal cap)
+* adjust the file paths through the *rendermanager*
+* calling the rendering
+* performing some post processing steps
 
 ```python
 def generate_dataset(self):
@@ -93,10 +96,12 @@ The file is used to specifiy a bunch of configuration values for the dataset we 
 going to render such as the number of images to render etc.
 
 As you can see, we exploits some enviroment variables in order to parametrize some 
-configuration values and make them agnostic user specific settings. In particular, these are:
-- `OUTDIR`: path to folder where the rendered dataset will be stored
-- `DATA`: path where backgrounds data are stored
-- `DATA_GFX`: path where graphics data are stored
+configuration values and make them agnostic user specific settings. 
+In particular, these are:
+
+* `OUTDIR`: path to folder where the rendered dataset will be stored
+* `DATA`: path where backgrounds data are stored
+* `DATA_GFX`: path where graphics data are stored
 
 In order to successfully render the dataset, you need to explictly set the above three variables.
 You can do that e.g., in you `~/.bashrc` or *inline* as shown in the following section.
@@ -108,7 +113,10 @@ repo available in your `$HOME` and that you set up the data as explained [above]
 Then, to commence the rendering run
 
 ```bash
-OUTDIR=~/data DATA_GFX=~/amira_blender_rendering/data DATA=~/data --config ~/amira_blender_rendering/config/examples/single_object_toolcap_example.cfg
+OUTDIR=~/data \
+DATA_GFX=~/amira_blender_rendering/data \
+DATA=~/data \
+    abrgen --config ~/amira_blender_rendering/config/examples/single_object_toolcap_example.cfg
 ```
 
 In case you get
