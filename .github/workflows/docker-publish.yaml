@@ -20,33 +20,10 @@ jobs:
           name: blender_archive
           path: blender.tar.xz
 
-    # Run tests.
-  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  build:
-    needs: upload-blender
-    runs-on: ubuntu-20.04
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Get Blender artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: blender_archive
-          path: docker/
-
-      - name: Build Image
-        run:
-          docker build docker/
-
   # Push image to GitHub Packages.
   # See also https://docs.docker.com/docker-hub/builds/
-  push:
-    # Ensure test job passes before pushing image.
-    needs: build
-
+  build-and-push:
     runs-on: ubuntu-20.04
-    if: github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v2
