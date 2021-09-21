@@ -1,7 +1,6 @@
 name: Build Docker Image
 
-on:
-  workflow_dispatch:
+on: [workflow_dispatch, push]
 
 env:
   IMAGE_NAME: amira-ci-blender
