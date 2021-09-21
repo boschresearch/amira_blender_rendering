@@ -7,7 +7,7 @@ env:
   IMAGE_NAME: amira-ci-blender
 
 jobs:
-  blender:
+  upload-blender:
     runs-on: ubuntu-20.04
 
     steps:
@@ -22,8 +22,8 @@ jobs:
 
     # Run tests.
   # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  test:
-    needs: blender
+  build:
+    needs: upload-blender
     runs-on: ubuntu-20.04
 
     steps:
@@ -35,7 +35,7 @@ jobs:
           name: blender_archive
           path: docker/
 
-      - name: Run tests
+      - name: Build Image
         run:
           docker build docker/
 
@@ -43,7 +43,7 @@ jobs:
   # See also https://docs.docker.com/docker-hub/builds/
   push:
     # Ensure test job passes before pushing image.
-    needs: test
+    needs: build
 
     runs-on: ubuntu-20.04
     if: github.event_name == 'push'
