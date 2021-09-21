@@ -4,15 +4,6 @@ FROM ubuntu:20.04
 LABEL description="This image builds an Ubuntu20.04 image with Blender installed."
 LABEL maintainer="Marco.Todescato@de.bosch.com"
 LABEL version.base="1.0"
-ARG GIT_COMMIT=unspecified
-
-# Must be path in folder or subfolder of Dockerfile due to limitations of COPY
-ARG SSH_PRIVATE_KEYFILE
-
-# credentials for the artifactory
-ARG USERPASS
-
-LABEL git_commit=$GIT_COMMIT
 
 # set docker env since COPY does not expand system env variables
 ENV HOME=/root
@@ -20,8 +11,8 @@ ENV ABR=/root/amira_blender_rendering
 
 # additional install requirements for AMIRA Blender Rendering:
 #  * nano: for debugging (remove when stable)
-#  * wget: download blender
-#  * xz-utils: decompress blender tarball
+#  * curl: download blender
+#  * xz-utils: uncompress blender tarball
 #  * lib*: blender dependencies
 RUN apt update \
  && apt install --no-install-recommends -y \
