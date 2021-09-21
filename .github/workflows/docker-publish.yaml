@@ -24,6 +24,8 @@ jobs:
   build-and-push:
     runs-on: ubuntu-20.04
 
+    needs: upload-blender
+
     steps:
       - uses: actions/checkout@v2
 
