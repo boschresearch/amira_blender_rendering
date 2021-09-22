@@ -1,0 +1,901 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="AMIRA Blender Rendering Documentation">
+      
+      
+      
+        <meta name="author" content="BCAI">
+      
+      
+        <link rel="canonical" href="https://boschresearch.github.io/amira_blender_rendering/configs/baseconfiguration/">
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.8">
+    
+    
+      
+        <title>Base Config - AMIRA Blender Rendering Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.92558b1b.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.3f5d1f46.min.css">
+        
+          
+          
+          <meta name="theme-color" content="">
+        
+      
+    
+    
+    
+      
+    
+    
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="dark-blue" data-md-color-accent="">
+  
+    
+    <script>function __prefix(e){return new URL("../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#base-configuration" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="AMIRA Blender Rendering Documentation" class="md-header__button md-logo" aria-label="AMIRA Blender Rendering Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AMIRA Blender Rendering Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Base Config
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        
+<a href="https://github.com/boschresearch/amira_blender_rendering/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    boschresearch/amira_blender_rendering
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AMIRA Blender Rendering Documentation" class="md-nav__button md-logo" aria-label="AMIRA Blender Rendering Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    AMIRA Blender Rendering Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/boschresearch/amira_blender_rendering/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    boschresearch/amira_blender_rendering
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+      
+      <label class="md-nav__link" for="__nav_1">
+        ABR User's Guide
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="ABR User's Guide" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          ABR User's Guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/" class="md-nav__link">
+        Installation
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../using/" class="md-nav__link">
+        Using
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../formats/" class="md-nav__link">
+        Formats
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../datasets/" class="md-nav__link">
+        Datasets
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fqa/" class="md-nav__link">
+        FAQs
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/" class="md-nav__link">
+        Troubleshooting
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tests/" class="md-nav__link">
+        Tests
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        Contributing
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
+      
+      <label class="md-nav__link" for="__nav_3">
+        Configurations
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Configurations" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Configurations
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Base Config
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Base Config
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dataset" class="md-nav__link">
+    dataset
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#camera_info" class="md-nav__link">
+    camera_info
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#render_setup" class="md-nav__link">
+    render_setup
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    debugging
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#postprocess" class="md-nav__link">
+    postprocess
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workstation_scenarios/" class="md-nav__link">
+        Workstation
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pandatable/" class="md-nav__link">
+        Panda Table
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../simpleobject/" class="md-nav__link">
+        Simple Object
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../multiview/" class="md-nav__link">
+        Multi view rendering
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      <label class="md-nav__link" for="__nav_4">
+        Tutorials
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Tutorials" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Tutorials
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/renderpredefinedscene/" class="md-nav__link">
+        Basic - render a predefined scene
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tutorials/simplecustomscenario/" class="md-nav__link">
+        Intermediate - set up a simple custom scenario
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../license/" class="md-nav__link">
+        License
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#dataset" class="md-nav__link">
+    dataset
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#camera_info" class="md-nav__link">
+    camera_info
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#render_setup" class="md-nav__link">
+    render_setup
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#debugging" class="md-nav__link">
+    debugging
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#postprocess" class="md-nav__link">
+    postprocess
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/boschresearch/amira_blender_rendering/edit/master/docs/configs/baseconfiguration.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="base-configuration">Base Configuration<a class="headerlink" href="#base-configuration" title="Permanent link">&para;</a></h1>
+<p>The base configuration is supported by all scenarios. It consists of several
+namespaces, which are described in detail below.</p>
+<h2 id="dataset">dataset<a class="headerlink" href="#dataset" title="Permanent link">&para;</a></h2>
+<p>The <code>dataset</code> namespace contains information about a dataset such as number of
+images, as well as the output directory where data will be written to.</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="n">dataset</span><span class="p">]</span>
+<span class="c1"># Specify how many images should be rendered</span>
+<span class="n">image_count</span> <span class="o">=</span> <span class="mi">5</span>
+<span class="c1"># Depending on the rendering mode it is also possible to set scene </span>
+<span class="c1"># and camera view counts. Note that setting these values might affect</span>
+<span class="c1"># the total number of rendered image and, in turn, image_count.</span>
+<span class="c1"># As an example, if supported, setting scene_cout = 5, view_count = 5 in</span>
+<span class="c1"># &quot;multiview&quot; render mode will result in image_count = 25 </span>
+<span class="n">scene_count</span> <span class="o">=</span> 
+<span class="n">view_count</span> <span class="o">=</span>
+<span class="c1"># Specify the base path where data will be written to. Note that this is a base</span>
+<span class="c1"># path, to which additional information will be added such as Scenario-Number</span>
+<span class="c1"># and Camera-Name</span>
+<span class="n">base_path</span> <span class="o">=</span> <span class="err">$</span><span class="n">OUTDIR</span><span class="o">/</span><span class="n">WorkstationScenarios</span><span class="o">-</span><span class="n">Train</span>
+<span class="c1"># specify the scene type</span>
+<span class="n">scene_type</span> <span class="o">=</span> <span class="n">WorkstationScenarios</span>
+</code></pre></div>
+<h2 id="camera_info">camera_info<a class="headerlink" href="#camera_info" title="Permanent link">&para;</a></h2>
+<p>Camera information is placed in the <code>camera_info</code> namespace. It contains
+settings for image width and height, as well as (optional) intrinsic camera
+information.</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="n">camera_info</span><span class="p">]</span>
+<span class="c1"># In this section you specify the camera information, which will have a direct</span>
+<span class="c1"># impact on rendering results.</span>
+
+<span class="c1"># The width and height have an influence on the rendering resolution. In case</span>
+<span class="c1"># you wish to set a specific calibration matrix that you obtained, for</span>
+<span class="c1"># instance, from OpenCV, and do not wish to temper with the rendering</span>
+<span class="c1"># resolution, then set these values to 0.</span>
+<span class="n">width</span> <span class="o">=</span> <span class="mi">640</span>
+<span class="n">height</span> <span class="o">=</span> <span class="mi">480</span>
+
+<span class="c1"># The camera model to use. At the moment, this value is ignored in</span>
+<span class="c1"># amira_blender_rendering. However, because all rendering is in fact done with a</span>
+<span class="c1"># pinhole camera model, this value serves as documentation</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">pinhole</span>
+
+<span class="c1"># Also this value has no impact on rendering likewise the model. However, if</span>
+<span class="c1"># you want to specify a certain camera name for documentation purposes, this is</span>
+<span class="c1"># the place.</span>
+<span class="n">name</span> <span class="o">=</span> <span class="n">Pinhole</span> <span class="n">Camera</span>
+
+<span class="c1"># You can specify the intrinsic calibration information that was determined for</span>
+<span class="c1"># a camera, for instance with OpenCV.</span>
+<span class="c1">#</span>
+<span class="c1"># Here, we use the format</span>
+<span class="c1">#   intrinsics = fx, fy, cx, cy</span>
+<span class="c1"># Where the fx, fy values represented focal lengths, and cx, cy defines the</span>
+<span class="c1"># camera&#39;s principal point.</span>
+<span class="c1">#</span>
+<span class="c1"># You can extract fx, fy, cx, cy from a calibration matrix K:</span>
+<span class="c1">#</span>
+<span class="c1">#         fx  s   cx</span>
+<span class="c1">#    K =   0  fy  cy</span>
+<span class="c1">#          0  0   1</span>
+<span class="c1">#</span>
+<span class="c1"># Note, however, that the values in your calibration matrix or intrinsics</span>
+<span class="c1"># specification might not end up in proper render resolutions. For instance,</span>
+<span class="c1"># this is the case in the example below, which would result in a rendering</span>
+<span class="c1"># resolution of about 1320.98 x 728.08.  Blender will round these values to</span>
+<span class="c1"># suitable integer values.  As a consequence, even if you set width and height</span>
+<span class="c1"># above to 0, the effective intrinsics that blender uses might be slightly</span>
+<span class="c1"># different from your K.</span>
+<span class="c1">#</span>
+<span class="c1"># To accomodate this &#39;issue&#39;, amira_blender_rendering will write a value</span>
+<span class="c1"># &#39;effective_intrinsics&#39; to the configuration as soon as setting up cameras and</span>
+<span class="c1"># rendering is done. Recall that all configurations will be stored alongside the</span>
+<span class="c1"># created dataset, so you can easily retrieve the effective_intrinsics in</span>
+<span class="c1"># downstream applications</span>
+<span class="n">intrinsics</span> <span class="o">=</span> <span class="mf">9.9801747708520452e+02</span><span class="p">,</span><span class="mf">9.9264009290521165e+02</span><span class="p">,</span><span class="mf">6.6049856967197002e+02</span><span class="p">,</span><span class="mf">3.6404286361152555e+02</span><span class="p">,</span><span class="mi">0</span>
+
+<span class="c1"># A default camera in blender with 0 rotation applied to its transform looks</span>
+<span class="c1"># along the -Z direction. Blender&#39;s modelling viewport, however, assumes that</span>
+<span class="c1"># the surface plane is spanned by X and Y, where X indicates left/right. This</span>
+<span class="c1"># can be observed by putting the modelling viewport into the front viewpoint</span>
+<span class="c1"># (Numpad 1). Then, the viewport looks along the Y direction.</span>
+<span class="c1">#</span>
+<span class="c1"># As a consequence, the relative rotation between a camera image and an object</span>
+<span class="c1"># is only 0 when the camera would look onto the top of the object. Note that</span>
+<span class="c1"># this is rather unintuitive, as most people would expect that the relative</span>
+<span class="c1"># rotation is 0 when the camera looks at the front of an object.</span>
+<span class="c1">#</span>
+<span class="c1"># To accomodate for this, users can set their preferred &#39;zeroing&#39; rotation </span>
+<span class="c1"># by using the following configuration parameter encoding rotations </span>
+<span class="c1"># around x, y and z-axis, respectively, in degrees.</span>
+<span class="c1">#</span>
+<span class="c1"># As an example, a value of 90, 0, 0 will apply a rotation of 90[deg] around x</span>
+<span class="c1"># when computing the relative rotation between the camera and an object in the</span>
+<span class="c1"># in the camera reference frame.</span>
+<span class="n">zeroing</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span>
+
+<span class="c1"># We allow to set camera parameters also using additional values. These are:</span>
+<span class="c1"># The sensor width in mm (if not available, set to 0.0)</span>
+<span class="n">sensor_width</span> <span class="o">=</span>
+<span class="c1"># The camera focal lenght in mm (if not available, set to 0.0)</span>
+<span class="n">focal_length</span> <span class="o">=</span> 
+<span class="c1"># The camera Horizontal Field-of-View in degrees (if not available, set to 0.0) </span>
+<span class="n">hfov</span> <span class="o">=</span>
+<span class="c1"># Additionally, it is possible to determin how to compute the camera setup if only</span>
+<span class="c1"># instrinsics values are give among &quot;fov&quot; and &quot;mm&quot; (default is &quot;mm&quot;).</span>
+<span class="n">intrinsics_conversion_mode</span> <span class="o">=</span> 
+</code></pre></div>
+<h2 id="render_setup">render_setup<a class="headerlink" href="#render_setup" title="Permanent link">&para;</a></h2>
+<p>The <code>render_setup</code> namespace is used to configure how blender&rsquo;s render backend
+behaves, or which render backend to use.</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="n">render_setup</span><span class="p">]</span>
+<span class="c1"># specify which renderer to use. Usually you should leave this at</span>
+<span class="c1"># blender-cycles. Note that, at the moment, this is hard-coded to cycles</span>
+<span class="c1"># internally anyway.</span>
+<span class="n">backend</span> <span class="o">=</span> <span class="n">blender</span><span class="o">-</span><span class="n">cycles</span>
+<span class="c1"># integrator (either PATH or BRANCHED_PATH)</span>
+<span class="n">integrator</span> <span class="o">=</span> <span class="n">BRANCHED_PATH</span>
+<span class="c1"># use denoising (true, false)</span>
+<span class="n">denoising</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="c1"># samples the ray-tracer uses per pixel</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="c1"># allow occlusions of target objects (true, false)</span>
+<span class="n">allow_occlusions</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="c1"># select bit size of RGB images between 8 bit and 16 bit (default)</span>
+<span class="n">color_depth</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="c1"># toggle motion blur (True, False (defualt)) during rendering. </span>
+<span class="c1"># Notice that, this might not heavily affect</span>
+<span class="c1"># your render output if the rendered scene is standing still.</span>
+<span class="n">motion_blue</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
+<h2 id="debugging">debugging<a class="headerlink" href="#debugging" title="Permanent link">&para;</a></h2>
+<p>The <code>debug</code> namespace can be used to toggle debug functionatilies.
+For scene specific flags refer to the desider scene.</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="n">debug</span><span class="p">]</span>
+<span class="c1"># activate debug logs and print-outs (true, false)</span>
+<span class="n">enabled</span> <span class="o">=</span> <span class="kc">False</span>
+</code></pre></div>
+<h2 id="postprocess">postprocess<a class="headerlink" href="#postprocess" title="Permanent link">&para;</a></h2>
+<p>The <code>postprocess</code> namespace can be used to implement functionatilies
+during postprocess and/or after the rendering phase</p>
+<div class="highlight"><pre><span></span><code><span class="p">[</span><span class="n">postprocess</span><span class="p">]</span>
+<span class="c1"># By default Blender uses a perfect pinhole camera models and its output depth maps</span>
+<span class="c1"># contain indeed ranges (in meters saved as .exr files). For this reasons, (rectified) depth </span>
+<span class="c1"># maps (saved as png files) are computed during postprocessing. During generation we allow to</span>
+<span class="c1"># select the output scale to convert range to depth. Default is 1e4 = .1mm </span>
+<span class="n">depth_scale</span> <span class="o">=</span> 
+<span class="c1"># During post processing it might happen that object visibility information (which are computed</span>
+<span class="c1"># using ray-casting) and the corresponding object mask do not correspond (ie. the mask is empty).</span>
+<span class="c1"># This might happen due to image resolution: the visible portion of the object is not big enough</span>
+<span class="c1"># for a single pixel. Since, for how seldom, this behavior can happen, we allow, to overwrite </span>
+<span class="c1"># visibility information based on the computed mask (defualt is False). </span>
+<span class="n">visibility_from_mask</span> <span class="o">=</span> 
+<span class="c1"># If requested, the disparity between a set of parallel cameras can be computed. Default is False</span>
+<span class="n">compute_disparity</span> <span class="o">=</span> 
+<span class="c1"># Disparity is computed only on given cameras (chosen among those set in scene_setup.cameras)</span>
+<span class="n">parallel_cameras</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="c1"># Disparity maps require a baseline value (in mm) between the selected cameras. Default is 0</span>
+<span class="n">parallel_cameras_baseline_mm</span> <span class="o">=</span> 
+</code></pre></div>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../overview/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Overview
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../workstation_scenarios/" class="md-footer__link md-footer__link--next" aria-label="Next: Workstation" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Workstation
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Apache-2.0
+          </div>
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+        
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.94ec81fe.min.js", "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.48dfec6c.min.js"></script>
+      
+    
+  </body>
+</html>

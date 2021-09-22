@@ -1,0 +1,952 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="AMIRA Blender Rendering Documentation">
+      
+      
+      
+        <meta name="author" content="BCAI">
+      
+      
+        <link rel="canonical" href="https://boschresearch.github.io/amira_blender_rendering/tutorials/simplecustomscenario/">
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.8">
+    
+    
+      
+        <title>Intermediate - set up a simple custom scenario - AMIRA Blender Rendering Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.92558b1b.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.3f5d1f46.min.css">
+        
+          
+          
+          <meta name="theme-color" content="">
+        
+      
+    
+    
+    
+      
+    
+    
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="dark-blue" data-md-color-accent="">
+  
+    
+    <script>function __prefix(e){return new URL("../..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#set-up-a-simple-custom-scenario" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="AMIRA Blender Rendering Documentation" class="md-header__button md-logo" aria-label="AMIRA Blender Rendering Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AMIRA Blender Rendering Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Intermediate - set up a simple custom scenario
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        
+<a href="https://github.com/boschresearch/amira_blender_rendering/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    boschresearch/amira_blender_rendering
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AMIRA Blender Rendering Documentation" class="md-nav__button md-logo" aria-label="AMIRA Blender Rendering Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    AMIRA Blender Rendering Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/boschresearch/amira_blender_rendering/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    boschresearch/amira_blender_rendering
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" >
+      
+      <label class="md-nav__link" for="__nav_1">
+        ABR User's Guide
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="ABR User's Guide" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          ABR User's Guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../installation/" class="md-nav__link">
+        Installation
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../using/" class="md-nav__link">
+        Using
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../formats/" class="md-nav__link">
+        Formats
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../datasets/" class="md-nav__link">
+        Datasets
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../fqa/" class="md-nav__link">
+        FAQs
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../troubleshooting/" class="md-nav__link">
+        Troubleshooting
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tests/" class="md-nav__link">
+        Tests
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        Contributing
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      <label class="md-nav__link" for="__nav_3">
+        Configurations
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Configurations" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Configurations
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configs/overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configs/baseconfiguration/" class="md-nav__link">
+        Base Config
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configs/workstation_scenarios/" class="md-nav__link">
+        Workstation
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configs/pandatable/" class="md-nav__link">
+        Panda Table
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configs/simpleobject/" class="md-nav__link">
+        Simple Object
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../configs/multiview/" class="md-nav__link">
+        Multi view rendering
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" checked>
+      
+      <label class="md-nav__link" for="__nav_4">
+        Tutorials
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Tutorials" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Tutorials
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../renderpredefinedscene/" class="md-nav__link">
+        Basic - render a predefined scene
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Intermediate - set up a simple custom scenario
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Intermediate - set up a simple custom scenario
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#create-the-configuration-and-scene-classes" class="md-nav__link">
+    Create the configuration and scene classes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#make-the-custom-scene-discoverable" class="md-nav__link">
+    Make the custom scene discoverable
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../license/" class="md-nav__link">
+        License
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#create-the-configuration-and-scene-classes" class="md-nav__link">
+    Create the configuration and scene classes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#make-the-custom-scene-discoverable" class="md-nav__link">
+    Make the custom scene discoverable
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/boschresearch/amira_blender_rendering/edit/master/docs/tutorials/simplecustomscenario.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="set-up-a-simple-custom-scenario">Set Up a Simple Custom Scenario<a class="headerlink" href="#set-up-a-simple-custom-scenario" title="Permanent link">&para;</a></h1>
+<p>ABR allows you to setup and render your own scenario.</p>
+<p>For further details and to take inspiration refer to the existing
+scenarios located in src/amira_blender_rendering/scenes/</p>
+<p>In order to setup your custom scenario few necessary requirements
+must be met.</p>
+<ol>
+<li><a href="#custom-classe">custom classes</a></li>
+<li><a href="#discover-scene">discover scenes</a></li>
+</ol>
+<p><strong>NOTE</strong> Adding custom scenes requires ABR to be installed as <code>editable</code> (see <a href="../../installation/">installation</a>).</p>
+<h2 id="create-the-configuration-and-scene-classes">Create the configuration and scene classes<a name="custom-classes"></a><a class="headerlink" href="#create-the-configuration-and-scene-classes" title="Permanent link">&para;</a></h2>
+<p>Start by creating a new .py file (e.g. <code>mycoolscenario.py</code>) in <code>src/amira_blender_rendering/scenes</code>.</p>
+<p>You could start from a minimal set of imports such as</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># necessary imports</span>
+<span class="kn">import</span> <span class="nn">bpy</span>
+<span class="kn">from</span> <span class="nn">amira_blender_rendering.utils</span> <span class="kn">import</span> <span class="n">camera</span> <span class="k">as</span> <span class="n">camera_utils</span>
+<span class="kn">from</span> <span class="nn">amira_blender_rendering.utils.io</span> <span class="kn">import</span> <span class="n">expandpath</span>
+<span class="kn">import</span>  <span class="nn">amira_blender_rendering.scenes</span> <span class="k">as</span> <span class="nn">abr_scenes</span>
+<span class="kn">import</span> <span class="nn">amira_blender_rendering.interfaces</span> <span class="k">as</span> <span class="nn">interfaces</span>
+
+<span class="c1"># useful imports</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pathlib</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">ceil</span><span class="p">,</span> <span class="n">log</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">amira_blender_rendering.utils.logging</span> <span class="kn">import</span> <span class="n">get_logger</span>
+<span class="kn">from</span> <span class="nn">amira_blender_rendering.dataset</span> <span class="kn">import</span> <span class="n">get_environment_textures</span><span class="p">,</span> <span class="n">build_directory_info</span><span class="p">,</span> <span class="n">dump_config</span>
+<span class="kn">import</span> <span class="nn">amira_blender_rendering.utils.blender</span> <span class="k">as</span> <span class="nn">blnd</span>
+<span class="kn">import</span> <span class="nn">amira_blender_rendering.nodes</span> <span class="k">as</span> <span class="nn">abr_nodes</span>
+<span class="kn">import</span> <span class="nn">amira_blender_rendering.math.geometry</span> <span class="k">as</span> <span class="nn">abr_geom</span>
+</code></pre></div>
+<p>As standard in the scenarios already provided, the most natural step is to add
+a custom configuration class</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># for later convenience, give your scene/scenario a name</span>
+<span class="n">_scene_name</span> <span class="o">=</span> <span class="s1">&#39;MyCoolScenario&#39;</span>
+
+<span class="c1"># Custom configuration class.</span>
+<span class="c1"># Inheriting from the BaseConfiguration which defines dataset,</span>
+<span class="c1"># camera and render -specific configuration parameters.</span>
+<span class="c1"># abr_scene.register(name=_scene_name, type=&#39;config&#39;)</span>
+<span class="k">class</span> <span class="nc">MyCoolScenarioConfiguration</span><span class="p">(</span><span class="n">abr_scenes</span><span class="o">.</span><span class="n">BaseConfiguration</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MyCoolScenarioConfiguration</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># Add all the scenario-specific configuration parameters,</span>
+        <span class="c1"># see the configuration documentation for an overview.</span>
+        <span class="c1"># This will be accessible in the config file or from the command line.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_param</span><span class="p">(</span><span class="o">...</span>
+</code></pre></div>
+<p>The following and most important thing is to add your custom scenario class</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># Custom scenario class.</span>
+<span class="c1"># Inheriting from ABRScene which defines an interface (in the form of</span>
+<span class="c1"># an abstract base class) for all ABR scenes.</span>
+<span class="c1"># This class should be expanded and modified at user wish to implement</span>
+<span class="c1"># all the functionalities needed to interact with her/his custom scenario.</span>
+<span class="c1"># E.g., object identification, random pose initialization etc.</span>
+<span class="nd">@abr_scenes</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">_scene_name</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;scene&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyCoolScenario</span><span class="p">(</span><span class="n">interfaces</span><span class="o">.</span><span class="n">ABRScene</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Example class implementing a custom user-defined scenario</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">MyCoolScenario</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+        <span class="c1"># [Optional] some logging capabilities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">()</span>
+
+        <span class="c1"># [Recommended] get the configuration, if one was passed in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="n">MyCoolScenarioConfiguration</span><span class="p">())</span>
+
+        <span class="c1"># [Mandatory] make use of ABR RenderManager for interaction with Blender</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderman</span> <span class="o">=</span> <span class="n">abr_scenes</span><span class="o">.</span><span class="n">RenderManager</span><span class="p">()</span>
+
+        <span class="c1"># [Optional] you might have to post-process the configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">postprocess_config</span><span class="p">()</span>
+
+        <span class="c1"># [Recommended] set up directories information, e.g., for multiple cameras</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_dirinfo</span><span class="p">()</span>
+
+        <span class="c1"># [Mandatory] set up anything that we need for the scene before doing anything else.</span>
+        <span class="c1"># For instance, removing all default objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_scene</span><span class="p">()</span>
+
+        <span class="c1"># [Mandatory] after the scene, let&#39;s set up the render manager</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderman</span><span class="o">.</span><span class="n">setup_renderer</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">render_setup</span><span class="o">.</span><span class="n">integrator</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">render_setup</span><span class="o">.</span><span class="n">denoising</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">render_setup</span><span class="o">.</span><span class="n">samples</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">render_setup</span><span class="o">.</span><span class="n">motion_blur</span><span class="p">)</span>
+
+        <span class="c1"># [Recommended] setup environment texture information</span>
+        <span class="c1"># This could be as simple as importing a list of all the available textures.</span>
+        <span class="c1"># In our case we often use images from OpenImagesV4 as textures for light reflection.</span>
+        <span class="c1"># In your case this could be a single image or something more sophisticated.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">environment_textures</span> <span class="o">=</span> <span class="n">get_environment_textures</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">scene_setup</span><span class="o">.</span><span class="n">environment_textures</span><span class="p">)</span>
+
+        <span class="c1"># [Mandatory] setup the camera that we wish to use</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_cameras</span><span class="p">()</span>
+
+        <span class="c1"># [Mandatory] setup render / output settings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_render_output</span><span class="p">()</span>
+
+        <span class="c1"># [Mandatory] setup the object that we want to render</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_objects</span><span class="p">()</span>
+
+        <span class="c1"># [Mandatory] finally, let&#39;s setup the compositor</span>
+        <span class="c1"># by passing it the list of defined objects, see setup_objects.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">renderman</span><span class="o">.</span><span class="n">setup_compositor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">objects</span><span class="p">)</span>
+
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [Mandatory] You need to implement the abstract methods</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">dump_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Dump dataset configuration into corresponding directory for documentation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Depending if you are rendering images of a single dataset from a single camera...</span>
+        <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirinfo</span><span class="o">.</span><span class="n">base_path</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">dump_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirinfo</span><span class="o">.</span><span class="n">base_path</span><span class="p">)</span>
+
+        <span class="c1"># ...or multiple dataset from multiple cameras</span>
+        <span class="c1"># See setup_dirinfo()</span>
+        <span class="k">for</span> <span class="n">dirinfo</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirinfos</span><span class="p">:</span>
+        <span class="n">output_path</span> <span class="o">=</span> <span class="n">dirinfo</span><span class="o">.</span><span class="n">base_path</span>
+        <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">dump_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">output_path</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">generate_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Main method used to iterate over and generate the dataset</span>
+
+<span class="sd">        The method should implement all the necessary computations to manipulate</span>
+<span class="sd">        existing objects, call to render and postprocessing</span>
+
+<span class="sd">        At generation time, this is called by the main script abrgen,</span>
+<span class="sd">        which, in turn, calls cli/render_dataset.py</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># Please refer to abr/scenes/simpletoolcap.py or abr/scenes/workspacescenario.py</span>
+        <span class="c1"># for code-specific implementation.</span>
+        <span class="c1"># The method could require implementation of additional supporting ones as for instance</span>
+        <span class="c1"># - visibility tests</span>
+        <span class="c1"># - object pose randomization</span>
+        <span class="c1"># - phisics forward simulation</span>
+</code></pre></div>
+<p>Recall, that the above code is only meant to hint your own one. After the constructor,
+you are left with implementing the class methods. In the following we provide some examples.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># [Recommended] Set up directories information, e.g., for multiple cameras</span>
+<span class="k">def</span> <span class="nf">setup_dirinfo</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+    <span class="c1"># This could be a single line of code such as</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">dirinfo</span> <span class="o">=</span> <span class="n">build_directory_info</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">base_path</span><span class="p">)</span>
+
+    <span class="c1">#.. as well as a list of multiple dictionaries depending if you have</span>
+    <span class="c1"># one or multiple cameras</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">dirinfos</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">cam</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">scene_setup</span><span class="o">.</span><span class="n">cameras</span><span class="p">:</span>
+        <span class="n">camera_base_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">base_path</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">cam</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">dirinfo</span> <span class="o">=</span> <span class="n">build_directory_info</span><span class="p">(</span><span class="n">camera_base_path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dirinfos</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dirinfo</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="c1"># [Mandatory] set up anything that we need for the scene before doing anything else.</span>
+<span class="c1"># For instance, removing all default objects</span>
+<span class="k">def</span> <span class="nf">setup_scene</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="c1"># This highly depends on your scene.</span>
+
+    <span class="sd">&quot;&quot;&quot;[For more complicated scene which use blender modeling]&quot;&quot;&quot;</span>
+    <span class="c1"># You might just want to load the blender file where you previously modeled your scene...</span>
+    <span class="n">bpy</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">wm</span><span class="o">.</span><span class="n">open_mainfile</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="n">expandpath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">scene_setup</span><span class="o">.</span><span class="n">blend_file</span><span class="p">))</span>
+    <span class="c1"># ...plus some additional operation such as</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Hiding all dropzones from viewport&quot;</span><span class="p">)</span>
+    <span class="n">bpy</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">collections</span><span class="p">[</span><span class="s1">&#39;Dropzones&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">hide_viewport</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="sd">&quot;&quot;&quot;[For simple rendering of objects]&quot;&quot;&quot;</span>
+    <span class="c1"># Conversely, if you do not really have an explicit scene you might</span>
+    <span class="c1"># first, want to delete everything (just to be sure)...</span>
+    <span class="n">blnd</span><span class="o">.</span><span class="n">clear_all_objects</span><span class="p">()</span>
+    <span class="c1"># ... After you could setup lighting.</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">lighting</span> <span class="o">=</span> <span class="n">abr_scenes</span><span class="o">.</span><span class="n">ThreePointLighting</span><span class="p">()</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="c1"># [Mandatory] setup the camera that we wish to use</span>
+<span class="k">def</span> <span class="nf">setup_cameras</span><span class="p">()</span>
+    <span class="c1"># This highly depends on your scene and the cameras that are setup in the blender file</span>
+
+    <span class="c1"># We recommend to take a look at abr/scenes/simpletoolcap.py or abr/scenes/workstationscenarios.py</span>
+
+    <span class="c1"># The general workflow is:</span>
+    <span class="c1"># - get the intrinsic from the config and convert them into suitable format, e.g., K matrix</span>
+    <span class="c1"># - select each existing camera and set its intrinsic values</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="c1"># [Mandatory] setup render / output settings</span>
+<span class="k">def</span> <span class="nf">setup_render_output</span><span class="p">()</span>
+    <span class="c1"># This mainly serves to set up the render dimension</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">camera_info</span><span class="o">.</span><span class="n">width</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">camera_info</span><span class="o">.</span><span class="n">height</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="n">bpy</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">render</span><span class="o">.</span><span class="n">resolution_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">camera_info</span><span class="o">.</span><span class="n">width</span>
+        <span class="n">bpy</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">scene</span><span class="o">.</span><span class="n">render</span><span class="o">.</span><span class="n">resolution_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">camera_info</span><span class="o">.</span><span class="n">height</span>
+
+    <span class="c1"># In addition you might want to include additional custom operations...</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="c1"># [Mandatory] setup the object that we want to render</span>
+<span class="bp">self</span><span class="o">.</span><span class="n">setup_objects</span><span class="p">()</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Setup all objects of interest to control in the scene.</span>
+<span class="sd">The main purpose is to create a list of objects (dict) such as</span>
+<span class="sd">each object is a dictionary with the following structure</span>
+
+<span class="sd">obj = {</span>
+<span class="sd">    &#39;id_mask&#39;    (str)      : &#39;&#39;,</span>
+<span class="sd">    &#39;model_name&#39; (str)      : obj_type,</span>
+<span class="sd">    &#39;model_id&#39;   (int)      : model_id,</span>
+<span class="sd">    &#39;object_id&#39;  (int)      : j,</span>
+<span class="sd">    &#39;bpy&#39;        (bpy.obj)  : bpy (blender) obj</span>
+<span class="sd">})</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1"># For code-specific implementation please refer to</span>
+<span class="c1"># abr/scenes/simpletoolcap.py and/or abr/scenes/workspacescenarios.py</span>
+</code></pre></div>
+<h2 id="make-the-custom-scene-discoverable">Make the custom scene <code>discoverable</code><a name="discover-scene"></a><a class="headerlink" href="#make-the-custom-scene-discoverable" title="Permanent link">&para;</a></h2>
+<p>As you might have noticed, right before the class definition for your custom scene and 
+its corresponding configurations, we used the following syntax</p>
+<div class="highlight"><pre><span></span><code><span class="n">_scene_name</span> <span class="o">=</span> <span class="s1">&#39;MyCoolScenario&#39;</span>
+
+<span class="nd">@abr_scene</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">_scene_name</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;config&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyCoolScenarioConfiguration</span><span class="p">(</span><span class="n">abr_scenes</span><span class="o">.</span><span class="n">BaseConfiguration</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># additional code</span>
+
+
+<span class="nd">@abr_scenes</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">_scene_name</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;scene&#39;</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">MyCoolScenario</span><span class="p">(</span><span class="n">interfaces</span><span class="o">.</span><span class="n">ABRScene</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># additional code</span>
+</code></pre></div>
+<p>In particular, the line <code>@abr_scene.register(name=, type=)</code> might appear a bit  obscure 
+if you are not familiar with python.
+In any case, it is important to add this line to  your custom code. 
+Internally, it is used to <em>automatically</em> register your scene (and its configuration), 
+expose and make it available to ABR.
+If you do not add those lines and you try to run <code>abrgen</code> with your brand new scene you most 
+likely are going to encounter a </p>
+<div class="highlight"><pre><span></span><code>RuntimeError: Invalid configuration: Unknown scene_type MyCoolSceneario
+</code></pre></div>
+<p><strong>NOTE</strong> In the config file used at rendering time, you need to use the value set in 
+<code>_scene_name</code> to correctly select your custom scenario.</p>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../renderpredefinedscene/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Basic - render a predefined scene" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Basic - render a predefined scene
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../../license/" class="md-footer__link md-footer__link--next" aria-label="Next: License" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              License
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Apache-2.0
+          </div>
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+        
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.94ec81fe.min.js", "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.48dfec6c.min.js"></script>
+      
+    
+  </body>
+</html>

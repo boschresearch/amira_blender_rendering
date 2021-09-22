@@ -1,0 +1,985 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="AMIRA Blender Rendering Documentation">
+      
+      
+      
+        <meta name="author" content="BCAI">
+      
+      
+        <link rel="canonical" href="https://boschresearch.github.io/amira_blender_rendering/installation/">
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.8">
+    
+    
+      
+        <title>Installation - AMIRA Blender Rendering Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.92558b1b.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.3f5d1f46.min.css">
+        
+          
+          
+          <meta name="theme-color" content="">
+        
+      
+    
+    
+    
+      
+    
+    
+    
+    
+      
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="dark-blue" data-md-color-accent="">
+  
+    
+    <script>function __prefix(e){return new URL("..",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#installation" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="AMIRA Blender Rendering Documentation" class="md-header__button md-logo" aria-label="AMIRA Blender Rendering Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AMIRA Blender Rendering Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Installation
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        
+<a href="https://github.com/boschresearch/amira_blender_rendering/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    boschresearch/amira_blender_rendering
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="AMIRA Blender Rendering Documentation" class="md-nav__button md-logo" aria-label="AMIRA Blender Rendering Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    AMIRA Blender Rendering Documentation
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/boschresearch/amira_blender_rendering/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    boschresearch/amira_blender_rendering
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_1" type="checkbox" id="__nav_1" checked>
+      
+      <label class="md-nav__link" for="__nav_1">
+        ABR User's Guide
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="ABR User's Guide" data-md-level="1">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          ABR User's Guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Installation
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Installation
+      </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installing-abr-as-a-python-package" class="md-nav__link">
+    Installing ABR as a python package
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-setting-up-blender-with-a-custom-python-installation" class="md-nav__link">
+    (Optional) Setting up blender with a custom python installation
+  </a>
+  
+    <nav class="md-nav" aria-label="(Optional) Setting up blender with a custom python installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installing-blender" class="md-nav__link">
+    Installing blender
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#replacing-blenders-python-version" class="md-nav__link">
+    Replacing Blender's python version
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-up-blenders-python-to-work-with-pip" class="md-nav__link">
+    Setting up Blender's python to work with pip
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing-your-python-installation" class="md-nav__link">
+    Testing your python installation
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing your python installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-conda" class="md-nav__link">
+    Using Conda
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../using/" class="md-nav__link">
+        Using
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../formats/" class="md-nav__link">
+        Formats
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../datasets/" class="md-nav__link">
+        Datasets
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../fqa/" class="md-nav__link">
+        FAQs
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting/" class="md-nav__link">
+        Troubleshooting
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tests/" class="md-nav__link">
+        Tests
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        Contributing
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      <label class="md-nav__link" for="__nav_3">
+        Configurations
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Configurations" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Configurations
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configs/overview/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configs/baseconfiguration/" class="md-nav__link">
+        Base Config
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configs/workstation_scenarios/" class="md-nav__link">
+        Workstation
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configs/pandatable/" class="md-nav__link">
+        Panda Table
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configs/simpleobject/" class="md-nav__link">
+        Simple Object
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configs/multiview/" class="md-nav__link">
+        Multi view rendering
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_4" type="checkbox" id="__nav_4" >
+      
+      <label class="md-nav__link" for="__nav_4">
+        Tutorials
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Tutorials" data-md-level="1">
+        <label class="md-nav__title" for="__nav_4">
+          <span class="md-nav__icon md-icon"></span>
+          Tutorials
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/renderpredefinedscene/" class="md-nav__link">
+        Basic - render a predefined scene
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/simplecustomscenario/" class="md-nav__link">
+        Intermediate - set up a simple custom scenario
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../license/" class="md-nav__link">
+        License
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#installing-abr-as-a-python-package" class="md-nav__link">
+    Installing ABR as a python package
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#optional-setting-up-blender-with-a-custom-python-installation" class="md-nav__link">
+    (Optional) Setting up blender with a custom python installation
+  </a>
+  
+    <nav class="md-nav" aria-label="(Optional) Setting up blender with a custom python installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#installing-blender" class="md-nav__link">
+    Installing blender
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#replacing-blenders-python-version" class="md-nav__link">
+    Replacing Blender's python version
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#setting-up-blenders-python-to-work-with-pip" class="md-nav__link">
+    Setting up Blender's python to work with pip
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#testing-your-python-installation" class="md-nav__link">
+    Testing your python installation
+  </a>
+  
+    <nav class="md-nav" aria-label="Testing your python installation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#using-conda" class="md-nav__link">
+    Using Conda
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/boschresearch/amira_blender_rendering/edit/master/docs/installation.md" title="Edit this page" class="md-content__button md-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+                  </a>
+                
+                
+                <h1 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h1>
+<p>This page explains how to install ABR. In order for ABR to properly interact
+with blender, it might be necessary to replace the python distribution
+shipped with Blender as below explained.
+We suggest to first try w/o doing so and resort to it if nothing else works.</p>
+<p><strong>Tested requirements</strong></p>
+<p>The following instructions have been tested for a variety of environments:</p>
+<ul>
+<li>OS: Ubuntu 18.04 (Bionic Beaver) and 20.04 (Focal Fossa)</li>
+<li>Blender: &gt;=2.80, &lt;=2.91.2</li>
+<li>python3.7(.x)</li>
+</ul>
+<p>Using a more recent version of Blender should be possible but we do not ensure it.</p>
+<h2 id="installing-abr-as-a-python-package">Installing ABR as a python package<a class="headerlink" href="#installing-abr-as-a-python-package" title="Permanent link">&para;</a></h2>
+<p>The easiest way to install (and later use) ABR can be done with <code>pip</code>.</p>
+<p>If you simply want to use ABR without adding your own scenes or without making
+modifications, the best way to install it so is to simply call <code>pip install .</code>
+from the root of ABR&rsquo;s source tree, i.e. the folder in which you can find the
+file <code>setup.py</code>. We call this the <code>passive user mode</code>.</p>
+<p>However, we expect users to be <code>active</code>. That is, we believe that, at some
+point, you might want to add your own scenes, make modifications to existing
+scenes, etc. If you are one of those <code>active users</code>, then you should rather
+install ABR in editable mode via</p>
+<div class="highlight"><pre><span></span><code>   pip install -e .
+</code></pre></div>
+<p>from ABR&rsquo;s root folder. This way, you can still edit all files, add new scenes,
+without having to manually re-install ABR afterwards.</p>
+<p>There&rsquo;s also the possibility to use ABR without any installation procedure. More
+about this can be found in <a href="../using/">using</a>.</p>
+<p>NOTE: both the above installation commands will install ABR in your currently 
+referenced Python distribution. To play around with ABR without messing up
+your standard/default distribution, we recommed to create and use a dedicated 
+environment, e.g., using Conda or virtualenv.</p>
+<h2 id="optional-setting-up-blender-with-a-custom-python-installation">(Optional) Setting up blender with a custom python installation<a class="headerlink" href="#optional-setting-up-blender-with-a-custom-python-installation" title="Permanent link">&para;</a></h2>
+<p>Despite our best efforts, ABR depends, or might in the future depend, on
+external libraries that go beyond what blender is shipping. However, installing
+third party dependencies using <code>pip</code> might not directly work, depending on
+your blender version. It is, however, possible, to replace blender&rsquo;s python
+version with a locally installed variant. Here, we outline the steps that are
+required to setup a python that is installed in a local virtual environment and
+make it the one that blender will use on a 64bit computer.</p>
+<p>These steps might also be required if you intend to render datasets on a GPU
+Cluster that has specific needs for python version, dedicated PIP backends, etc.</p>
+<p><strong>NOTE</strong>: Before you start changing blender as outlined below, we urge you to
+try ABR without changing blender&rsquo;s python!</p>
+<h3 id="installing-blender">Installing blender<a class="headerlink" href="#installing-blender" title="Permanent link">&para;</a></h3>
+<p>The example below uses blender-2.80. However, this should also work for later
+blender versions. Important is that the python version that should replace
+blender&rsquo;s shipped version has the same major and minor version numbers. For
+instance, you should be able to replace a python 3.7.0 with python 3.7.5. We
+were only partially successful in replacing python when the minor version number
+is different (i.e. 3.7.0 vs 3.8.0) due to blender&rsquo;s internal bindings, which
+require certain variants of the package <code>encodings</code>.</p>
+<p>Download the 64bit linux version of <a href="https://www.blender.org">blender</a> to your local
+computer and unpack it in some suitable directory. The next few steps assume
+that you have the following layout of files in your <code>home</code> folder:</p>
+<div class="highlight"><pre><span></span><code>$ ~/bin                     <span class="c1"># folder with executables, scripts, etc.</span>
+$ ~/bin/blender-2.80.d      <span class="c1"># un-packed blender download</span>
+$ ~/bin/blender             <span class="c1"># symlink to ~/bin/blender-2.80.d/blender</span>
+</code></pre></div>
+<p>To create the symlink run </p>
+<div class="highlight"><pre><span></span><code>$ ln -s blender-2.80.d/blender blender
+</code></pre></div>
+<p>Make sure that <code>~/bin</code> is on your path (you can add it e.g., through your <code>~/.bashrc</code>). 
+To quickly test if the setup is correct you can try running <code>blender</code> from your command line
+which should start Blender&rsquo;s 2.80 GUI.</p>
+<p>As mentioned above, blender ships its own python binary. This leads to issues
+when trying to install third party libraries due to, e.g., numpy version mismatches. 
+There are three ways of dealing with this: Replacing blender&rsquo;s python version with your own virtual environment,
+configuring the blender python version to be able to use <code>pip</code> or using conda. </p>
+<h3 id="replacing-blenders-python-version">Replacing Blender&rsquo;s python version<a class="headerlink" href="#replacing-blenders-python-version" title="Permanent link">&para;</a></h3>
+<p>The following replaces the shipped python version with the python of a
+virtualenv. </p>
+<p>We assume that blender was installed as above to <code>~/bin/blender</code>,
+and that you have <code>virtualenv</code> or <code>virtualenvwrapper</code> installed.</p>
+<div class="highlight"><pre><span></span><code>$ mkvirtualenv blender-venv                  <span class="c1"># This creates a new virtual environment.</span>
+                                                <span class="c1"># The path to the venv depends on your system</span>
+                                                <span class="c1"># setup. By default, it should end up either in</span>
+                                                <span class="c1"># ~/.venvs, ~/.virtualenvs or something similar. </span>
+                                                <span class="c1"># In the example here, we assume that virtualenvs</span>
+                                                <span class="c1"># are created in ~/.venvs .</span>
+                                                <span class="c1"># Note that this also activates the venv,</span>
+                                                <span class="c1"># which should be indicated by</span>
+                                                <span class="c1"># `(blender-env)` in front of PS1 (the dollar</span>
+                                                <span class="c1"># sign that indicates your shell $).</span>
+<span class="o">(</span>blender-venv<span class="o">)</span> $ <span class="nb">cd</span> bin/blender.d/2.80
+<span class="o">(</span>blender-venv<span class="o">)</span> $ mv python original.python   <span class="c1"># make back up of shipped python</span>
+<span class="o">(</span>blender-venv<span class="o">)</span> $ ln -s ~/venvs/blender-venv python
+<span class="o">(</span>blender-venv<span class="o">)</span> $ <span class="nb">cd</span> ..
+</code></pre></div>
+<p>We can test if this worked by calling blender and dropping into a python console
+from the command line:</p>
+<div class="highlight"><pre><span></span><code><span class="o">(</span>blender-venv<span class="o">)</span> $ ./blender -b --python-console
+</code></pre></div>
+<p>You can exit the shell with Ctrl-D.</p>
+<p>If the last step (running blender with an interactive python shell) failed,
+something went wrong. Most likely, you will have received an error which
+indicates that a certain package (encodings or initfsencoding) is missing our
+could not be loaded. Specifically, you might have received the following
+messages:</p>
+<div class="highlight"><pre><span></span><code>Fatal Python error: initfsencoding: Unable to get the locale encoding
+ModuleNotFoundError: No module named &#39;encoding
+</code></pre></div>
+<p>If this is the case, make sure that your virtualenv was created with a python3.7
+virtualenv script, and <strong>neither</strong> with a python2 <strong>nor</strong> a python3.8 virtualenv. 
+This could happen if you have a virtualenv script locally installed in ~/.local/bin, 
+which points to a python2 environment. 
+One viable workaround is to create a python3 environment from which you run the above commands, i.e.</p>
+<ol>
+<li>Create a python3 environment with your virtualenv installation, e.g.
+   called &lsquo;py3bootstrap&rsquo;</li>
+<li>Locally (i.e., inside the python3 environemnt) install <code>virtualenv</code> and <code>virtualenvwrapper</code></li>
+</ol>
+<div class="highlight"><pre><span></span><code>$ <span class="o">(</span>py3bootstrap<span class="o">)</span> pip install virtualenv virtualenvwrapper
+</code></pre></div>
+<ol>
+<li>Now create your blender virtual environment</li>
+</ol>
+<div class="highlight"><pre><span></span><code>$ <span class="o">(</span>py3bootstrap<span class="o">)</span> mkvirtualenv blender-venv
+</code></pre></div>
+<ol>
+<li>Follow the steps above.</li>
+</ol>
+<p>If the aforementioned 4 steps do not work, try to create a python environment
+using an explicit call to the appropriate virtualenv:</p>
+<div class="highlight"><pre><span></span><code>$ python3.7 .local/lib/python3.7/site-packages/virtualenv.py blender-env
+</code></pre></div>
+<p>If this still does not solve the issue, please get in contact with us, and we
+try to help you out.</p>
+<h3 id="setting-up-blenders-python-to-work-with-pip">Setting up Blender&rsquo;s python to work with pip<a class="headerlink" href="#setting-up-blenders-python-to-work-with-pip" title="Permanent link">&para;</a></h3>
+<p>Since version 2.80 blender&rsquo;s python distribution ships with <code>ensurepip</code>. This allows you to setup pip in blender. The instructions given here are loosely based on <a href="https://blender.stackexchange.com/questions/56011/how-to-install-pip-for-blenders-bundled-python/56013#comment254819_56013">this</a> StackOverflow post</p>
+<div class="highlight"><pre><span></span><code>$ <span class="nb">export</span> <span class="nv">BLENDER_PYTHON_DIR</span><span class="o">=</span>path/to/blender/2.80/python/bin
+$ <span class="nb">export</span> <span class="nv">BLENDER_PYTHON_PATH</span><span class="o">=</span><span class="nv">$BLENDER_PYTHON_DIR</span>/python3.7m
+$ <span class="si">${</span><span class="nv">BLENDER_PYTHON_PATH</span><span class="si">}</span> -m ensurepip
+$ <span class="si">${</span><span class="nv">BLENDER_PYTHON_PATH</span><span class="si">}</span> -m pip install -U pip
+$ <span class="c1"># This is just convenience for better usability</span>
+$ <span class="nb">echo</span> <span class="s2">&quot;alias pip-blender=&#39;</span><span class="si">${</span><span class="nv">BLENDER_PYTHON_PATH</span><span class="si">}</span><span class="s2"> -m pip&#39;&quot;</span> &gt;&gt; ~/.bashrc
+$ <span class="nb">echo</span> <span class="s2">&quot;export PATH=\${PATH}:</span><span class="nv">$BLENDER_PYTHON_DIR</span><span class="s2">&quot;</span> &gt;&gt; ~/.bashrc
+</code></pre></div>
+<p>You can test this solution by running</p>
+<div class="highlight"><pre><span></span><code>$ <span class="nb">source</span> ~/.bashrc <span class="o">&amp;&amp;</span> pip-blender --version
+$ <span class="c1"># Should point to the blender python distribution</span>
+</code></pre></div>
+<p><strong>Note</strong></p>
+<p>This procedure has the advantage that you do not need to take care of creating a dedicated python environment
+and struggle with selecting the correct interpreter version.
+On the other hand, it directly modifies the original Blender&rsquo;s python distro. To minimize the risk of potential
+issues we suggest to make a copy of the original python distro.</p>
+<h3 id="testing-your-python-installation">Testing your python installation<a class="headerlink" href="#testing-your-python-installation" title="Permanent link">&para;</a></h3>
+<blockquote>
+<p>The following instructions assume, that you did the virtualenv setup. 
+If you have reconfigured blender&rsquo;s python version, you do not need to work in a virtual environment. 
+Instead, replace all <code>pip</code> commands with the pip version of blenders&rsquo; python distribution. 
+If you followed this tutorial, this should be <code>pip-blender</code></p>
+</blockquote>
+<p>If everything worked as it should, you can now install python packages
+within the newly created virtual environment with pip, which are then also available 
+from within blender. For instance, to install numpy, imageio, and torch, simply run the following</p>
+<div class="highlight"><pre><span></span><code><span class="o">(</span>blender-venv<span class="o">)</span> $ pip install numpy imageio torch
+</code></pre></div>
+<p>Running blender with an interactive shell, you should now be able to import
+numpy, torch, etc.</p>
+<div class="highlight"><pre><span></span><code><span class="o">(</span>blender-venv<span class="o">)</span> $ blender -b --python-console
+&gt;&gt;&gt; import numpy, torch, imageio
+</code></pre></div>
+<p>without getting an ImportError.</p>
+<p>If this worked out, you can finally install ABR in your local virtualenv by running
+from ABR root dir (where setup.py is located)</p>
+<div class="highlight"><pre><span></span><code><span class="o">(</span>blender-venv<span class="o">)</span> $ pip install .
+</code></pre></div>
+<p>or, for the <code>editable</code> version</p>
+<div class="highlight"><pre><span></span><code><span class="o">(</span>blender-venv<span class="o">)</span> $ pip install -e .
+</code></pre></div>
+<h4 id="using-conda">Using Conda<a class="headerlink" href="#using-conda" title="Permanent link">&para;</a></h4>
+<p>Yet another option is to use conda as a virtual environement and package manager for python.</p>
+<p>We assume anaconda3 (<a href="https://www.anaconda.com/products/individual">here</a> or <a href="https://repo.anaconda.com/archive">here</a>) is <a href="https://phoenixnap.com/kb/how-to-install-anaconda-ubuntu-18-04-or-20-04">installed</a>
+in your <code>$HOME</code> and available on you path. Make sure your version of anaconda python is &gt;= 3.6</p>
+<p>Create a conda environment by running</p>
+<div class="highlight"><pre><span></span><code>$ conda create --name blender-venv <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.7.5 imageio numpy
+</code></pre></div>
+<p>Similar to explained when using virtualenv, symlink blender to the environment. That is, 
+from within <code>~/bin/blender-2.80.d/2.80</code> run</p>
+<div class="highlight"><pre><span></span><code>$ ln -s ~/anaconda3/env/blender-venv python
+</code></pre></div>
+<p>To check whether this was successfull, run</p>
+<div class="highlight"><pre><span></span><code>$ conda activate blender-venv
+<span class="o">(</span>blender-venv<span class="o">)</span> $ blender -b --python-console
+</code></pre></div>
+<p>It this went through you should now be able to use ABR.</p>
+<p><strong>Note</strong></p>
+<p>The advantage of using conda rather than virtualenv is that any anaconda3 version allows you
+to select, as interpreter for your environemnt, python3.7.x.</p>
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        
+<footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href=".." class="md-footer__link md-footer__link--prev" aria-label="Previous: Overview" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Overview
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../using/" class="md-footer__link md-footer__link--next" aria-label="Next: Using" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Using
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Apache-2.0
+          </div>
+        
+        Made with
+        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+          Material for MkDocs
+        </a>
+        
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.94ec81fe.min.js", "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.48dfec6c.min.js"></script>
+      
+    
+  </body>
+</html>
