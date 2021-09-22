@@ -1,0 +1,57 @@
+name: Build Docker Image
+
+on:
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: amira-ci-blender
+  REGISTRY: ghcr.io
+
+jobs:
+  upload-blender:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - name: Download blender
+        run: curl -o blender.tar.xz https://download.blender.org/release/Blender2.91/blender-2.91.2-linux64.tar.xz
+
+      - name: Store blender
+        uses: actions/upload-artifact@v2
+        with:
+          name: blender_archive
+          path: blender.tar.xz
+
+  build-and-push:
+    runs-on: ubuntu-20.04
+    needs: upload-blender
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Get Blender artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: blender_archive
+          path: docker/
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v2
+        with:
+          context: docker/
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
